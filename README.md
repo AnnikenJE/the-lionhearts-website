@@ -8,31 +8,6 @@ Official website for **The Lionhearts**, a World of Warcraft guild on **Darkmoon
 - TypeScript
 - Vite
 
-## Development
-
-```bash
-npm install
-npm run dev
-```
-
-## Build
-
-```bash
-npm run build
-```
-
-Preview the production build:
-
-```bash
-npm run preview
-```
-
-## Lint
-
-```bash
-npm run lint
-```
-
 ## Useful links
 
 - [Raider.IO](https://raider.io) — guild progression, mythic+ rankings
