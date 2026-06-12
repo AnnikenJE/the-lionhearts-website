@@ -13,6 +13,10 @@ Relevant external services:
 - [WoW Armory](https://worldofwarcraft.blizzard.com/en-gb/) — official Blizzard character/guild data
 - [WoW Head](https://www.wowhead.com) — item and spell database
 
+## Deployment
+
+**Pushes to `main` deploy directly to production at https://dev.thelionhearts.eu/** — do not push untested or broken changes.
+
 ## Commands
 
 ```bash
