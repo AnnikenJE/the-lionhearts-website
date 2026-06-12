@@ -1,0 +1,27 @@
+main {
+  text-align: center;
+}
+
+h1 {
+  font-size: 3rem;
+  letter-spacing: 0.05em;
+  color: #c8a96e;
+  margin-bottom: 0.4rem;
+}
+
+.server {
+  font-size: 0.95rem;
+  color: #888;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+}
+
+.status {
+  font-size: 0.85rem;
+  color: #555;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-top: 1px solid #222;
+  padding-top: 1.5rem;
+}
