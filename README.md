@@ -4,9 +4,8 @@ Official website for **The Lionhearts**, a World of Warcraft guild on **Darkmoon
 
 ## Stack
 
-- React 19
+- Nuxt 4
 - TypeScript
-- Vite
 
 ## Useful links
 

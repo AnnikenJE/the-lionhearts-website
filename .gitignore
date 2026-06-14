@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Nuxt
+.nuxt
+.output
+.data
+.cache
+
 # Environment variables
 .env
 .env.*
@@ -31,3 +37,6 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
+
+# Claude Code local settings
+.claude/settings.local.json
