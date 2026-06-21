@@ -1,21 +1,19 @@
+/* Global styles only — registered in nuxt.config.ts and shared across pages.
+   Component-specific styles live in each page's scoped <style> block. */
+
+/* Reset */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+/* App-wide theme: dark background, parchment text, serif font */
 body {
   background-color: #0f0f0f;
   color: #e8e0d0;
   font-family: Georgia, serif;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-main {
-  text-align: center;
 }
 
 h1 {
@@ -40,4 +38,16 @@ h1 {
   text-transform: uppercase;
   border-top: 1px solid #222;
   padding-top: 1.5rem;
+}
+
+.roster-link {
+  display: inline-block;
+  margin-top: 1.5rem;
+  color: #c8a96e;
+  text-decoration: none;
+  letter-spacing: 0.05em;
+}
+
+.roster-link:hover {
+  text-decoration: underline;
 }
