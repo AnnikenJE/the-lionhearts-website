@@ -1,8 +1,10 @@
 # The Lionhearts — Guild Website
 
-Official website for **The Lionhearts**, a World of Warcraft guild on **Darkmoon Faire (EU)**.
+Personal project: the website for **The Lionhearts**, a World of Warcraft guild on **Darkmoon Faire (EU)**.
 
 Live at **https://dev.thelionhearts.eu/**.
+
+> This is my own repo — not intended for cloning, contributions, or reuse.
 
 ## Stack
 
@@ -15,16 +17,7 @@ Live at **https://dev.thelionhearts.eu/**.
 - **Landing page** — guild intro hero.
 - **Roster** — full guild roster pulled live from the Raider.IO API, grouped by in-game rank with collapsible sections, member counts, and official WoW class colours. Members link to their Raider.IO profiles.
 
-## Getting started
-
-```bash
-npm install
-npm run dev
-```
-
-The dev server opens a browser automatically.
-
-### Scripts
+## Scripts
 
 ```bash
 npm run dev       # start dev server (opens browser automatically)
@@ -52,10 +45,6 @@ nuxt.config.ts         # Nuxt config (global CSS registered here)
 ```
 
 The roster is fetched server-side and cached, so visitor traffic does not hammer the Raider.IO API. Rank names and class colours are configured in `app/pages/roster.vue`.
-
-## Deployment
-
-Pushes to `main` deploy directly to production. Do not push untested or broken changes.
 
 ## Useful links
 
