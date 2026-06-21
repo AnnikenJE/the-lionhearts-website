@@ -4,8 +4,6 @@ Personal project: the website for **The Lionhearts**, a World of Warcraft guild 
 
 Live at **https://dev.thelionhearts.eu/**.
 
-> This is my own repo — not intended for cloning, contributions, or reuse.
-
 ## Stack
 
 - [Nuxt 4](https://nuxt.com) (Vue 3 + Vite)
