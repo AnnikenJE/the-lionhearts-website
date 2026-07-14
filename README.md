@@ -1,6 +1,8 @@
 # The Lionhearts — Guild Website
 
-Personal project: the website for **The Lionhearts**, a World of Warcraft guild on **Darkmoon Faire (EU)**.
+Personal project: the website for **The Lionhearts**, a World of Warcraft guild on **Darkmoon Faire (EU)**. Built while exploring AI-assisted development with Claude Code.
+
+> **Work in progress** — early stage, more features planned.
 
 Live at **https://dev.thelionhearts.eu/**.
 

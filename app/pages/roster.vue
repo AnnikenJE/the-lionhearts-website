@@ -1,10 +1,8 @@
 <script setup lang="ts">
-// Guild roster page: fetches members from our cached /api/roster endpoint,
-// groups them by in-game rank, and lets each rank be collapsed.
 import type { RosterMember } from "~~/server/api/roster.get";
 
-// Raider.IO only exposes the numeric rank index (0 = Guild Master), not the
-// guild's chosen rank names. Edit these labels to match the in-game ranks.
+// Raider.IO exposes rank as numeric index only (0 = Guild Master). Edit these
+// to match the in-game rank names.
 const RANK_NAMES: Record<number, string> = {
   0: "King Lionheart",
   1: "Royal Advisor",
@@ -18,7 +16,6 @@ const RANK_NAMES: Record<number, string> = {
   9: "Peasant",
 };
 
-// Official WoW class colours.
 const CLASS_COLORS: Record<string, string> = {
   "Death Knight": "#c41e3a",
   "Demon Hunter": "#a330c9",
@@ -35,20 +32,15 @@ const CLASS_COLORS: Record<string, string> = {
   Warrior: "#c69b6d",
 };
 
-// Fall back gracefully if Raider.IO ever returns an unknown rank or class.
 const rankName = (rank: number) => RANK_NAMES[rank] ?? `Rank ${rank}`;
 const classColor = (cls: string) => CLASS_COLORS[cls] ?? "#e8e0d0";
 
-// Fetched once on the server during SSR and reused on the client.
 const {
   data: members,
   pending,
   error,
 } = await useFetch<RosterMember[]>("/api/roster");
 
-const total = computed(() => members.value?.length ?? 0);
-
-// Group members by rank so each rank gets a heading, keeping API sort order.
 const groups = computed(() => {
   const byRank = new Map<number, RosterMember[]>();
   for (const m of members.value ?? []) {
@@ -56,12 +48,13 @@ const groups = computed(() => {
     list.push(m);
     byRank.set(m.rank, list);
   }
-  return [...byRank.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .map(([rank, list]) => ({ rank, name: rankName(rank), members: list }));
+  return [...byRank.entries()].map(([rank, list]) => ({
+    rank,
+    name: rankName(rank),
+    members: list,
+  }));
 });
 
-// Track which ranks are collapsed so each role can be hidden independently.
 const collapsed = ref<Set<number>>(new Set());
 const toggle = (rank: number) => {
   const next = new Set(collapsed.value);
@@ -78,18 +71,15 @@ const toggle = (rank: number) => {
       <h1>Roster</h1>
       <p class="server">
         The Lionhearts — Darkmoon Faire (EU)
-        <span v-if="total" class="total">· {{ total }} members</span>
+        <span v-if="members?.length" class="total">· {{ members.length }} members</span>
       </p>
     </header>
 
-    <!-- Loading / error states -->
-    <p v-if="pending" class="status">Loading roster…</p>
-    <p v-else-if="error" class="status">Could not load the roster right now.</p>
+    <p v-if="pending" class="loading">Loading roster…</p>
+    <p v-else-if="error" class="loading">Could not load the roster right now.</p>
 
-    <!-- One collapsible section per rank -->
     <template v-else>
       <section v-for="group in groups" :key="group.rank" class="rank-group">
-        <!-- Clicking the heading toggles this rank's member list -->
         <h2>
           <button
             class="toggle"
@@ -103,8 +93,7 @@ const toggle = (rank: number) => {
             <span class="count">{{ group.members.length }}</span>
           </button>
         </h2>
-        <!-- v-show keeps the list in the DOM so re-expanding is instant -->
-        <ul v-show="!collapsed.has(group.rank)">
+        <ul v-show="!collapsed.has(group.rank)"><!-- v-show keeps DOM so re-expand is instant -->
           <li v-for="m in group.members" :key="m.name + m.realm">
             <a
               :href="m.profileUrl"
@@ -235,6 +224,13 @@ li:hover {
 .meta {
   color: #777;
   font-size: 0.78rem;
+}
+
+.loading {
+  color: #555;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .back {

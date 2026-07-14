@@ -1,12 +1,9 @@
-// Fetches the guild roster from the public Raider.IO API.
-// Runs server-side so the browser never hits Raider.IO directly (avoids CORS)
-// and the response can be cached.
+// Server-side only — avoids CORS and allows caching.
 
 interface RaiderIoMember {
   rank: number
   character: {
     name: string
-    race: string
     class: string
     active_spec_name: string | null
     active_spec_role: string | null
