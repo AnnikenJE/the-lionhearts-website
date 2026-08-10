@@ -35,8 +35,14 @@ Early-stage Nuxt 4 + TypeScript project (Vue 3 + Vite under the hood). Uses the 
 
 - `nuxt.config.ts` — Nuxt config; global CSS registered here
 - `app/app.vue` — root layout, renders `<NuxtPage />`
+- `app/layouts/default.vue` — shared shell: header nav (Home · Roster · News) + footer links
 - `app/pages/index.vue` — home page / landing hero (file-based routing)
 - `app/pages/roster.vue` — guild roster page; groups members by rank, each rank collapsible
+- `app/pages/news/index.vue`, `app/pages/news/[slug].vue` — markdown-backed news list + post
+- `content/news/*.md` — news posts (authored as markdown, rendered by @nuxt/content)
+- `content.config.ts` — @nuxt/content collection schema for news
+- `app/data/schedule.ts`, `app/data/links.ts` — typed static data (raid schedule, links)
+- `app/components/RaidSchedule.vue`, `app/components/LinkGrid.vue` — render the static data
 - `app/assets/css/main.css` — global styles only (reset + app-wide theme)
 - `server/api/roster.get.ts` — server route that fetches and caches the guild roster from Raider.IO
 - `public/` — static assets served as-is
@@ -54,3 +60,4 @@ External APIs are called from **server routes** (`server/api/`), never directly 
 - **Styles:** component-specific CSS goes in each `.vue` file's `<style scoped>` block. Only genuinely global styles (reset, `body`, shared theme) belong in `main.css`. Don't add page-specific rules to `main.css`.
 - **Types:** co-locate types with the code that owns them and export when shared (e.g. `RosterMember` is exported from `roster.get.ts` and imported by `roster.vue`). Only promote a type to a shared file once it's used across several unrelated modules.
 - **WoW domain data:** Raider.IO exposes ranks as numeric indices only (0 = Guild Master); the human-readable rank names are mapped in `roster.vue` and must be kept in sync with the in-game ranks. Class colours in `roster.vue` follow the official WoW palette.
+- **Local content vs external APIs:** news (markdown via @nuxt/content), the raid schedule, and the links hub are local content edited in the repo — no server route. Only external APIs (e.g. Raider.IO for the roster) go through `server/api/`.
