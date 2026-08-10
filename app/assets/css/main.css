@@ -39,15 +39,3 @@ h1 {
   border-top: 1px solid #222;
   padding-top: 1.5rem;
 }
-
-.roster-link {
-  display: inline-block;
-  margin-top: 1.5rem;
-  color: #c8a96e;
-  text-decoration: none;
-  letter-spacing: 0.05em;
-}
-
-.roster-link:hover {
-  text-decoration: underline;
-}
