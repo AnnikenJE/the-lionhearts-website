@@ -23,6 +23,14 @@ dist-ssr
 .env.*
 !.env.example
 
+# Secrets / credentials
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.json
+credentials.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
