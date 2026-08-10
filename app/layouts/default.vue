@@ -12,7 +12,8 @@
     <slot />
 
     <footer class="site-footer">
-      <p>The Lionhearts — Darkmoon Faire (EU)</p>
+      <LinkGrid />
+      <p class="colophon">The Lionhearts — Darkmoon Faire (EU)</p>
     </footer>
   </div>
 </template>
@@ -67,5 +68,9 @@
   text-align: center;
   color: #555;
   font-size: 0.85rem;
+}
+
+.colophon {
+  margin-top: 1.25rem;
 }
 </style>
