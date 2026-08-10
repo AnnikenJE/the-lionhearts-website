@@ -3,7 +3,7 @@
     <header class="site-header">
       <div class="header-inner">
         <NuxtLink to="/" class="brand">
-          <span class="brand-mark" aria-hidden="true">◆</span>
+          <span class="brand-mark"><GuildCrest /></span>
           The Lionhearts
         </NuxtLink>
         <nav class="nav" aria-label="Primary">
@@ -71,8 +71,12 @@
 }
 
 .brand-mark {
-  color: var(--gold-deep);
-  font-size: 0.7rem;
+  width: 26px;
+  display: inline-flex;
+}
+
+.brand-mark :deep(.crest) {
+  filter: none;
 }
 
 .nav {

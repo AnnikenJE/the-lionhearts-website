@@ -15,6 +15,9 @@ const formatDate = (iso: string) =>
 <template>
   <main class="home">
     <section class="hero">
+      <div class="crest-wrap">
+        <GuildCrest />
+      </div>
       <p class="server">Darkmoon Faire — EU</p>
       <h1>The Lionhearts</h1>
 
@@ -71,11 +74,38 @@ const formatDate = (iso: string) =>
 /* Hero */
 .hero {
   text-align: center;
-  padding: 3rem 0 2.5rem;
+  padding: 2.5rem 0;
+}
+
+.crest-wrap {
+  width: clamp(120px, 22vw, 160px);
+  margin: 0 auto 1.5rem;
 }
 
 .hero .server {
   margin-bottom: 1rem;
+}
+
+/* Gold gradient title with a slow left-to-right sheen.
+   The reduced-motion rule in main.css neutralises the animation. */
+.hero h1 {
+  background: linear-gradient(
+    100deg,
+    var(--gold-deep) 10%,
+    var(--gold-bright) 50%,
+    var(--gold-deep) 90%
+  );
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: title-sheen 9s linear infinite;
+}
+
+@keyframes title-sheen {
+  to {
+    background-position: 220% center;
+  }
 }
 
 .divider {
