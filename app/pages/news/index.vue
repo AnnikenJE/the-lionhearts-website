@@ -14,15 +14,23 @@ const formatDate = (iso: string) =>
 
 <template>
   <main class="news">
-    <h1>News</h1>
+    <header class="page-head">
+      <p class="server">The Lionhearts</p>
+      <h1>News</h1>
+    </header>
 
-    <p v-if="!posts || posts.length === 0" class="empty">No posts yet.</p>
+    <p v-if="!posts || posts.length === 0" class="empty">
+      No posts yet — check back soon.
+    </p>
 
     <ul v-else class="post-list">
-      <li v-for="post in posts" :key="post.path" class="post">
-        <NuxtLink :to="post.path" class="title">{{ post.title }}</NuxtLink>
-        <p class="date">{{ formatDate(post.date) }}</p>
-        <p v-if="post.excerpt" class="excerpt">{{ post.excerpt }}</p>
+      <li v-for="post in posts" :key="post.path">
+        <NuxtLink :to="post.path" class="post">
+          <p class="date">{{ formatDate(post.date) }}</p>
+          <h2 class="title">{{ post.title }}</h2>
+          <p v-if="post.excerpt" class="excerpt">{{ post.excerpt }}</p>
+          <span class="read">Read more →</span>
+        </NuxtLink>
       </li>
     </ul>
   </main>
@@ -32,45 +40,73 @@ const formatDate = (iso: string) =>
 .news {
   max-width: 780px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
+  padding: 2.5rem 1.5rem 1rem;
 }
 
-h1 {
+.page-head {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+}
+
+.page-head .server {
+  margin-bottom: 0.6rem;
 }
 
 .empty {
   text-align: center;
-  color: #777;
+  color: var(--text-muted);
 }
 
 .post-list {
   list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .post {
-  padding: 1.25rem 0;
-  border-bottom: 1px solid #222;
-}
-
-.title {
-  color: #c8a96e;
+  display: block;
+  padding: 1.25rem 1.4rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   text-decoration: none;
-  font-size: 1.3rem;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease;
 }
 
-.title:hover {
-  text-decoration: underline;
+.post:hover {
+  background: var(--surface-hover);
+  border-color: var(--gold-deep);
 }
 
 .date {
-  color: #777;
-  font-size: 0.8rem;
-  margin: 0.2rem 0 0.4rem;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.title {
+  color: var(--gold);
+  font-size: 1.35rem;
+  margin: 0.3rem 0 0.5rem;
 }
 
 .excerpt {
-  color: #aaa;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: 0.75rem;
+}
+
+.read {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  transition: color 0.16s ease;
+}
+
+.post:hover .read {
+  color: var(--gold);
 }
 </style>

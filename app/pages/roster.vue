@@ -74,7 +74,6 @@ const toggle = (rank: number) => {
 <template>
   <main class="roster">
     <header class="head">
-      <NuxtLink to="/" class="back">← Home</NuxtLink>
       <h1>Roster</h1>
       <p class="server">
         The Lionhearts — Darkmoon Faire (EU)
@@ -120,10 +119,6 @@ const toggle = (rank: number) => {
           </li>
         </ul>
       </section>
-
-      <footer class="foot">
-        <NuxtLink to="/" class="back">← Home</NuxtLink>
-      </footer>
     </template>
   </main>
 </template>
@@ -133,28 +128,31 @@ const toggle = (rank: number) => {
   text-align: left;
   max-width: 1080px;
   width: 100%;
-  padding: 2rem 1.5rem 4rem;
+  padding: 2.5rem 1.5rem 1rem;
   margin: 0 auto;
 }
 
 .head {
   position: relative;
+  text-align: center;
   margin-bottom: 2.5rem;
 }
 
 h1 {
-  text-align: center;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.4rem;
 }
 
 .server {
   text-align: center;
-  color: #999;
 }
 
 .total {
-  color: #c8a96e;
+  color: var(--gold);
   white-space: nowrap;
+}
+
+.status {
+  text-align: center;
 }
 
 .rank-group {
@@ -162,7 +160,7 @@ h1 {
 }
 
 h2 {
-  border-bottom: 1px solid #222;
+  border-bottom: 1px solid var(--border);
   margin-bottom: 0.8rem;
 }
 
@@ -171,23 +169,26 @@ h2 {
   background: none;
   border: none;
   cursor: pointer;
-  color: #c8a96e;
+  color: var(--gold);
   font-family: inherit;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 0.2rem 0 0.4rem;
+  padding: 0.35rem 0.4rem;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  transition: color 0.15s ease;
 }
 
 .toggle:hover {
-  color: #e0c089;
+  color: var(--gold-bright);
 }
 
 .chevron {
   font-size: 0.8rem;
+  color: var(--gold-deep);
   transition: transform 0.15s ease;
 }
 
@@ -197,7 +198,8 @@ h2 {
 }
 
 .count {
-  color: #555;
+  margin-left: auto;
+  color: var(--text-dim);
   font-size: 0.8rem;
 }
 
@@ -212,14 +214,14 @@ ul {
 li {
   display: flex;
   flex-direction: column;
-  padding: 0.3rem 0.5rem;
-  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-sm);
   transition: background 0.12s ease;
   break-inside: avoid; /* keep a member's name + spec together in one column */
 }
 
 li:hover {
-  background: #161616;
+  background: var(--surface);
 }
 
 .name {
@@ -233,24 +235,7 @@ li:hover {
 }
 
 .meta {
-  color: #777;
+  color: var(--text-muted);
   font-size: 0.78rem;
-}
-
-.back {
-  display: inline-block;
-  color: #888;
-  text-decoration: none;
-}
-
-.back:hover {
-  color: #c8a96e;
-}
-
-.foot {
-  margin-top: 1rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #222;
-  text-align: center;
 }
 </style>

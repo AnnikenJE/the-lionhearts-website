@@ -35,41 +35,71 @@ const formatDate = (iso: string) =>
 
 <style scoped>
 .post {
-  max-width: 780px;
+  max-width: 720px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
+  padding: 2.5rem 1.5rem 1rem;
 }
 
 .back {
-  color: #888;
+  display: inline-block;
+  color: var(--text-muted);
   text-decoration: none;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  margin-bottom: 1.5rem;
+  transition: color 0.15s ease;
 }
 
 .back:hover {
-  color: #c8a96e;
+  color: var(--gold);
 }
 
 h1 {
-  margin: 1rem 0 0.25rem;
+  margin: 0 0 0.4rem;
+  line-height: 1.15;
 }
 
 .date {
-  color: #777;
-  font-size: 0.85rem;
-  margin-bottom: 1.5rem;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.body {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
 }
 
 .body :deep(p) {
-  margin-bottom: 1rem;
-  line-height: 1.7;
+  margin-bottom: 1.1rem;
+  line-height: 1.8;
 }
 
 .body :deep(a) {
-  color: #c8a96e;
+  color: var(--gold);
+  text-underline-offset: 2px;
 }
 
 .body :deep(h2) {
-  color: #c8a96e;
-  margin: 1.5rem 0 0.5rem;
+  color: var(--gold);
+  margin: 2rem 0 0.6rem;
+}
+
+.body :deep(ul),
+.body :deep(ol) {
+  margin: 0 0 1.1rem 1.25rem;
+  line-height: 1.8;
+}
+
+.body :deep(blockquote) {
+  border-left: 3px solid var(--gold-deep);
+  padding-left: 1rem;
+  margin: 0 0 1.1rem;
+  color: var(--text-muted);
+  font-style: italic;
 }
 </style>
