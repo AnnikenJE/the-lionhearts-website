@@ -10,6 +10,7 @@
           <NuxtLink to="/">Home</NuxtLink>
           <NuxtLink to="/roster">Roster</NuxtLink>
           <NuxtLink to="/news">News</NuxtLink>
+          <NuxtLink to="/rules">Rules</NuxtLink>
         </nav>
       </div>
     </header>
