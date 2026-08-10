@@ -8,34 +8,98 @@
   padding: 0;
 }
 
-/* App-wide theme: dark background, parchment text, serif font */
+/* Design tokens — the WoW parchment-on-dark theme.
+   Components reference these instead of raw hex, so the palette stays
+   consistent and is tunable from one place. */
+:root {
+  /* Surfaces */
+  --bg: #0f0f0f;
+  --surface: #151412;
+  --surface-hover: #1b1915;
+
+  /* Lines */
+  --border: #262320;
+  --border-strong: #35302a;
+
+  /* Text — parchment, stepping down in emphasis */
+  --text: #e8e0d0;
+  --text-secondary: #b8b0a0;
+  --text-muted: #8a8474;
+  --text-dim: #625c50;
+
+  /* Heraldic gold accent */
+  --gold: #c8a96e;
+  --gold-bright: #e6c98d;
+  --gold-deep: #9c7f4e;
+
+  /* Shape & rhythm */
+  --radius: 10px;
+  --radius-sm: 7px;
+  --maxw: 960px;
+  --focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--gold);
+}
+
+/* App-wide theme: dark background with a faint golden aura at the top,
+   parchment text, serif type. */
 body {
-  background-color: #0f0f0f;
-  color: #e8e0d0;
-  font-family: Georgia, serif;
   min-height: 100vh;
+  background-color: var(--bg);
+  background-image: radial-gradient(
+    1100px 560px at 50% -8%,
+    rgba(200, 169, 110, 0.07),
+    transparent 62%
+  );
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: Georgia, "Times New Roman", serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  line-height: 1.5;
 }
 
 h1 {
-  font-size: 3rem;
-  letter-spacing: 0.05em;
-  color: #c8a96e;
-  margin-bottom: 0.4rem;
+  font-size: clamp(2.4rem, 6vw, 3.4rem);
+  letter-spacing: 0.04em;
+  color: var(--gold);
+  line-height: 1.1;
 }
 
+/* Shared, uppercase "server" eyebrow line used across pages. */
 .server {
-  font-size: 0.95rem;
-  color: #888;
-  letter-spacing: 0.1em;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  margin-bottom: 2rem;
 }
 
 .status {
   font-size: 0.85rem;
-  color: #555;
+  color: var(--text-dim);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  border-top: 1px solid #222;
+  border-top: 1px solid var(--border);
   padding-top: 1.5rem;
+}
+
+/* Selection + keyboard focus in the guild's gold. */
+::selection {
+  background: rgba(200, 169, 110, 0.28);
+  color: var(--text);
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+  border-radius: var(--radius-sm);
+}
+
+/* Respect users who prefer less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

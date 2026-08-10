@@ -15,31 +15,45 @@ import { RAID_SCHEDULE } from '~/data/schedule'
 <style scoped>
 .schedule {
   list-style: none;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 1rem;
 }
 
 .night {
   display: flex;
   flex-direction: column;
-  padding: 0.75rem 1rem;
-  border: 1px solid #222;
-  border-radius: 8px;
-  min-width: 160px;
+  gap: 0.15rem;
+  padding: 1rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--gold-deep);
+  border-radius: var(--radius);
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.night:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+  border-left-color: var(--gold);
 }
 
 .day {
-  color: #c8a96e;
-  letter-spacing: 0.05em;
+  color: var(--gold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
 }
 
 .time {
-  color: #e8e0d0;
+  color: var(--text);
+  font-size: 1.05rem;
 }
 
 .note {
-  color: #777;
+  color: var(--text-muted);
   font-size: 0.8rem;
   margin-top: 0.2rem;
 }
