@@ -6,7 +6,10 @@ import { RAID_SCHEDULE } from '~/data/schedule'
   <ul class="schedule">
     <li v-for="night in RAID_SCHEDULE" :key="night.day" class="night">
       <span class="day">{{ night.day }}</span>
-      <span class="time">{{ night.start }}–{{ night.end }} {{ night.timezone }}</span>
+      <span class="time">
+        {{ night.start }}<template v-if="night.end">–{{ night.end }}</template>
+        <span class="tz">{{ night.timezone }}</span>
+      </span>
       <span v-if="night.note" class="note">{{ night.note }}</span>
     </li>
   </ul>
@@ -50,6 +53,11 @@ import { RAID_SCHEDULE } from '~/data/schedule'
 .time {
   color: var(--text);
   font-size: 1.05rem;
+}
+
+.tz {
+  color: var(--text-muted);
+  font-size: 0.85rem;
 }
 
 .note {
