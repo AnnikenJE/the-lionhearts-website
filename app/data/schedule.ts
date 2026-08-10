@@ -9,6 +9,6 @@ export interface RaidNight {
 }
 
 export const RAID_SCHEDULE: RaidNight[] = [
-  { day: 'Thursday', start: '19:00', timezone: 'Oslo time' },
-  { day: 'Sunday', start: '19:00', timezone: 'Oslo time' },
+  { day: 'Thursday', start: '19:00', end: '22:00', timezone: 'Oslo time' },
+  { day: 'Sunday', start: '19:00', end: '22:00', timezone: 'Oslo time' },
 ]
