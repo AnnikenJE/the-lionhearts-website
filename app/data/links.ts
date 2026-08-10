@@ -6,7 +6,7 @@ export interface GuildLink {
 }
 
 export const GUILD_LINKS: GuildLink[] = [
-  { label: 'Discord', url: 'https://discord.gg/adyfrc3', description: 'Guild chat & voice' },
+  { label: 'Discord', url: 'https://discord.gg/dVWddC6aq', description: 'Guild chat & voice' },
   { label: 'Raider.IO', url: 'https://raider.io/guilds/eu/darkmoon-faire/The%20Lionhearts', description: 'Progression & M+' },
   { label: 'Warcraft Logs', url: 'https://www.warcraftlogs.com/', description: 'Raid parses' },
 ]
