@@ -4,7 +4,7 @@ Personal project: the website for **The Lionhearts**, a World of Warcraft guild 
 
 > **Work in progress** — early stage, more features planned.
 
-Live at **https://dev.thelionhearts.eu/**.
+Live at **https://thelionhearts.eu/**.
 
 ## Stack
 
