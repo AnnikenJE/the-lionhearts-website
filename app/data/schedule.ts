@@ -1,14 +1,18 @@
-// Raid nights. Edit these to match the guild's actual schedule.
 export interface RaidNight {
   day: string
   start: string
-  /** Optional end time. Omit if the raid has no fixed end. */
+  /** Omit if the raid has no fixed end. */
   end?: string
+  /**
+   * Shown after the times. EU realms run on CET in winter and CEST in summer,
+   * so never write a fixed offset like "GMT+2" here: it would be wrong for
+   * half the year.
+   */
   timezone: string
   note?: string
 }
 
 export const RAID_SCHEDULE: RaidNight[] = [
-  { day: 'Thursday', start: '19:00', end: '22:00', timezone: 'Oslo time' },
-  { day: 'Sunday', start: '19:00', end: '22:00', timezone: 'Oslo time' },
+  { day: 'Thursday', start: '19:00', end: '22:00', timezone: 'server time' },
+  { day: 'Sunday', start: '19:00', end: '22:00', timezone: 'server time' },
 ]

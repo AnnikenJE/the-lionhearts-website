@@ -1,119 +1,221 @@
 <script setup lang="ts">
-// Guild roster page: fetches members from our cached /api/roster endpoint,
-// groups them by in-game rank, and lets each rank be collapsed.
-import type { RosterMember } from "~~/server/api/roster.get";
+import type { RosterMember } from '~~/server/api/roster.get'
 
-// Raider.IO only exposes the numeric rank index (0 = Guild Master), not the
-// guild's chosen rank names. Edit these labels to match the in-game ranks.
+// Raider.IO exposes only the numeric rank index (0 = Guild Master), so the
+// labels live here and must be kept in sync with the in-game ranks. Rank 99 is
+// Raider.IO's placeholder for an unresolved rank and is filtered out in
+// server/api/roster.get.ts.
 const RANK_NAMES: Record<number, string> = {
-  0: "King Lionheart",
-  1: "Royal Advisor",
-  2: "Lord",
-  3: "Noble",
-  4: "Knight",
-  5: "Squire",
-  6: "Soldier",
-  7: "Recruit",
-  8: "Civilian",
-  9: "Peasant",
-};
+  0: 'King Lionheart',
+  1: 'Royal Advisor',
+  2: 'Lord',
+  3: 'Noble',
+  4: 'Knight',
+  5: 'Squire',
+  6: 'Soldier',
+  7: 'Recruit',
+  8: 'Civilian',
+  9: 'Peasant',
+}
 
 // Official WoW class colours.
 const CLASS_COLORS: Record<string, string> = {
-  "Death Knight": "#c41e3a",
-  "Demon Hunter": "#a330c9",
-  Druid: "#ff7c0a",
-  Evoker: "#33937f",
-  Hunter: "#aad372",
-  Mage: "#3fc7eb",
-  Monk: "#00ff98",
-  Paladin: "#f48cba",
-  Priest: "#ffffff",
-  Rogue: "#fff468",
-  Shaman: "#0070dd",
-  Warlock: "#8788ee",
-  Warrior: "#c69b6d",
-};
+  'Death Knight': '#c41e3a',
+  'Demon Hunter': '#a330c9',
+  'Druid': '#ff7c0a',
+  'Evoker': '#33937f',
+  'Hunter': '#aad372',
+  'Mage': '#3fc7eb',
+  'Monk': '#00ff98',
+  'Paladin': '#f48cba',
+  'Priest': '#ffffff',
+  'Rogue': '#fff468',
+  'Shaman': '#0070dd',
+  'Warlock': '#8788ee',
+  'Warrior': '#c69b6d',
+}
 
-// Fall back gracefully if Raider.IO ever returns an unknown rank or class.
-const rankName = (rank: number) => RANK_NAMES[rank] ?? `Rank ${rank}`;
-const classColor = (cls: string) => CLASS_COLORS[cls] ?? "#e8e0d0";
+const rankName = (rank: number) => RANK_NAMES[rank] ?? `Rank ${rank}`
+const classColor = (cls: string) => CLASS_COLORS[cls] ?? 'var(--color-fg)'
 
-// Fetched once on the server during SSR and reused on the client.
-const {
-  data: members,
-  pending,
-  error,
-} = await useFetch<RosterMember[]>("/api/roster");
+const { data: members, pending, error } = await useFetch<RosterMember[]>('/api/roster')
 
-const total = computed(() => members.value?.length ?? 0);
+const total = computed(() => members.value?.length ?? 0)
 
-// Group members by rank so each rank gets a heading, keeping API sort order.
+const query = ref('')
+const classFilter = ref('')
+const roleFilter = ref('')
+
+// Options come from the roster itself, so they can never list a class or role
+// nobody plays.
+const classes = computed(() => [...new Set((members.value ?? []).map(m => m.class))].sort())
+const roles = computed(() =>
+  [...new Set((members.value ?? []).flatMap(m => m.role ?? []))].sort(),
+)
+
+const isFiltering = computed(
+  () => !!(query.value.trim() || classFilter.value || roleFilter.value),
+)
+
+const matches = computed(() => {
+  const q = query.value.trim().toLowerCase()
+  return (members.value ?? []).filter((m) => {
+    if (classFilter.value && m.class !== classFilter.value) return false
+    if (roleFilter.value && m.role !== roleFilter.value) return false
+    // Name, class and spec are searched together, so "frost" and "mage" both work.
+    return !q || `${m.name} ${m.class} ${m.spec ?? ''}`.toLowerCase().includes(q)
+  })
+})
+
+const clearFilters = () => {
+  query.value = ''
+  classFilter.value = ''
+  roleFilter.value = ''
+}
+
 const groups = computed(() => {
-  const byRank = new Map<number, RosterMember[]>();
-  for (const m of members.value ?? []) {
-    const list = byRank.get(m.rank) ?? [];
-    list.push(m);
-    byRank.set(m.rank, list);
+  const byRank = new Map<number, RosterMember[]>()
+  for (const m of matches.value) {
+    byRank.set(m.rank, [...(byRank.get(m.rank) ?? []), m])
   }
   return [...byRank.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .map(([rank, list]) => ({ rank, name: rankName(rank), members: list }));
-});
+    .sort(([a], [b]) => a - b)
+    .map(([rank, list]) => ({ rank, name: rankName(rank), members: list }))
+})
 
-// Track which ranks are collapsed so each role can be hidden independently.
-const collapsed = ref<Set<number>>(new Set());
+const collapsed = ref<Set<number>>(new Set())
 const toggle = (rank: number) => {
-  const next = new Set(collapsed.value);
-  if (next.has(rank)) next.delete(rank);
-  else next.add(rank);
-  collapsed.value = next;
-};
+  const next = new Set(collapsed.value)
+  if (!next.delete(rank)) next.add(rank)
+  collapsed.value = next
+}
+
+// Filtering forces every rank open, otherwise a collapsed rank would hide the
+// matches the search just found.
+const isOpen = (rank: number) => isFiltering.value || !collapsed.value.has(rank)
+
+const fieldLabel = 'text-xs font-medium text-fg-subtle'
+const fieldInput
+  = 'h-10 w-full rounded-lg border border-line-strong bg-bg px-3 text-sm text-fg '
+    + 'transition placeholder:text-fg-subtle hover:border-fg-subtle'
+const field = 'flex min-w-0 flex-col gap-1.5'
+
+// The selects need a fixed width: sized by their content they re-measure when
+// the options arrive or the selection changes, which drags the search box
+// sideways under the cursor. flex-1 gives the search box a 0% basis, so its
+// width never depends on its own content either.
+const fieldSearch = `${field} w-full sm:w-auto sm:flex-1`
+const fieldSelect = `${field} w-full sm:w-44 sm:flex-none`
 </script>
 
 <template>
-  <main class="roster">
-    <header class="head">
-      <h1>Roster</h1>
-      <p class="server">
-        The Lionhearts — Darkmoon Faire (EU)
-        <span v-if="total" class="total">· {{ total }} members</span>
+  <main class="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+    <header>
+      <h1 class="text-display text-fg">Roster</h1>
+      <p v-if="total" class="mt-5 text-lg text-fg-muted">
+        {{ total }} members on Darkmoon Faire.
       </p>
     </header>
 
-    <!-- Loading / error states -->
-    <p v-if="pending" class="status">Loading roster…</p>
-    <p v-else-if="error" class="status">Could not load the roster right now.</p>
+    <p v-if="pending" class="mt-12 text-fg-muted">Loading roster…</p>
+    <p v-else-if="error" class="mt-12 text-fg-muted">Could not load the roster right now.</p>
 
-    <!-- One collapsible section per rank -->
     <template v-else>
-      <section v-for="group in groups" :key="group.rank" class="rank-group">
-        <!-- Clicking the heading toggles this rank's member list -->
-        <h2>
+      <!-- Every control is h-10 and none is sized by its own content, so
+           items-end lands all four on one baseline and nothing moves as you
+           type. -->
+      <div class="mt-10 flex flex-wrap items-end gap-3 rounded-xl border border-line bg-surface p-4">
+        <div :class="fieldSearch">
+          <label :class="fieldLabel" for="roster-search">Search</label>
+          <input
+            id="roster-search"
+            v-model="query"
+            type="search"
+            :class="fieldInput"
+            placeholder="Name, class or spec…"
+            autocomplete="off"
+          >
+        </div>
+
+        <div :class="fieldSelect">
+          <label :class="fieldLabel" for="roster-class">Class</label>
+          <select id="roster-class" v-model="classFilter" :class="[fieldInput, 'cursor-pointer']">
+            <option value="">All classes</option>
+            <option v-for="c in classes" :key="c" :value="c">{{ c }}</option>
+          </select>
+        </div>
+
+        <div :class="fieldSelect">
+          <label :class="fieldLabel" for="roster-role">Role</label>
+          <select id="roster-role" v-model="roleFilter" :class="[fieldInput, 'cursor-pointer']">
+            <option value="">All roles</option>
+            <option v-for="r in roles" :key="r" :value="r">{{ r }}</option>
+          </select>
+        </div>
+
+        <!-- The wrapper keeps the button auto-width on its own stacked line on
+             phones. The button is always rendered and only disabled, because
+             hiding it changed the bar's width as soon as you typed. -->
+        <div class="flex w-full justify-end sm:w-auto sm:justify-start">
           <button
-            class="toggle"
-            :aria-expanded="!collapsed.has(group.rank)"
+            type="button"
+            class="h-10 shrink-0 cursor-pointer rounded-lg bg-surface-hover px-4 text-sm font-medium text-fg transition hover:bg-line-strong disabled:cursor-default disabled:opacity-40 disabled:hover:bg-surface-hover"
+            :disabled="!isFiltering"
+            @click="clearFilters"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <!-- Always rendered and merely hidden, so the line reserves the height it
+           will occupy at every width, wrapped lines included. -->
+      <p class="mt-4 min-h-6 text-sm tabular-nums text-fg-subtle" role="status">
+        <span :class="{ invisible: !isFiltering }">
+          Showing {{ matches.length }} of {{ total }} members
+        </span>
+      </p>
+
+      <p v-if="!groups.length" class="mt-6 text-fg-muted">
+        No members match those filters.
+      </p>
+
+      <section v-for="group in groups" :key="group.rank" class="mt-8">
+        <h2 class="border-b border-line pb-2">
+          <button
+            class="flex w-full cursor-pointer items-center gap-2 rounded-md py-1 text-left text-lg font-semibold text-fg transition hover:text-accent"
+            :aria-expanded="isOpen(group.rank)"
             @click="toggle(group.rank)"
           >
-            <span class="chevron" :class="{ closed: collapsed.has(group.rank) }"
-              >▾</span
-            >
+            <!-- The fixed box pins the glyph's footprint, so the rank name
+                 keeps its position whichever way the arrow points. -->
+            <span
+              class="inline-block w-3 shrink-0 text-center text-xs leading-none text-fg-subtle transition-transform"
+              :class="{ '-rotate-90': !isOpen(group.rank) }"
+              aria-hidden="true"
+            >▼</span>
             {{ group.name }}
-            <span class="count">{{ group.members.length }}</span>
+            <!-- min-w holds the pill at one size from 1 to 999 members. -->
+            <span class="ml-auto min-w-10 shrink-0 rounded-full bg-surface px-2.5 py-0.5 text-center text-xs font-medium tabular-nums text-fg-subtle">
+              {{ group.members.length }}
+            </span>
           </button>
         </h2>
-        <!-- v-show keeps the list in the DOM so re-expanding is instant -->
-        <ul v-show="!collapsed.has(group.rank)">
-          <li v-for="m in group.members" :key="m.name + m.realm">
+        <!-- v-show keeps the list in the DOM so re-expanding is instant. -->
+        <ul v-show="isOpen(group.rank)" class="mt-3 columns-[280px] gap-x-6">
+          <li
+            v-for="m in group.members"
+            :key="m.name + m.realm"
+            class="flex break-inside-avoid flex-col rounded-lg px-3 py-2 transition hover:bg-surface"
+          >
             <a
               :href="m.profileUrl"
               target="_blank"
               rel="noopener"
-              class="name"
+              class="font-medium hover:underline"
               :style="{ color: classColor(m.class) }"
-              >{{ m.name }}</a
-            >
-            <span class="meta">
+            >{{ m.name }}</a>
+            <span class="text-sm text-fg-subtle">
               {{ m.spec ? `${m.spec} ${m.class}` : m.class }}
             </span>
           </li>
@@ -122,120 +224,3 @@ const toggle = (rank: number) => {
     </template>
   </main>
 </template>
-
-<style scoped>
-.roster {
-  text-align: left;
-  max-width: 1080px;
-  width: 100%;
-  padding: 2.5rem 1.5rem 1rem;
-  margin: 0 auto;
-}
-
-.head {
-  position: relative;
-  text-align: center;
-  margin-bottom: 2.5rem;
-}
-
-h1 {
-  margin-bottom: 0.4rem;
-}
-
-.server {
-  text-align: center;
-}
-
-.total {
-  color: var(--gold);
-  white-space: nowrap;
-}
-
-.status {
-  text-align: center;
-}
-
-.rank-group {
-  margin-bottom: 2.5rem;
-}
-
-h2 {
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 0.8rem;
-}
-
-.toggle {
-  width: 100%;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--gold);
-  font-family: inherit;
-  font-size: 1.05rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 0.35rem 0.4rem;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  transition: color 0.15s ease;
-}
-
-.toggle:hover {
-  color: var(--gold-bright);
-}
-
-.chevron {
-  font-size: 0.8rem;
-  color: var(--gold-deep);
-  transition: transform 0.15s ease;
-}
-
-/* Point right when the rank is collapsed, down when expanded */
-.chevron.closed {
-  transform: rotate(-90deg);
-}
-
-.count {
-  margin-left: auto;
-  color: var(--text-dim);
-  font-size: 0.8rem;
-}
-
-/* Multi-column layout: members flow top-to-bottom, fitting as many ~300px
-   columns as the width allows (3 on desktop, 2 on tablet, 1 on mobile). */
-ul {
-  list-style: none;
-  column-width: 300px;
-  column-gap: 1.5rem;
-}
-
-li {
-  display: flex;
-  flex-direction: column;
-  padding: 0.4rem 0.6rem;
-  border-radius: var(--radius-sm);
-  transition: background 0.12s ease;
-  break-inside: avoid; /* keep a member's name + spec together in one column */
-}
-
-li:hover {
-  background: var(--surface);
-}
-
-.name {
-  text-decoration: none;
-  font-size: 1rem;
-  line-height: 1.3;
-}
-
-.name:hover {
-  text-decoration: underline;
-}
-
-.meta {
-  color: var(--text-muted);
-  font-size: 0.78rem;
-}
-</style>

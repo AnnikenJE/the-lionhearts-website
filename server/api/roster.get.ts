@@ -1,4 +1,3 @@
-// Fetches the guild roster from the public Raider.IO API.
 // Runs server-side so the browser never hits Raider.IO directly (avoids CORS)
 // and the response can be cached.
 
@@ -25,6 +24,9 @@ export interface RosterMember {
   profileUrl: string
 }
 
+/** WoW guilds only have ranks 0-9. Raider.IO returns 99 when it cannot resolve one. */
+const UNRANKED_SENTINEL = 99
+
 export default defineCachedEventHandler(
   async (): Promise<RosterMember[]> => {
     const data = await $fetch<{ members: RaiderIoMember[] }>(
@@ -40,7 +42,8 @@ export default defineCachedEventHandler(
     )
 
     return data.members
-      .map((m) => ({
+      .filter(m => m.rank !== UNRANKED_SENTINEL)
+      .map(m => ({
         rank: m.rank,
         name: m.character.name,
         class: m.character.class,
@@ -51,6 +54,6 @@ export default defineCachedEventHandler(
       }))
       .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name))
   },
-  // Raider.IO crawls roughly daily; cache for an hour to stay polite.
+  // Raider.IO crawls roughly daily, so an hour is polite and plenty fresh.
   { maxAge: 60 * 60, name: 'roster', getKey: () => 'lionhearts' },
 )

@@ -1,273 +1,94 @@
 <script setup lang="ts">
-// Landing page: guild pitch, raid schedule, latest news, links, roster CTA.
+import type { Feature } from '~/components/FeatureGrid.vue'
+import { NEWS_ENABLED } from '~/data/news'
+import { DISCORD_URL } from '~/data/links'
+
+// Nothing is queried while news is off, so no draft titles reach the payload.
 const { data: latest } = await useAsyncData('news-latest', () =>
-  queryCollection('news').order('date', 'DESC').limit(3).all(),
+  NEWS_ENABLED
+    ? queryCollection('news').order('date', 'DESC').limit(3).all()
+    : Promise.resolve([]),
 )
 
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('en-GB', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
+const HIGHLIGHTS: Feature[] = [
+  {
+    title: 'Social raiding',
+    body: 'Two fixed nights a week. We clear content together at a pace that keeps it fun rather than a second job.',
+  },
+  {
+    title: 'Mythic+ all week',
+    body: 'Keys run outside raid nights, from casual weekly runs to pushing groups. There is almost always something going.',
+  },
+  {
+    title: 'Beginner-friendly',
+    body: 'New to raiding? You are welcome here. Ask questions, learn the fights, and take the time you need.',
+  },
+]
+
+const section = 'mt-16 border-t border-line pt-16'
 </script>
 
 <template>
-  <main class="home">
-    <section class="hero">
-      <div class="crest-wrap">
+  <main class="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+    <!-- The copy column comes first in the DOM so the h1 lines up with the
+         title on every other page and the crest can never push it. -->
+    <header class="flex flex-col-reverse items-start gap-10 sm:flex-row sm:items-center sm:gap-12">
+      <div class="min-w-0 flex-1">
+        <AppBadge tone="neutral">
+          Darkmoon Faire <span class="mx-1.5 text-fg-subtle" aria-hidden="true">·</span> EU
+        </AppBadge>
+
+        <h1 class="mt-5 text-display text-fg">The Lionhearts</h1>
+
+        <p class="mt-5 text-lg text-fg-muted">
+          A social raiding guild that also runs Mythic+. Beginner-friendly, with
+          a mixed community, from first-time raiders to Mythic veterans.
+        </p>
+
+        <div class="mt-9 flex flex-wrap items-center gap-3">
+          <AppButton :href="DISCORD_URL">Join our Discord</AppButton>
+          <AppButton to="/roster" variant="secondary">See the roster</AppButton>
+        </div>
+      </div>
+
+      <div class="w-28 shrink-0 sm:w-56">
         <GuildCrest />
       </div>
-      <p class="server">Darkmoon Faire — EU</p>
-      <h1>The Lionhearts</h1>
+    </header>
 
-      <div class="divider" aria-hidden="true">
-        <span class="line" />
-        <span class="gem">◆</span>
-        <span class="line" />
-      </div>
-
-      <!-- TODO(maintainer): replace with the real guild pitch -->
-      <p class="pitch">
-        A close-knit World of Warcraft guild raiding on Darkmoon Faire.
-        We value good people, steady progress, and a laugh on voice.
-      </p>
-
-      <NuxtLink to="/roster" class="btn">
-        View the roster
-        <span class="arrow" aria-hidden="true">→</span>
-      </NuxtLink>
+    <section :class="section">
+      <FeatureGrid :items="HIGHLIGHTS" :level="2" />
     </section>
 
-    <section class="block">
-      <h2 class="section-title">Raid nights</h2>
+    <section :class="section">
+      <SectionHeading class="mb-6">Raid nights</SectionHeading>
       <RaidSchedule />
     </section>
 
-    <section class="block">
-      <div class="section-head">
-        <h2 class="section-title">Latest news</h2>
-        <NuxtLink to="/news" class="more">All news →</NuxtLink>
-      </div>
-      <p v-if="!latest || latest.length === 0" class="empty">
-        No posts yet — check back soon.
+    <section v-if="NEWS_ENABLED" :class="section">
+      <SectionHeading class="mb-6">
+        Latest news
+        <template #end>
+          <NuxtLink to="/news" class="font-medium text-accent hover:text-accent-bright">
+            All news <span aria-hidden="true">→</span>
+          </NuxtLink>
+        </template>
+      </SectionHeading>
+
+      <p v-if="!latest?.length" class="text-fg-muted">
+        No posts yet, check back soon.
       </p>
-      <ul v-else class="news-teasers">
-        <li v-for="post in latest" :key="post.path" class="news-row">
-          <NuxtLink :to="post.path" class="news-link">
-            <span class="news-title">{{ post.title }}</span>
-            <time class="news-date">{{ formatDate(post.date) }}</time>
+      <ul v-else class="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
+        <li v-for="post in latest" :key="post.path">
+          <NuxtLink
+            :to="post.path"
+            class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4 transition hover:bg-surface-hover"
+          >
+            <span class="font-medium text-fg">{{ post.title }}</span>
+            <time class="text-sm text-fg-subtle">{{ formatDate(post.date) }}</time>
           </NuxtLink>
         </li>
       </ul>
     </section>
   </main>
 </template>
-
-<style scoped>
-.home {
-  max-width: var(--maxw);
-  margin: 0 auto;
-  padding: 2rem 1.5rem 1rem;
-}
-
-/* Hero */
-.hero {
-  text-align: center;
-  padding: 2.5rem 0;
-}
-
-.crest-wrap {
-  width: clamp(120px, 22vw, 160px);
-  margin: 0 auto 1.5rem;
-}
-
-.hero .server {
-  margin-bottom: 1rem;
-}
-
-/* Gold gradient title with a slow left-to-right sheen.
-   The reduced-motion rule in main.css neutralises the animation. */
-.hero h1 {
-  background: linear-gradient(
-    100deg,
-    var(--gold-deep) 10%,
-    var(--gold-bright) 50%,
-    var(--gold-deep) 90%
-  );
-  background-size: 220% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: title-sheen 9s linear infinite;
-}
-
-@keyframes title-sheen {
-  to {
-    background-position: 220% center;
-  }
-}
-
-.divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  max-width: 320px;
-  margin: 1.4rem auto;
-}
-
-.divider .line {
-  height: 1px;
-  flex: 1;
-  background: linear-gradient(
-    to var(--dir, right),
-    transparent,
-    var(--border-strong)
-  );
-}
-
-.divider .line:first-child {
-  --dir: left;
-}
-
-.divider .gem {
-  color: var(--gold-deep);
-  font-size: 0.7rem;
-}
-
-.pitch {
-  max-width: 40rem;
-  margin: 0 auto 2rem;
-  color: var(--text-secondary);
-  font-size: 1.08rem;
-  line-height: 1.75;
-}
-
-/* Gold "button" — the primary call to action. */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.7rem 1.4rem;
-  border: 1px solid var(--gold-deep);
-  border-radius: var(--radius-sm);
-  color: var(--gold);
-  text-decoration: none;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  transition:
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease;
-}
-
-.btn:hover {
-  background: var(--gold);
-  border-color: var(--gold);
-  color: #191510;
-}
-
-.btn .arrow {
-  transition: transform 0.18s ease;
-}
-
-.btn:hover .arrow {
-  transform: translateX(3px);
-}
-
-/* Sections */
-.block {
-  margin-top: 3rem;
-}
-
-.section-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-/* Section heading with a small heraldic gem marker + rule beneath. */
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  color: var(--gold);
-  font-size: 1.25rem;
-  letter-spacing: 0.05em;
-  padding-bottom: 0.5rem;
-  margin-bottom: 1.1rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.section-title::before {
-  content: "◆";
-  color: var(--gold-deep);
-  font-size: 0.6rem;
-}
-
-.section-head .section-title {
-  flex: 1;
-}
-
-/* News teasers */
-.news-teasers {
-  list-style: none;
-}
-
-.news-row + .news-row {
-  border-top: 1px solid var(--border);
-}
-
-.news-link {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.7rem 0.6rem;
-  border-radius: var(--radius-sm);
-  text-decoration: none;
-  transition: background-color 0.14s ease;
-}
-
-.news-link:hover {
-  background: var(--surface);
-}
-
-.news-title {
-  color: var(--text);
-  transition: color 0.14s ease;
-}
-
-.news-link:hover .news-title {
-  color: var(--gold);
-}
-
-.news-date {
-  color: var(--text-dim);
-  font-size: 0.8rem;
-  white-space: nowrap;
-  letter-spacing: 0.04em;
-}
-
-.empty {
-  color: var(--text-muted);
-  padding: 0.5rem 0;
-}
-
-.more {
-  color: var(--text-muted);
-  text-decoration: none;
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  transition: color 0.15s ease;
-}
-
-.more:hover {
-  color: var(--gold);
-}
-</style>

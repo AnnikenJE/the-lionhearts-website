@@ -1,149 +1,57 @@
+<script setup lang="ts">
+// Primary navigation. Kept as data so the link styling lives in exactly one
+// place rather than being repeated on every <NuxtLink>.
+const NAV = [
+  { to: '/', label: 'Home' },
+  { to: '/about', label: 'About' },
+  { to: '/news', label: 'News' },
+  { to: '/roster', label: 'Roster' },
+  { to: '/rules', label: 'Rules' },
+]
+
+// A pill that fills in on hover, and stays filled on the current page.
+const navLink
+  = 'rounded-md px-3 py-1.5 text-sm font-medium text-fg-muted transition hover:bg-surface hover:text-fg '
+    + '[&.router-link-active]:bg-surface [&.router-link-active]:text-fg'
+</script>
+
 <template>
-  <div class="site">
-    <header class="site-header">
-      <div class="header-inner">
-        <NuxtLink to="/" class="brand">
-          <span class="brand-mark"><GuildCrest /></span>
+  <div class="flex min-h-screen flex-col">
+    <!-- Sticky, faintly translucent header so content scrolls under it. -->
+    <header class="sticky top-0 z-10 border-b border-line bg-bg/80 backdrop-blur">
+      <div
+        class="mx-auto flex max-w-5xl flex-col items-center gap-3 px-4 py-3 sm:flex-row sm:justify-between sm:gap-4 sm:px-6"
+      >
+        <NuxtLink to="/" class="flex items-center gap-2.5 font-semibold tracking-tight text-fg">
+          <span class="inline-flex w-7"><GuildCrest /></span>
           The Lionhearts
         </NuxtLink>
-        <nav class="nav" aria-label="Primary">
-          <NuxtLink to="/">Home</NuxtLink>
-          <NuxtLink to="/roster">Roster</NuxtLink>
-          <NuxtLink to="/news">News</NuxtLink>
-          <NuxtLink to="/rules">Rules</NuxtLink>
+        <nav class="flex flex-wrap justify-center gap-1" aria-label="Primary">
+          <NuxtLink v-for="item in NAV" :key="item.to" :to="item.to" :class="navLink">
+            {{ item.label }}
+          </NuxtLink>
         </nav>
       </div>
     </header>
 
-    <slot />
+    <div class="flex-1">
+      <slot />
+    </div>
 
-    <footer class="site-footer">
-      <div class="footer-inner">
-        <p class="footer-heading">Quick links</p>
+    <!-- Compact: the page's own py-16 already separates content from the top
+         border, so the footer adds no top margin of its own. The extra bottom
+         padding on phones keeps the fixed "under construction" badge off the
+         colophon. -->
+    <footer class="border-t border-line">
+      <div class="mx-auto max-w-5xl px-4 pb-20 pt-8 sm:px-6 sm:pb-8">
+        <p class="mb-3 text-sm font-medium text-fg-muted">Quick links</p>
         <LinkGrid />
-        <p class="colophon">
+        <p class="mt-6 text-sm text-fg-subtle">
           The Lionhearts <span aria-hidden="true">·</span> Darkmoon Faire (EU)
         </p>
       </div>
     </footer>
+
+    <DevNotice />
   </div>
 </template>
-
-<style scoped>
-.site {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.site > :slotted(*) {
-  flex: 1;
-}
-
-/* Sticky, faintly translucent header so content scrolls under it. */
-.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: rgba(15, 15, 15, 0.82);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--border);
-}
-
-.header-inner {
-  max-width: var(--maxw);
-  margin: 0 auto;
-  padding: 0.9rem 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  color: var(--gold);
-  text-decoration: none;
-  letter-spacing: 0.1em;
-  font-size: 1.15rem;
-}
-
-.brand-mark {
-  width: 26px;
-  display: inline-flex;
-}
-
-.brand-mark :deep(.crest) {
-  filter: none;
-}
-
-.nav {
-  display: flex;
-  gap: 1.5rem;
-}
-
-.nav a {
-  position: relative;
-  color: var(--text-muted);
-  text-decoration: none;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-size: 0.82rem;
-  padding: 0.2rem 0;
-  transition: color 0.15s ease;
-}
-
-/* Animated gold underline that grows from the centre on hover/active. */
-.nav a::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -2px;
-  height: 1px;
-  background: var(--gold);
-  transform: scaleX(0);
-  transition: transform 0.18s ease;
-}
-
-.nav a:hover,
-.nav a.router-link-active {
-  color: var(--gold);
-}
-
-.nav a.router-link-active::after,
-.nav a:hover::after {
-  transform: scaleX(1);
-}
-
-.site-footer {
-  border-top: 1px solid var(--border);
-  margin-top: 3rem;
-  padding: 2.5rem 1.5rem;
-  background: rgba(0, 0, 0, 0.25);
-}
-
-.footer-inner {
-  max-width: var(--maxw);
-  margin: 0 auto;
-  text-align: center;
-}
-
-.footer-heading {
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  font-size: 0.75rem;
-  margin-bottom: 1.1rem;
-}
-
-.colophon {
-  margin-top: 1.6rem;
-  color: var(--text-dim);
-  font-size: 0.85rem;
-  letter-spacing: 0.05em;
-}
-</style>
