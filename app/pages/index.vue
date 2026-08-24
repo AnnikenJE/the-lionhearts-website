@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { Feature } from '~/components/FeatureGrid.vue'
 import { NEWS_ENABLED } from '~/data/news'
 import { DISCORD_URL } from '~/data/links'
 
@@ -10,19 +9,12 @@ const { data: latest } = await useAsyncData('news-latest', () =>
     : Promise.resolve([]),
 )
 
-const HIGHLIGHTS: Feature[] = [
-  {
-    title: 'Social raiding',
-    body: 'Two fixed nights a week. We clear content together at a pace that keeps it fun rather than a second job.',
-  },
-  {
-    title: 'Mythic+ all week',
-    body: 'Keys run outside raid nights, from casual weekly runs to pushing groups. There is almost always something going.',
-  },
-  {
-    title: 'Beginner-friendly',
-    body: 'New to raiding? You are welcome here. Ask questions, learn the fights, and take the time you need.',
-  },
+// One line per page, so the landing page is a way in rather than a copy of
+// what those pages already say.
+const EXPLORE = [
+  { to: '/about', title: 'About the guild', body: 'What we run, how we raid, and who to ask.' },
+  { to: '/roster', title: 'Roster', body: 'Every member, grouped by rank and searchable.' },
+  { to: '/rules', title: 'Rules', body: 'The guild and raid rules.' },
 ]
 
 const section = 'mt-16 border-t border-line pt-16'
@@ -41,13 +33,12 @@ const section = 'mt-16 border-t border-line pt-16'
         <h1 class="mt-5 text-display text-fg">The Lionhearts</h1>
 
         <p class="mt-5 text-lg text-fg-muted">
-          A social raiding guild that also runs Mythic+. Beginner-friendly, with
-          a mixed community, from first-time raiders to Mythic veterans.
+          Social raiding and Mythic+ on Darkmoon Faire.
         </p>
 
         <div class="mt-9 flex flex-wrap items-center gap-3">
           <AppButton :href="DISCORD_URL">Join our Discord</AppButton>
-          <AppButton to="/roster" variant="secondary">See the roster</AppButton>
+          <AppButton to="/about" variant="secondary">Read about the guild</AppButton>
         </div>
       </div>
 
@@ -57,15 +48,31 @@ const section = 'mt-16 border-t border-line pt-16'
     </header>
 
     <section :class="section">
-      <FeatureGrid :items="HIGHLIGHTS" :level="2" />
-    </section>
-
-    <section :class="section">
       <SectionHeading class="mb-6">Raid nights</SectionHeading>
       <RaidSchedule />
     </section>
 
-    <section v-if="NEWS_ENABLED" :class="section">
+    <section :class="section">
+      <SectionHeading class="mb-6">Explore</SectionHeading>
+      <ul class="grid gap-4 sm:grid-cols-3">
+        <li v-for="item in EXPLORE" :key="item.to">
+          <NuxtLink
+            :to="item.to"
+            class="flex h-full flex-col rounded-xl border border-line bg-surface p-5 transition hover:border-line-strong hover:bg-surface-hover"
+          >
+            <h3 class="font-semibold text-fg">{{ item.title }}</h3>
+            <p class="mt-2 text-sm text-fg-muted">{{ item.body }}</p>
+            <span class="mt-4 text-sm font-medium text-accent">
+              Open <span aria-hidden="true">→</span>
+            </span>
+          </NuxtLink>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Rendered even while news is off, so there is always a way through to
+         the section from the landing page. -->
+    <section :class="section">
       <SectionHeading class="mb-6">
         Latest news
         <template #end>

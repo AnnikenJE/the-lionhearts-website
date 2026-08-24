@@ -33,19 +33,10 @@ const marker = 'flex size-7 shrink-0 items-center justify-center rounded-lg bg-s
   <main class="mx-auto max-w-5xl px-4 py-16 sm:px-6">
     <header>
       <h1 class="text-display text-fg">Guild rules</h1>
-      <p class="mt-5 text-lg text-fg-muted">
-        The code every Lionheart is held to, in the guild, in Discord, and in
-        the raid.
-      </p>
     </header>
 
-    <!-- Articles read better on a narrower measure, so the blocks are
-         constrained rather than the page container. -->
-    <section v-for="set in RULE_SETS" :key="set.title" class="mt-14 max-w-3xl">
-      <SectionHeading class="mb-5">
-        {{ set.title }}
-        <template #end>{{ set.rules.length }} articles</template>
-      </SectionHeading>
+    <section v-for="set in RULE_SETS" :key="set.title" class="mt-14">
+      <SectionHeading class="mb-5">{{ set.title }}</SectionHeading>
       <ol class="space-y-3">
         <li
           v-for="(rule, i) in set.rules"
@@ -59,7 +50,7 @@ const marker = 'flex size-7 shrink-0 items-center justify-center rounded-lg bg-s
     </section>
 
     <aside
-      class="mt-14 max-w-3xl rounded-xl border border-accent/30 bg-accent/5 p-5"
+      class="mt-14 rounded-xl border border-accent/30 bg-accent/5 p-5"
       aria-labelledby="enforcement"
     >
       <h2 id="enforcement" class="font-semibold text-accent">Enforcement</h2>

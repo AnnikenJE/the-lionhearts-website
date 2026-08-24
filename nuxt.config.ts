@@ -7,6 +7,11 @@ export default defineNuxtConfig({
   app: {
     head: {
       link: [
+        // Square SVG wrapper around the crest, so the icon is never stretched.
+        // The PNG stays as the fallback for browsers without SVG favicons.
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'icon', type: 'image/png', href: '/lionhearts-crest.png' },
+        { rel: 'apple-touch-icon', href: '/lionhearts-crest.png' },
         // Nunito Sans is the site's only typeface, headings included.
         // Preconnect to both Google Fonts hosts so it isn't held up by
         // DNS + TLS.

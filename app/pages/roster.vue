@@ -94,27 +94,15 @@ const toggle = (rank: number) => {
 // matches the search just found.
 const isOpen = (rank: number) => isFiltering.value || !collapsed.value.has(rank)
 
-const fieldLabel = 'text-xs font-medium text-fg-subtle'
-const fieldInput
-  = 'h-10 w-full rounded-lg border border-line-strong bg-bg px-3 text-sm text-fg '
-    + 'transition placeholder:text-fg-subtle hover:border-fg-subtle'
-const field = 'flex min-w-0 flex-col gap-1.5'
-
-// The selects need a fixed width: sized by their content they re-measure when
-// the options arrive or the selection changes, which drags the search box
-// sideways under the cursor. flex-1 gives the search box a 0% basis, so its
-// width never depends on its own content either.
-const fieldSearch = `${field} w-full sm:w-auto sm:flex-1`
-const fieldSelect = `${field} w-full sm:w-44 sm:flex-none`
+// flex-1 gives the search box a 0% basis, so its width never depends on its own
+// content and the row cannot re-wrap while you type.
+const fieldSearch = 'flex w-full min-w-0 flex-col gap-1.5 sm:w-auto sm:flex-1'
 </script>
 
 <template>
   <main class="mx-auto max-w-5xl px-4 py-16 sm:px-6">
     <header>
       <h1 class="text-display text-fg">Roster</h1>
-      <p v-if="total" class="mt-5 text-lg text-fg-muted">
-        {{ total }} members on Darkmoon Faire.
-      </p>
     </header>
 
     <p v-if="pending" class="mt-12 text-fg-muted">Loading roster…</p>
@@ -126,32 +114,19 @@ const fieldSelect = `${field} w-full sm:w-44 sm:flex-none`
            type. -->
       <div class="mt-10 flex flex-wrap items-end gap-3 rounded-xl border border-line bg-surface p-4">
         <div :class="fieldSearch">
-          <label :class="fieldLabel" for="roster-search">Search</label>
+          <label :class="FIELD_LABEL" for="roster-search">Search</label>
           <input
             id="roster-search"
             v-model="query"
             type="search"
-            :class="fieldInput"
+            :class="CONTROL"
             placeholder="Name, class or spec…"
             autocomplete="off"
           >
         </div>
 
-        <div :class="fieldSelect">
-          <label :class="fieldLabel" for="roster-class">Class</label>
-          <select id="roster-class" v-model="classFilter" :class="[fieldInput, 'cursor-pointer']">
-            <option value="">All classes</option>
-            <option v-for="c in classes" :key="c" :value="c">{{ c }}</option>
-          </select>
-        </div>
-
-        <div :class="fieldSelect">
-          <label :class="fieldLabel" for="roster-role">Role</label>
-          <select id="roster-role" v-model="roleFilter" :class="[fieldInput, 'cursor-pointer']">
-            <option value="">All roles</option>
-            <option v-for="r in roles" :key="r" :value="r">{{ r }}</option>
-          </select>
-        </div>
+        <SelectMenu v-model="classFilter" label="Class" placeholder="All classes" :options="classes" />
+        <SelectMenu v-model="roleFilter" label="Role" placeholder="All roles" :options="roles" />
 
         <!-- The wrapper keeps the button auto-width on its own stacked line on
              phones. The button is always rendered and only disabled, because

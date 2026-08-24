@@ -38,20 +38,17 @@ const navLink
       <slot />
     </div>
 
-    <!-- Compact: the page's own py-16 already separates content from the top
-         border, so the footer adds no top margin of its own. The extra bottom
-         padding on phones keeps the fixed "under construction" badge off the
-         colophon. -->
+    <!-- The page's own py-16 separates content from the top border, so the
+         footer adds no top margin. -->
     <footer class="border-t border-line">
-      <div class="mx-auto max-w-5xl px-4 pb-20 pt-8 sm:px-6 sm:pb-8">
-        <p class="mb-3 text-sm font-medium text-fg-muted">Quick links</p>
-        <LinkGrid />
-        <p class="mt-6 text-sm text-fg-subtle">
+      <div
+        class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-6 sm:px-6"
+      >
+        <p class="text-sm text-fg-subtle">
           The Lionhearts <span aria-hidden="true">·</span> Darkmoon Faire (EU)
         </p>
+        <LinkGrid />
       </div>
     </footer>
-
-    <DevNotice />
   </div>
 </template>

@@ -13,6 +13,10 @@ const VARIANTS = {
   secondary: 'border border-line-strong text-fg hover:bg-surface-hover',
 }
 
+// Both props default to '', so this has to be a falsy check: `to ?? href`
+// would keep the empty string and render a link that goes nowhere.
+const destination = to || href
+
 const classes = [
   'inline-block rounded-lg px-4 py-2.5 text-sm font-semibold transition',
   VARIANTS[variant],
@@ -21,8 +25,8 @@ const classes = [
 
 <template>
   <NuxtLink
-    v-if="to || href"
-    :to="to ?? href"
+    v-if="destination"
+    :to="destination"
     :target="href ? '_blank' : undefined"
     :rel="href ? 'noopener' : undefined"
     :class="classes"
