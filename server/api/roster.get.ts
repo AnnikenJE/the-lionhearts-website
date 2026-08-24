@@ -5,7 +5,6 @@ interface RaiderIoMember {
   rank: number
   character: {
     name: string
-    race: string
     class: string
     active_spec_name: string | null
     active_spec_role: string | null
