@@ -18,25 +18,7 @@ const RANK_NAMES: Record<number, string> = {
   9: 'Peasant',
 }
 
-// Official WoW class colours.
-const CLASS_COLORS: Record<string, string> = {
-  'Death Knight': '#c41e3a',
-  'Demon Hunter': '#a330c9',
-  'Druid': '#ff7c0a',
-  'Evoker': '#33937f',
-  'Hunter': '#aad372',
-  'Mage': '#3fc7eb',
-  'Monk': '#00ff98',
-  'Paladin': '#f48cba',
-  'Priest': '#ffffff',
-  'Rogue': '#fff468',
-  'Shaman': '#0070dd',
-  'Warlock': '#8788ee',
-  'Warrior': '#c69b6d',
-}
-
 const rankName = (rank: number) => RANK_NAMES[rank] ?? `Rank ${rank}`
-const classColor = (cls: string) => CLASS_COLORS[cls] ?? 'var(--color-fg)'
 
 const { data: members, pending, error } = await useFetch<RosterMember[]>('/api/roster')
 
