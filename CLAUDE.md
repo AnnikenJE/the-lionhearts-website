@@ -59,9 +59,14 @@ npm run build     # production build
 npm run preview   # preview the production build locally
 npm run generate  # static site generation
 npm run lint      # run ESLint
+npm run typecheck # run vue-tsc over the whole project
 npm run test      # run the Vitest suite once
 npm run test:watch # re-run tests on change
 ```
+
+Every pull request, and every push to `main`, runs `.github/workflows/ci.yml`: lint, typecheck, tests, then build, in that order in one job. The build needs no Warcraft Logs credentials, since the routes return a clean 503 when they are missing.
+
+`npm run typecheck` is `nuxt typecheck`, which runs `vue-tsc`. It prints a "Resolve plugin path failed: vue-router/volar/sfc-route-blocks" stack trace on every run: vue-tsc 3 still looks for a Volar plugin that vue-router 5 no longer ships. It is noise, not a failure. Trust the exit code.
 
 Tests run on Vitest, configured in `vitest.config.ts` through `defineVitestConfig` from `@nuxt/test-utils`. Specs live in `test/` and default to the plain `node` environment, because everything covered so far is a pure module. A test that needs a Nuxt runtime opts in per file with `// @vitest-environment nuxt`.
 

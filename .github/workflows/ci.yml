@@ -1,0 +1,41 @@
+# A push to main deploys straight to production, so everything that can be
+# checked automatically is checked before a pull request can merge.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A second push to the same branch makes the first run pointless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: lint, typecheck, test, build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # postinstall runs nuxt prepare, which generates .nuxt/tsconfig.json.
+      # Both the typecheck and the test suite need it.
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+      # Last, because it is the slowest and the least likely to fail on its own.
+      # No Warcraft Logs credentials are needed: the routes return a clean 503
+      # when they are missing, so the build never depends on them.
+      - run: npm run build
