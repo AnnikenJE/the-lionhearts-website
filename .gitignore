@@ -46,6 +46,11 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 
+# Tooling caches and local artefacts
+coverage
+.eslintcache
+.wrangler
+
 # Agent tooling
 .claude/
 .superpowers/
