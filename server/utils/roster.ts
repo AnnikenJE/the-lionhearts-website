@@ -2,6 +2,10 @@
 // without a Nitro runtime: the route file's body runs defineCachedEventHandler
 // the moment it is imported.
 
+// Imported explicitly rather than left to Nitro's auto-import, for the same
+// reason: this module has to load under plain Vitest too.
+import { isOptedOut } from './optOut'
+
 /** The slice of Raider.IO's guild profile response the roster actually reads. */
 export interface RaiderIoMember {
   rank: number
@@ -29,12 +33,13 @@ export interface RosterMember {
 const UNRANKED_SENTINEL = 99
 
 /**
- * Drops the members Raider.IO could not place, flattens the rest, and orders
- * them by rank then name, so the page never has to sort or filter again.
+ * Drops the members Raider.IO could not place and anyone who has opted out,
+ * flattens the rest, and orders them by rank then name, so the page never has
+ * to sort or filter again.
  */
 export const toRosterMembers = (members: RaiderIoMember[]): RosterMember[] =>
   members
-    .filter(m => m.rank !== UNRANKED_SENTINEL)
+    .filter(m => m.rank !== UNRANKED_SENTINEL && !isOptedOut(m.character.name))
     .map(m => ({
       rank: m.rank,
       name: m.character.name,

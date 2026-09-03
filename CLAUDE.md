@@ -75,6 +75,7 @@ Early-stage Nuxt 4 + TypeScript project (Vue 3 + Vite under the hood). Uses the 
 - `app/pages/index.vue`: home page / landing hero (file-based routing)
 - `app/pages/about.vue`: who the guild is, what it plays, and who to contact (GM / Royal Advisors)
 - `app/pages/roster.vue`: guild roster page; groups members by rank, each rank collapsible
+- `app/pages/privacy.vue`: what the site shows about a character, which external source each field comes from, and how to be taken off. Blizzard's Developer API Terms of Use require both the policy and immediate removal on request
 - `app/pages/news/index.vue`, `app/pages/news/[slug].vue`: markdown-backed news list + post
 - `content/news/*.md`: news posts (authored as markdown, rendered by @nuxt/content)
 - `content.config.ts`: @nuxt/content collection schema for news
@@ -84,6 +85,7 @@ Early-stage Nuxt 4 + TypeScript project (Vue 3 + Vite under the hood). Uses the 
 - `app/components/SectionHeading.vue` is the recurring section header: a heading with an optional muted note (a count, a link) pinned to the far end
 - `app/assets/css/main.css` holds the whole theme: Tailwind import, `@theme` tokens, and the handful of base rules that cannot be utilities
 - `server/api/roster.get.ts`: server route that fetches and caches the guild roster from Raider.IO. It only fetches: the transform lives in `server/utils/roster.ts`
+- `server/utils/optOut.ts`: the opt-out list and the name matching around it. One list, applied wherever a character is named, so removing someone is a single edit and a deploy rather than a hunt through routes. Matching is case-insensitive and lives in `isNameIn()`, separate from the list, so it can be tested without a real person being in it
 - `server/utils/roster.ts`: owns `RaiderIoMember`, `RosterMember` and `toRosterMembers()`, the pure filter-map-sort the route applies to Raider.IO's response. Separate from the route so it can be tested without a Nitro runtime, since a route module runs `defineCachedEventHandler` the moment it is imported
 - `public/`: static assets served as-is
 
