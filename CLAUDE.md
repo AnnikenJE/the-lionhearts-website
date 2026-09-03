@@ -17,6 +17,40 @@ Relevant external services:
 
 **Pushes to `main` deploy directly to production at https://dev.thelionhearts.eu/**. Do not push untested or broken changes.
 
+## Branch workflow
+
+One issue, one branch. Never commit to `main`: a push there deploys to production.
+
+Starting work on an issue means creating its branch first, before any edit:
+
+```bash
+gh issue develop 7 --checkout    # branches off main and links the branch to issue 7
+```
+
+`gh issue develop` names the branch after the issue (`7-feat-seo-generate-sitemap-xml`) and
+links the two, so the issue itself shows the branch and later the pull request. A branch made by
+hand should follow the same shape, `<issue-number>-<short-slug>`.
+
+Finishing:
+
+```bash
+gh pr create --fill              # the body must say Closes #<issue-number>
+gh pr merge --squash             # GitHub deletes the remote branch on merge
+```
+
+`Closes #<number>` in the pull request body is what closes the issue on merge. Without it the
+issue stays open after the work has shipped.
+
+The repository has "Automatically delete head branches" enabled, so the remote branch is removed
+when the pull request merges. The local branch is not, so clean it up afterwards:
+
+```bash
+git switch main && git pull && git branch -d <branch>
+```
+
+`remote.origin.prune` is set in this clone, so `git fetch` and `git pull` drop the stale
+remote-tracking ref at the same time.
+
 ## Commands
 
 ```bash
