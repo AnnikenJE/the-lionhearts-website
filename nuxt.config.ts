@@ -6,6 +6,8 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   app: {
     head: {
+      // Paints the mobile browser chrome the same near-black as the page.
+      meta: [{ name: 'theme-color', content: '#0f0f0f' }],
       link: [
         // Square SVG wrapper around the crest, so the icon is never stretched.
         // The PNG stays as the fallback for browsers without SVG favicons.

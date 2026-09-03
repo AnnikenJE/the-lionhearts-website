@@ -16,6 +16,13 @@ const WHAT_WE_DO: Feature[] = [
     body: 'A mixed crowd, from people clearing their first raid to Mythic veterans. New players are genuinely welcome: ask questions, learn the fights, and take the time you need.',
   },
 ]
+usePageSeo({
+  title: 'About the guild',
+  description:
+    'The Lionhearts are a social raiding guild on Darkmoon Faire (EU) that also runs '
+    + 'Mythic+. Beginner-friendly, with a mixed community, from first-time raiders to '
+    + 'Mythic veterans.',
+})
 </script>
 
 <template>

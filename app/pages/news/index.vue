@@ -18,6 +18,10 @@ const summaryOf = (post: { summary?: string, description?: string }) =>
 
 const meta = 'flex flex-wrap items-center gap-2 text-sm text-fg-subtle'
 const card = 'rounded-xl border border-line bg-surface transition hover:border-line-strong hover:bg-surface-hover'
+usePageSeo({
+  title: 'News',
+  description: 'Raid progress, roster changes and guild announcements from The Lionhearts.',
+})
 </script>
 
 <template>
