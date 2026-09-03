@@ -14,6 +14,15 @@ const { data: post } = await useAsyncData(`news-${route.path}`, () =>
 
 if (!post.value) throw notFound()
 
+// A getter rather than a plain object, so the tags follow the fetched post
+// instead of being read once while it is still empty.
+usePageSeo(() => ({
+  title: post.value?.title,
+  // The schema's own summary first, then the description @nuxt/content derives
+  // from the opening paragraph.
+  description: post.value?.summary || post.value?.description || 'A post from The Lionhearts.',
+  type: 'article',
+}))
 // Markdown renders to plain HTML with no classes of its own, so typography
 // supplies the rhythm and these variants pull it onto the site palette.
 const prose = [

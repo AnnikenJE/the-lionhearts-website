@@ -18,6 +18,13 @@ const EXPLORE = [
 ]
 
 const section = 'mt-16 border-t border-line pt-16'
+// The landing page sets no title of its own, so the tab shows the guild name
+// alone rather than repeating it twice.
+usePageSeo({
+  description:
+    'Social raiding and Mythic+ on Darkmoon Faire (EU). Two raid nights a week, '
+    + 'keys all week, and a roster that makes room for new players.',
+})
 </script>
 
 <template>

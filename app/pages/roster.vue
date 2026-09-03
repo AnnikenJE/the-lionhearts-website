@@ -97,6 +97,12 @@ const isOpen = (rank: number) => isFiltering.value || !collapsed.value.has(rank)
 // flex-1 gives the search box a 0% basis, so its width never depends on its own
 // content and the row cannot re-wrap while you type.
 const fieldSearch = 'flex w-full min-w-0 flex-col gap-1.5 sm:w-auto sm:flex-1'
+usePageSeo({
+  title: 'Roster',
+  description:
+    'Every member of The Lionhearts, grouped by in-game rank and searchable by name, '
+    + 'class and spec. Pulled live from Raider.IO.',
+})
 </script>
 
 <template>

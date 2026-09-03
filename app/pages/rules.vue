@@ -27,6 +27,12 @@ const RULE_SETS = [
 
 // Numbered as markup rather than a CSS counter, so the chip can be styled.
 const marker = 'flex size-7 shrink-0 items-center justify-center rounded-lg bg-surface-hover text-sm font-semibold text-fg-muted'
+usePageSeo({
+  title: 'Guild rules',
+  description:
+    'The rules for The Lionhearts: how we treat each other in the guild, and what is '
+    + 'expected of you on a raid night.',
+})
 </script>
 
 <template>
