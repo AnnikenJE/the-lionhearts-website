@@ -31,6 +31,8 @@ npm run build     # production build
 npm run preview   # preview the production build locally
 npm run generate  # static site generation
 npm run lint      # run ESLint
+npm run test      # run the test suite once
+npm run test:watch # re-run tests on change
 ```
 
 ## Project structure
@@ -52,6 +54,7 @@ app/
   assets/css/main.css      # the whole theme: Tailwind import + @theme tokens
 content/news/*.md          # news posts
 server/api/roster.get.ts   # cached Raider.IO roster endpoint
+server/utils/roster.ts     # the roster transform, kept testable
 public/                    # static assets
 nuxt.config.ts             # Nuxt config
 ```
