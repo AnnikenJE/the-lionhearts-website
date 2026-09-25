@@ -1,29 +1,38 @@
 import { describe, expect, it } from 'vitest'
-import { formatClock, formatDate, formatDuration, formatTime } from '../../app/utils/date'
+import { formatClock, formatDate, formatDuration, formatTime, formatWeekday } from '../../app/utils/date'
 
-// Both formatters render in the viewer's own timezone, so the fixtures are built
-// from local parts rather than a fixed UTC string. That keeps the assertions true
-// wherever the tests run.
-const localIso = (year: number, month: number, day: number, hour = 0, minute = 0) =>
-  new Date(year, month - 1, day, hour, minute).toISOString()
+// The formatters use server time (Europe/Paris) whatever zone the tests run in, so the
+// fixtures are fixed UTC instants: 17:30 UTC is 19:30 in summer (CEST, UTC+2).
 
 describe('formatDate', () => {
   it('renders the en-GB long form', () => {
-    expect(formatDate(localIso(2026, 8, 10))).toBe('10 August 2026')
+    expect(formatDate('2026-08-10T10:00:00Z')).toBe('10 August 2026')
   })
 
   it('does not pad the day', () => {
-    expect(formatDate(localIso(2026, 1, 5))).toBe('5 January 2026')
+    expect(formatDate('2026-01-05T10:00:00Z')).toBe('5 January 2026')
+  })
+
+  it('uses the server date, not UTC, just after midnight server time', () => {
+    // 23:30 UTC on 9 August is 01:30 on 10 August in Paris.
+    expect(formatDate('2026-08-09T23:30:00Z')).toBe('10 August 2026')
   })
 })
 
 describe('formatTime', () => {
-  it('renders a 24 hour wall clock', () => {
-    expect(formatTime(localIso(2026, 8, 10, 19, 30))).toBe('19:30')
+  it('renders a 24 hour wall clock in server time', () => {
+    expect(formatTime('2026-08-10T17:30:00Z')).toBe('19:30')
   })
 
-  it('pads the hour', () => {
-    expect(formatTime(localIso(2026, 8, 10, 9, 5))).toBe('09:05')
+  it('pads the hour, and follows winter time', () => {
+    expect(formatTime('2026-01-10T08:05:00Z')).toBe('09:05')
+  })
+})
+
+describe('formatWeekday', () => {
+  it('names the weekday in server time', () => {
+    expect(formatWeekday('2026-09-24T16:49:53Z')).toBe('Thursday')
+    expect(formatWeekday('2026-09-24T22:30:00Z')).toBe('Friday')
   })
 })
 

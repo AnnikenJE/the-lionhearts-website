@@ -1,17 +1,31 @@
-/** Post dates are authored as ISO strings and always shown in en-GB long form. */
+/**
+ * Every date and time on the site is shown in server time, the time EU realms run on
+ * and the raid schedule is written in. It also has to be one fixed zone: the page is
+ * rendered on a server in UTC and then hydrated in the visitor's browser, and two
+ * different zones made times jump after load ("16:49" becoming "18:49").
+ */
+export const SERVER_TIME_ZONE = 'Europe/Paris'
+
+/** Dates in en-GB long form, "24 September 2026". */
 export const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-GB', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    timeZone: SERVER_TIME_ZONE,
   })
 
-/** Wall-clock times in the viewer's own timezone, matching formatDate, so the two never disagree. */
+/** A 24 hour wall clock in server time, matching formatDate so the two never disagree. */
 export const formatTime = (iso: string) =>
   new Date(iso).toLocaleTimeString('en-GB', {
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: SERVER_TIME_ZONE,
   })
+
+/** The weekday in server time, "Thursday". */
+export const formatWeekday = (iso: string) =>
+  new Date(iso).toLocaleDateString('en-GB', { weekday: 'long', timeZone: SERVER_TIME_ZONE })
 
 /** Raid nights run long enough that a bare minute count is hard to scan, but a leading 0h is just noise. */
 export const formatDuration = (ms: number) => {

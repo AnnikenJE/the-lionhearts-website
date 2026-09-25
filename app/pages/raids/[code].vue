@@ -17,7 +17,7 @@ const notConfigured = computed(() => error.value?.statusCode === 503)
 
 // formatDate has no weekday, so it is derived separately here rather than faked.
 const weekday = computed(() =>
-  raid.value ? new Date(raid.value.startedAt).toLocaleDateString('en-GB', { weekday: 'long' }) : '',
+  raid.value ? formatWeekday(raid.value.startedAt) : '',
 )
 
 const killedCount = computed(() => raid.value?.fights.filter(f => f.kill).length ?? 0)
