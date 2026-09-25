@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { countRosterPlayers, groupRaidNights } from '../../server/utils/raids'
+import { collapseFights, countRosterPlayers, groupRaidNights } from '../../server/utils/raids'
 
 const log = (code: string, start: string, end: string) => ({
   code,
@@ -50,5 +50,25 @@ describe('countRosterPlayers', () => {
 
   it('skips ids with no name in the log', () => {
     expect(countRosterPlayers([99], actors, roster)).toBe(0)
+  })
+})
+
+describe('collapseFights', () => {
+  const pull = (id: number, name: string, difficulty: number, kill = false, fightPercentage: number | null = 50) =>
+    ({ id, name, difficulty, kill, fightPercentage })
+
+  it('collapses wipes on one boss into a single row with the pull count and best pull', () => {
+    const rows = collapseFights([pull(1, 'Sszorak', 4, false, 40), pull(2, 'Sszorak', 4, false, 12.5), pull(3, 'Sszorak', 4, false, 30)])
+    expect(rows).toEqual([{ id: 1, name: 'Sszorak', kill: false, difficulty: 'Heroic', pulls: 3, bestPercent: 12.5 }])
+  })
+
+  it('splits a boss killed on Normal and then on Heroic into two rows', () => {
+    const rows = collapseFights([pull(1, 'Nekzali', 3, true), pull(5, 'Nekzali', 4), pull(6, 'Nekzali', 4, true)])
+    expect(rows.map(row => [row.difficulty, row.pulls, row.kill])).toEqual([['Normal', 1, true], ['Heroic', 2, true]])
+  })
+
+  it('keeps the order bosses were first pulled in', () => {
+    const rows = collapseFights([pull(1, 'B', 4), pull(2, 'A', 4), pull(3, 'B', 4)])
+    expect(rows.map(row => row.name)).toEqual(['B', 'A'])
   })
 })

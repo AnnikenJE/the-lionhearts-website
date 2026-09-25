@@ -31,12 +31,13 @@ export const difficultyName = (difficulty: number | null | undefined) =>
   difficulty == null ? null : DIFFICULTY_NAMES[difficulty] ?? null
 
 /**
- * Whether an encounter was a raid boss. A raid log can also hold Mythic+ runs from
- * later that evening, and Warcraft Logs lists those dungeon bosses as encounters too
- * (difficulty 10). Counting them made a night read "12 of 12 bosses" with 31 raiders.
+ * Whether an encounter counts towards a guild raid night: Normal, Heroic or Mythic.
+ * A raid log can also hold Mythic+ runs from later that evening, which Warcraft Logs
+ * lists as encounters too (difficulty 10; counting them once made a night read "12 of
+ * 12 bosses" with 31 raiders), and LFR is matchmaking with strangers, never a guild run.
  */
-export const isRaidDifficulty = (difficulty: number | null | undefined) =>
-  difficulty != null && difficulty in DIFFICULTY_NAMES
+export const isGuildRaidDifficulty = (difficulty: number | null | undefined) =>
+  difficulty === 3 || difficulty === 4 || difficulty === 5
 
 /**
  * The raid tiers the guild has logs for, newest first, as Warcraft Logs zone ids.
