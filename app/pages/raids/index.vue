@@ -4,11 +4,26 @@ import type { RaidNightsResponse } from '~~/server/api/raids.get'
 const route = useRoute()
 
 // The tier lives in the URL (?tier=44) and drives the fetch, so picking a tier in
-// TierNav refetches without a full page load.
+// TierNav refetches without a full page load. One fixed key for every tier keeps the
+// previous tier on screen while the next loads: keyed by URL, a new tier would start
+// empty, and a tier not cached yet can take several seconds.
 const query = computed(() => (route.query.tier ? { tier: String(route.query.tier) } : {}))
-const { data, pending, error } = await useFetch<RaidNightsResponse>('/api/raids', { query })
+const { data, pending, error } = await useFetch<RaidNightsResponse>('/api/raids', { query, key: 'raids' })
 
-const raids = computed(() => data.value?.nights ?? [])
+// The last tier that loaded. A failed fetch resets `data`, and without this the tier
+// selector would vanish with it, leaving no way to try another tier.
+const shown = shallowRef(data.value)
+watch(data, (value) => {
+  if (value) shown.value = value
+})
+
+// The tier the reader asked for, so the selector moves at once rather than when the
+// data arrives. The first tier is the default with no query.
+const selectedTierId = computed(() => Number(route.query.tier) || shown.value?.tiers[0]?.id || 0)
+const selectedTierName = computed(() => shown.value?.tiers.find(tier => tier.id === selectedTierId.value)?.name ?? 'this tier')
+const switching = computed(() => pending.value && !!shown.value && shown.value.tier.id !== selectedTierId.value)
+
+const raids = computed(() => shown.value?.nights ?? [])
 
 // wclQuery throws a 503 when the Warcraft Logs credentials are not configured,
 // so that specific status gets its own message instead of the generic error one.
@@ -35,16 +50,21 @@ usePageSeo({
       </p>
     </header>
 
-    <TierNav v-if="data" class="mt-10" :tiers="data.tiers" :current-id="data.tier.id" />
+    <TierNav v-if="shown" class="mt-10" :tiers="shown.tiers" :current-id="selectedTierId" />
 
-    <p v-if="pending && !data" class="mt-12 text-fg-muted">Loading raids…</p>
+    <p v-if="pending && !shown" class="mt-12 text-fg-muted">Loading raids…</p>
     <p v-else-if="notConfigured" class="mt-12 text-fg-muted">
       The Warcraft Logs connection is not set up yet, so there is nothing to show here.
     </p>
-    <p v-else-if="error" class="mt-12 text-fg-muted">Could not load recent raids right now.</p>
-    <p v-else-if="!raids.length" class="mt-8 text-fg-muted">No raid nights logged in {{ data?.tier.name }}.</p>
+    <p v-else-if="error" class="mt-8 text-fg-muted">Could not load {{ selectedTierName }} right now.</p>
+    <p v-else-if="!raids.length" class="mt-8 text-fg-muted">No raid nights logged in {{ shown?.tier.name }}.</p>
 
-    <ul v-else class="mt-6 divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
+    <ul
+      v-else
+      class="mt-6 divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface transition-opacity"
+      :class="{ 'opacity-50': switching }"
+      :aria-busy="switching"
+    >
       <li v-for="raid in raids" :key="raid.code">
         <NuxtLink :to="`/raids/${raid.code}`" :class="row">
           <span class="flex flex-wrap items-center gap-2">
