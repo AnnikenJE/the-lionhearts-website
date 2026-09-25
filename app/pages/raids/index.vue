@@ -7,6 +7,9 @@ const { data: raids, pending, error } = await useFetch<RaidSummary[]>('/api/raid
 // so that specific status gets its own message instead of the generic error one.
 const notConfigured = computed(() => error.value?.statusCode === 503)
 
+// Five nights at a time, paged in place rather than across URLs.
+const pager = usePagination(raids)
+
 // Shared by every row, so the left and right halves of the list line up the
 // same way regardless of which fields a given raid has.
 const row = 'flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4 transition hover:bg-surface-hover'
@@ -35,8 +38,9 @@ usePageSeo({
     <p v-else-if="error" class="mt-12 text-fg-muted">Could not load recent raids right now.</p>
     <p v-else-if="!raids?.length" class="mt-12 text-fg-muted">No raids logged yet.</p>
 
-    <ul v-else class="mt-10 divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
-      <li v-for="raid in raids" :key="raid.code">
+    <template v-else>
+    <ul class="mt-10 divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
+      <li v-for="raid in pager.pageItems.value" :key="raid.code">
         <NuxtLink :to="`/raids/${raid.code}`" :class="row">
           <span class="flex flex-wrap items-center gap-2">
             <span class="font-medium text-fg">{{ raid.zone ?? raid.title }}</span>
@@ -52,5 +56,14 @@ usePageSeo({
         </NuxtLink>
       </li>
     </ul>
+    <PagerControls
+      :page="pager.page.value"
+      :page-count="pager.pageCount.value"
+      :has-previous="pager.hasPrevious.value"
+      :has-next="pager.hasNext.value"
+      @previous="pager.previous"
+      @next="pager.next"
+    />
+    </template>
   </main>
 </template>

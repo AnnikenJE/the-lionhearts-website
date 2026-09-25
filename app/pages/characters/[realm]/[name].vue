@@ -53,10 +53,18 @@ const stats = computed(() => {
       value: d?.allStars ? `#${d.allStars.serverRank}` : null,
       color: null,
     },
+    {
+      label: 'Achievement points',
+      value: c.achievementPoints != null ? c.achievementPoints.toLocaleString('en-GB') : null,
+      color: null,
+    },
   ].filter(stat => stat.value != null)
 })
 
 const roleLabel = { tank: 'Tank', healer: 'Healer', dps: 'DPS' } as const
+
+// Five nights at a time, paged in place like the raids page.
+const nightsPager = usePagination(() => character.value?.raidNights)
 
 const section = 'mt-16 border-t border-line pt-16'
 const card = 'overflow-hidden rounded-xl border border-line bg-surface'
@@ -109,7 +117,7 @@ usePageSeo(() => ({
         <AppButton :href="character.links.armory" variant="secondary">Armory</AppButton>
       </div>
 
-      <dl v-if="stats.length" class="mt-10 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <dl v-if="stats.length" class="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
         <div v-for="stat in stats" :key="stat.label" class="rounded-xl border border-line bg-surface px-5 py-4">
           <dt class="text-xs font-medium text-fg-subtle">{{ stat.label }}</dt>
           <dd class="mt-1 text-2xl font-semibold tabular-nums text-fg" :style="stat.color ? { color: stat.color } : undefined">
@@ -223,7 +231,7 @@ usePageSeo(() => ({
           <template #end>{{ plural(character.raidNights.length, 'night') }} with the guild</template>
         </SectionHeading>
         <ul :class="[card, 'divide-y divide-line']">
-          <li v-for="night in character.raidNights" :key="night.code">
+          <li v-for="night in nightsPager.pageItems.value" :key="night.code">
             <NuxtLink
               :to="`/raids/${night.code}`"
               class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4 transition hover:bg-surface-hover"
@@ -235,6 +243,14 @@ usePageSeo(() => ({
             </NuxtLink>
           </li>
         </ul>
+        <PagerControls
+          :page="nightsPager.page.value"
+          :page-count="nightsPager.pageCount.value"
+          :has-previous="nightsPager.hasPrevious.value"
+          :has-next="nightsPager.hasNext.value"
+          @previous="nightsPager.previous"
+          @next="nightsPager.next"
+        />
       </section>
 
       <!-- Mythic+ -->
