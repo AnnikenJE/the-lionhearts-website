@@ -227,7 +227,16 @@ const fetchCharacter = defineCachedFunction(
 
 export default defineEventHandler(async (event): Promise<CharacterProfile> => {
   const realm = getRouterParam(event, 'realm') ?? ''
-  const name = decodeURIComponent(getRouterParam(event, 'name') ?? '')
+  // decode: true would throw on a malformed percent sequence ("%E0") and turn a name
+  // that cannot exist into a 500; an empty name fails the pattern below and is a 404.
+  const name = (() => {
+    try {
+      return decodeURIComponent(getRouterParam(event, 'name') ?? '')
+    }
+    catch {
+      return ''
+    }
+  })()
 
   // An opted-out character gets the same 404 as one that does not exist, so the page
   // does not even confirm it is there.

@@ -11,7 +11,7 @@ const query = computed(() => (route.query.tier ? { tier: String(route.query.tier
 // the new parses load instead of blanking the whole page.
 const { data: fetched, pending, error } = await useFetch<CharacterProfile>(
   () => `/api/characters/${route.params.realm}/${encodeURIComponent(String(route.params.name))}`,
-  { query, key: `character:${route.params.realm}:${String(route.params.name).toLowerCase()}` },
+  { query, key: () => `character:${route.params.realm}:${String(route.params.name).toLowerCase()}` },
 )
 
 // The last profile that loaded. A failed fetch resets `fetched`; without this a

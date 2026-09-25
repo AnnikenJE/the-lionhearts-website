@@ -12,6 +12,8 @@ interface WclFight {
   kill: boolean | null
   difficulty: number | null
   fightPercentage: number | null
+  /** Actor ids of the players in the fight. */
+  friendlyPlayers: number[] | null
 }
 
 interface WclReport {
@@ -32,6 +34,8 @@ interface WclResponse {
 }
 
 interface WclPlayerEntry {
+  /** Actor id, the same ids a fight's friendlyPlayers lists. */
+  id?: number
   name?: string
   type?: string
   server?: string
@@ -80,7 +84,7 @@ const QUERY = `
         startTime
         endTime
         zone { name }
-        fights(killType: Encounters) { id name kill difficulty fightPercentage }
+        fights(killType: Encounters) { id name kill difficulty fightPercentage friendlyPlayers }
         playerDetails(startTime: 0, endTime: 100000000, includeCombatantInfo: false)
       }
     }
@@ -173,7 +177,16 @@ export const fetchRaid = defineCachedFunction(
       throw createError({ statusCode: 404, statusMessage: 'Raid not found' })
     }
 
-    const { tanks, healers, dps } = unwrapPlayerDetails(report.playerDetails)
+    // Raid encounters only: a Mythic+ run later in the same log is neither a boss of
+    // this night nor a reason to list its players as raiders.
+    const fights = (report.fights ?? []).filter(fight => isRaidDifficulty(fight.difficulty))
+    const raiders = new Set(fights.flatMap(fight => fight.friendlyPlayers ?? []))
+    const inRaid = (entry: WclPlayerEntry) => raiders.size === 0 || entry.id === undefined || raiders.has(entry.id)
+
+    const details = unwrapPlayerDetails(report.playerDetails)
+    const tanks = details.tanks.filter(inRaid)
+    const healers = details.healers.filter(inRaid)
+    const dps = details.dps.filter(inRaid)
 
     return {
       code: report.code,
@@ -183,7 +196,7 @@ export const fetchRaid = defineCachedFunction(
       endedAt: new Date(report.endTime).toISOString(),
       durationMs: report.endTime - report.startTime,
       logUrl: `https://www.warcraftlogs.com/reports/${report.code}`,
-      fights: collapseFights(report.fights ?? []),
+      fights: collapseFights(fights),
       tanks: tanks.map(toPlayer),
       healers: healers.map(toPlayer),
       dps: dps.map(toPlayer),

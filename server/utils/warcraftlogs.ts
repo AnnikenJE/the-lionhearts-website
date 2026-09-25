@@ -31,6 +31,14 @@ export const difficultyName = (difficulty: number | null | undefined) =>
   difficulty == null ? null : DIFFICULTY_NAMES[difficulty] ?? null
 
 /**
+ * Whether an encounter was a raid boss. A raid log can also hold Mythic+ runs from
+ * later that evening, and Warcraft Logs lists those dungeon bosses as encounters too
+ * (difficulty 10). Counting them made a night read "12 of 12 bosses" with 31 raiders.
+ */
+export const isRaidDifficulty = (difficulty: number | null | undefined) =>
+  difficulty != null && difficulty in DIFFICULTY_NAMES
+
+/**
  * The raid tiers the guild has logs for, newest first, as Warcraft Logs zone ids.
  * The first entry is the current tier and the default everywhere. Adding a tier is
  * one line here; Mythic+ zones are left out because they are not raids.

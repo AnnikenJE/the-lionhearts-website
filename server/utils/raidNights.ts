@@ -205,7 +205,11 @@ const loadRaidNights = async (tierId: number): Promise<RaidNightsResult> => {
   ])
 
   // A log tagged to the guild and uploaded by a logger comes back from both queries.
-  const reports = new Map([...logger.reports, ...guildReports].map(report => [report.code, report]))
+  // Only raid encounters count; see isRaidDifficulty for the Mythic+ runs this drops.
+  const reports = new Map([...logger.reports, ...guildReports].map(report => [
+    report.code,
+    { ...report, fights: (report.fights ?? []).filter(fight => isRaidDifficulty(fight.difficulty)) },
+  ]))
 
   // A log with no boss pulls is not a raid night: a short trash or test log that
   // someone uploaded under the guild. It has nothing to show on the detail page.
