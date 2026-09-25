@@ -4,6 +4,17 @@ export default defineNuxtConfig({
   compatibilityDate: '2026-06-14',
   modules: ['@nuxt/eslint', '@nuxt/content'],
   css: ['~/assets/css/main.css'],
+  // Server-only: never nested under `public`, so these never reach the browser payload.
+  // Empty-string defaults let a server route detect "not configured" and return a
+  // clean 503 instead of crashing. Bound from env as NUXT_WCL_CLIENT_ID and
+  // NUXT_WCL_CLIENT_SECRET (Nuxt's uppercase-and-underscore mapping of wcl.clientId
+  // and wcl.clientSecret).
+  runtimeConfig: {
+    wcl: {
+      clientId: '',
+      clientSecret: '',
+    },
+  },
   app: {
     head: {
       // Paints the mobile browser chrome the same near-black as the page.
