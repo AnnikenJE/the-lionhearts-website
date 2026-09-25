@@ -45,7 +45,15 @@ interface GraphQLResponse<T> {
 let cached: { token: string, expiresAt: number } | null = null
 
 const readCredentials = () => {
-  const { wcl } = useRuntimeConfig()
+  const { wcl: config } = useRuntimeConfig()
+
+  // useRuntimeConfig() without an event is built once at module load and frozen. On
+  // Cloudflare the secrets only reach process.env once a request arrives, so the
+  // frozen copy never has them; reading process.env here, at call time, does.
+  const wcl = {
+    clientId: config.clientId || process.env.NUXT_WCL_CLIENT_ID || '',
+    clientSecret: config.clientSecret || process.env.NUXT_WCL_CLIENT_SECRET || '',
+  }
 
   // Empty defaults mean "not configured". A 503 lets the page say so plainly, rather
   // than surfacing an auth failure that looks like Warcraft Logs being down.
