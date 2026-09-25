@@ -120,7 +120,8 @@ usePageSeo(() => ({
             </h3>
             <div class="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-3 md:grid-cols-4">
               <p v-for="player in group.members" :key="player.name" class="truncate text-sm">
-                <!-- Only guild members have a character page; a pug is plain text. A
+                <!-- Only current guild members have a character page. Anyone else, a pug
+                     or a former member, is plain text in a dimmed colour. A
                      player with no realm in the log is on the guild's own realm. -->
                 <NuxtLink
                   v-if="player.onRoster !== false"
@@ -128,9 +129,8 @@ usePageSeo(() => ({
                   class="hover:underline"
                   :style="{ color: classColor(player.className) }"
                 >{{ player.name }}</NuxtLink>
-                <span v-else :style="{ color: classColor(player.className) }">{{ player.name }}</span>
+                <span v-else class="opacity-60" :style="{ color: classColor(player.className) }">{{ player.name }}</span>
                 <span v-if="player.spec" class="ml-1.5 text-fg-subtle">{{ player.spec }}</span>
-                <span v-if="player.onRoster === false" class="ml-1.5 text-xs text-fg-subtle">(pug)</span>
               </p>
             </div>
           </div>
