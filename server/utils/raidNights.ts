@@ -1,5 +1,5 @@
-// The guild's recent raid nights. A cached function rather than a cached route, so the
-// character pages can reuse it to find the nights a character attended.
+// The guild's raid nights in one raid tier. A cached function rather than a cached
+// route, so the character pages can reuse it to find the nights a character attended.
 // wclQuery and GUILD come from server/utils/warcraftlogs.ts (Nitro auto-import).
 
 interface WclFight {
@@ -44,9 +44,9 @@ export interface RaidSummary {
 }
 
 const REPORTS_QUERY = `
-  query Raids($name: String!, $slug: String!, $region: String!, $limit: Int!) {
+  query Raids($name: String!, $slug: String!, $region: String!, $zone: Int!, $limit: Int!) {
     reportData {
-      reports(guildName: $name, guildServerSlug: $slug, guildServerRegion: $region, limit: $limit) {
+      reports(guildName: $name, guildServerSlug: $slug, guildServerRegion: $region, zoneID: $zone, limit: $limit) {
         data {
           code
           title
@@ -61,12 +61,16 @@ const REPORTS_QUERY = `
 `
 
 export const fetchRaidNights = defineCachedFunction(
-  async (): Promise<RaidSummary[]> => {
+  async (tierId: number): Promise<RaidSummary[]> => {
     const data = await wclQuery<ReportsResponse>(REPORTS_QUERY, {
       name: GUILD.name,
       slug: GUILD.serverSlug,
       region: GUILD.serverRegion,
-      limit: 10,
+      zone: raidTier(tierId).id,
+      // Every log in the tier: no tier so far has more than about twenty. Fifty stays
+      // under Warcraft Logs' query complexity cap, which a hundred logs with their
+      // fights would break.
+      limit: 50,
     })
 
     const raids = data.reportData.reports.data
@@ -115,5 +119,5 @@ export const fetchRaidNights = defineCachedFunction(
   },
   // Refreshed once an hour: a new raid night shows up within the hour of its upload,
   // and Warcraft Logs is asked at most once an hour however many people visit.
-  { maxAge: 60 * 60, name: 'raids', getKey: () => 'lionhearts' },
+  { maxAge: 60 * 60, name: 'raids', getKey: (tierId: number) => `lionhearts:${raidTier(tierId).id}` },
 )

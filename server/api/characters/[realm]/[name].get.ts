@@ -118,10 +118,10 @@ const fetchLogs = async (realm: string, name: string, zone: number, metric: 'dps
 
 type Soft = <T>(promise: Promise<T>, fallback: T) => Promise<T>
 
-// Every guild raid night currently listed, in detail. Both are cached on their own,
+// Every guild raid night in the current tier, in detail. Both are cached on their own,
 // so this is cheap after the first character page of the hour.
 const fetchAttendance = async (realm: string, name: string, soft: Soft) => {
-  const nights = await soft(fetchRaidNights(), [])
+  const nights = await soft(fetchRaidNights(RAID_TIERS[0].id), [])
   const details = await Promise.all(nights.map(night => soft(fetchRaid(night.code), null)))
   const raids = details.filter(raid => raid !== null)
 
