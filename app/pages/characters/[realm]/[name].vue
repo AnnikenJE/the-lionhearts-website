@@ -7,9 +7,23 @@ const route = useRoute()
 // works. A computed query makes useFetch refetch when it changes.
 const query = computed(() => (route.query.tier ? { tier: String(route.query.tier) } : {}))
 
-const { data: character, pending, error } = await useFetch<CharacterProfile>(
+// Keyed per character, not per tier, so switching tier keeps the page on screen while
+// the new parses load instead of blanking the whole page.
+const { data: fetched, pending, error } = await useFetch<CharacterProfile>(
   () => `/api/characters/${route.params.realm}/${encodeURIComponent(String(route.params.name))}`,
-  { query },
+  { query, key: `character:${route.params.realm}:${String(route.params.name).toLowerCase()}` },
+)
+
+// The last profile that loaded. A failed fetch resets `fetched`; without this a
+// failed tier switch would replace the whole page with an error.
+const character = shallowRef(fetched.value)
+watch(fetched, (value) => {
+  if (value) character.value = value
+})
+
+const selectedTierId = computed(() => Number(route.query.tier) || character.value?.logs?.tiers[0]?.id || 0)
+const switchingTier = computed(() =>
+  pending.value && !!character.value?.logs && character.value.logs.tier.id !== selectedTierId.value,
 )
 
 // Same pattern as raids/[code].vue: the route's 404 lands in error, so it is
@@ -89,7 +103,7 @@ usePageSeo(() => ({
     </NuxtLink>
 
     <p v-if="pending && !character" class="mt-12 text-fg-muted">Loading character…</p>
-    <p v-else-if="error" class="mt-12 text-fg-muted">Could not load this character right now.</p>
+    <p v-else-if="error && !character" class="mt-12 text-fg-muted">Could not load this character right now.</p>
 
     <template v-else-if="character">
       <div class="mt-6 flex items-center gap-5">
@@ -138,8 +152,13 @@ usePageSeo(() => ({
         </p>
 
         <template v-else>
-          <TierNav :tiers="character.logs.tiers" :current-id="character.logs.tier.id" />
+          <TierNav :tiers="character.logs.tiers" :current-id="selectedTierId" />
 
+          <p v-if="error" class="mt-6 text-fg-muted">
+            Could not load that tier right now. Showing {{ character.logs.tier.name }}.
+          </p>
+
+          <div class="transition-opacity" :class="{ 'opacity-50': switchingTier }" :aria-busy="switchingTier">
           <p v-if="!difficulty" class="mt-6 text-fg-muted">
             No kills logged in {{ character.logs.tier.name }}.
           </p>
@@ -211,6 +230,7 @@ usePageSeo(() => ({
               </table>
             </div>
           </template>
+          </div>
         </template>
       </section>
 
