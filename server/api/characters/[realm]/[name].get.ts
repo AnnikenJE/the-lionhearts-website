@@ -151,9 +151,11 @@ interface CharacterResult {
 const fetchCharacter = defineCachedFunction(
   async (realm: string, name: string, tierId: number): Promise<CharacterResult> => {
     let complete = true
+    // Missing credentials are a setting, not a failure: nothing will change on a
+    // retry, so they do not make the result incomplete.
     const soft: Soft = (promise, fallback) =>
-      promise.catch(() => {
-        complete = false
+      promise.catch((error) => {
+        if (!isNotConfigured(error)) complete = false
         return fallback
       })
 

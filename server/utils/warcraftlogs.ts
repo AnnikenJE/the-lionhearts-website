@@ -256,9 +256,11 @@ export const wclQuery = async <T>(
 
   // GraphQL reports failures inside a 200 response, so $fetch never throws for them.
   if (response.errors?.length) {
+    const message = response.errors[0]!.message
     throw createError({
-      statusCode: 502,
-      statusMessage: `Warcraft Logs: ${response.errors[0]!.message}`,
+      // An unknown report code is a 404 for the page, not an outage.
+      statusCode: /does not exist/i.test(message) ? 404 : 502,
+      statusMessage: `Warcraft Logs: ${message}`,
     })
   }
 
