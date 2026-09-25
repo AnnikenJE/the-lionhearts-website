@@ -63,7 +63,7 @@ usePageSeo(() => ({
 
 <template>
   <main class="mx-auto max-w-5xl px-4 py-16 sm:px-6">
-    <NuxtLink to="/raids" class="text-sm text-fg-muted transition hover:text-fg">
+    <NuxtLink to="/raids" class="-my-2 inline-block py-2 text-sm text-fg-muted transition hover:text-fg">
       <span aria-hidden="true">←</span> All raids
     </NuxtLink>
 
@@ -123,7 +123,7 @@ usePageSeo(() => ({
                 <NuxtLink
                   v-if="player.onRoster !== false"
                   :to="characterPath(player.realmSlug!, player.name)"
-                  class="hover:underline"
+                  class="-my-1 inline-block py-1 hover:underline"
                   :style="{ color: classColor(player.className) }"
                 >{{ player.name }}</NuxtLink>
                 <span v-else class="opacity-60" :style="{ color: classColor(player.className) }">{{ player.name }}</span>

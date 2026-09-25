@@ -83,7 +83,7 @@ usePageSeo({
       <SectionHeading class="mb-6">
         Latest news
         <template #end>
-          <NuxtLink to="/news" class="font-medium text-accent hover:text-accent-bright">
+          <NuxtLink to="/news" class="-my-1 inline-block py-1 font-medium text-accent hover:text-accent-bright">
             All news <span aria-hidden="true">→</span>
           </NuxtLink>
         </template>
