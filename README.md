@@ -106,7 +106,7 @@ The [RPGLogs API terms](https://www.archon.gg/wow/articles/help/rpg-logs-api-ter
 - **Non-commercial.** Ads, subscriptions or selling data would need prior approval from RPGLogs (and are ruled out by the Blizzard terms anyway).
 - **Only public reports.** The site uses `/api/v2/client`, which only sees public logs.
 - **Attribution.** Every raid page links back to its log on Warcraft Logs, and the footer names Warcraft Logs as a data source. Do not present the site as partnered with or endorsed by RPGLogs.
-- **Caching.** Keep cached copies within what the API allows. An hour is well inside what the quota docs recommend, see *Raid data* above.
+- **Caching.** Keep cached copies within what the API allows. Everything is refreshed once an hour, see *Raid data* above. The quota docs suggest 5 to 10 minutes for a log that is still live, so an hour is a deliberate choice to keep API use low, not a limit the API sets.
 - **Privacy.** The terms require a privacy policy that describes what the site collects. `/privacy` covers the Warcraft Logs data, so update it whenever a page starts showing something new from the API.
 
 ## Useful links
