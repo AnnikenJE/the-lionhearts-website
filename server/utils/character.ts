@@ -4,6 +4,7 @@
 
 // Imported explicitly rather than left to Nitro's auto-import, so this module also
 // loads under plain Vitest.
+import { upgradeTrack, type UpgradeTracks } from './upgradeTracks'
 import { difficultyName } from './warcraftlogs'
 
 // Raider.IO ------------------------------------------------------------------------
@@ -14,6 +15,8 @@ interface RaiderIoItem {
   name: string
   icon: string
   item_quality: number
+  /** Bonus ids; one of them encodes the upgrade track. */
+  bonuses?: number[]
 }
 
 interface RaiderIoRun {
@@ -102,6 +105,8 @@ export interface CharacterGearItem {
   /** Blizzard's quality integer: 3 rare, 4 epic, 5 legendary. */
   quality: number
   icon: string
+  /** Upgrade track and step, e.g. "Hero 4/6". Null when the item has none or it is unknown. */
+  track: string | null
 }
 
 export interface CharacterMythicRun {
@@ -188,7 +193,10 @@ const SLOT_NAMES: Record<string, string> = {
 }
 
 /** Equipped items in Raider.IO's own slot order, which is the character sheet's. */
-export const toGear = (items: Record<string, RaiderIoItem> | undefined): CharacterGearItem[] =>
+export const toGear = (
+  items: Record<string, RaiderIoItem> | undefined,
+  tracks: UpgradeTracks = {},
+): CharacterGearItem[] =>
   Object.entries(items ?? {}).map(([slot, item]) => ({
     slot: SLOT_NAMES[slot] ?? slot,
     name: item.name,
@@ -196,6 +204,7 @@ export const toGear = (items: Record<string, RaiderIoItem> | undefined): Charact
     itemLevel: item.item_level,
     quality: item.item_quality,
     icon: item.icon,
+    track: upgradeTrack(item.bonuses, tracks),
   }))
 
 export const toMythicPlusRuns = (runs: RaiderIoRun[] | undefined): CharacterMythicRun[] =>

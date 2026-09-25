@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { characterPath, classColor, parseColor, realmSlug } from '../../app/utils/wow'
+import { characterPath, classColor, parseColor, realmSlug, trackColor } from '../../app/utils/wow'
 
 describe('classColor', () => {
   it('returns the official colour', () => {
@@ -58,5 +58,14 @@ describe('parseColor', () => {
     expect(parseColor(95)).toBe('#ff8000')
     expect(parseColor(99.5)).toBe('#e268a8')
     expect(parseColor(100)).toBe('#e5cc80')
+  })
+})
+
+describe('trackColor', () => {
+  it('tints each track like the matching item quality', () => {
+    expect(trackColor('Veteran 3/6')).toBe('#1eff00')
+    expect(trackColor('Champion 6/6')).toBe('#0070dd')
+    expect(trackColor('Hero 4/6')).toBe('#a335ee')
+    expect(trackColor('Myth 1/6')).toBe('#ff8000')
   })
 })

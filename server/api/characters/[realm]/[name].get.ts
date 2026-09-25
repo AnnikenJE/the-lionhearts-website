@@ -126,15 +126,24 @@ const fetchAttendance = async (realm: string, name: string) => {
   return findRaidNights(raids, name, server => realmSlug(server ?? GUILD.serverSlug) === realm)
 }
 
+// Raidbots' bonus id table is 1.7 MB; only the small track lookup built from it is
+// cached, for a day, since tracks only change with a new season. If Raidbots is down
+// the gear simply shows without tracks.
+const fetchUpgradeTracks = defineCachedFunction(
+  async () => toUpgradeTracks(await $fetch('https://www.raidbots.com/static/data/live/bonuses.json')),
+  { name: 'upgrade-tracks', getKey: () => 'live', maxAge: 24 * 60 * 60 },
+)
+
 const fetchCharacter = defineCachedFunction(
   async (realm: string, name: string, tierId: number): Promise<CharacterProfile | null> => {
     const tier = raidTier(tierId)
     const raiderIo = await fetchRaiderIo(realm, name)
     const metric = rankingMetric(raiderIo?.active_spec_role)
 
-    const [wcl, raidNights] = await Promise.all([
+    const [wcl, raidNights, tracks] = await Promise.all([
       fetchLogs(realm, name, tier.id, metric),
       fetchAttendance(realm, name),
+      fetchUpgradeTracks().catch(() => ({})),
     ])
 
     if (!raiderIo && !wcl) return null
@@ -156,7 +165,7 @@ const fetchCharacter = defineCachedFunction(
       guild: raiderIo?.guild ?? null,
       achievementPoints: raiderIo?.achievement_points ?? null,
       itemLevel: raiderIo?.gear?.item_level_equipped ?? null,
-      gear: toGear(raiderIo?.gear?.items),
+      gear: toGear(raiderIo?.gear?.items, tracks),
       mythicPlus: season && (season.scores.all > 0 || bestRuns.length > 0)
         ? { score: season.scores.all, color: season.segments.all.color, bestRuns }
         : null,

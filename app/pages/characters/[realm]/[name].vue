@@ -302,7 +302,10 @@ usePageSeo(() => ({
               >
               <span class="min-w-0">
                 <span class="block truncate text-sm font-medium" :style="{ color: itemQualityColor(item.quality) }">{{ item.name }}</span>
-                <span class="block text-xs text-fg-subtle">{{ item.slot }} · {{ item.itemLevel }}</span>
+                <span class="block text-xs text-fg-subtle">
+                  {{ item.slot }} · {{ item.itemLevel }}<template v-if="item.track">
+                    · <span :style="{ color: trackColor(item.track) }">{{ item.track }}</span></template>
+                </span>
               </span>
             </a>
           </li>

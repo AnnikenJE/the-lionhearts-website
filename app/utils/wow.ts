@@ -78,3 +78,17 @@ export const iconUrl = (icon: string): string =>
 
 export const wowheadItemUrl = (itemId: number): string =>
   `https://www.wowhead.com/item=${itemId}`
+
+// Upgrade tracks borrow the item quality colours, the same way the game tints them:
+// Veteran green, Champion blue, Hero purple, Myth orange.
+const TRACK_QUALITY: Record<string, number> = {
+  adventurer: 1,
+  veteran: 2,
+  champion: 3,
+  hero: 4,
+  myth: 5,
+}
+
+/** Colour for an upgrade track such as "Hero 4/6". Returns a CSS colour, bound with `:style`. */
+export const trackColor = (track: string): string =>
+  itemQualityColor(TRACK_QUALITY[track.split(' ')[0]!.toLowerCase()] ?? 1)

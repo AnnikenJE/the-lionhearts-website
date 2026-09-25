@@ -70,6 +70,14 @@ describe('toGear', () => {
     expect(gear[1]).toMatchObject({ name: 'Staff', itemId: 2, itemLevel: 310 })
   })
 
+  it('names the upgrade track of each item from its bonus ids', () => {
+    const gear = toGear(
+      { head: { item_id: 1, item_level: 328, name: 'Casque', icon: 'helm', item_quality: 4, bonuses: [13692, 12852] } },
+      { 12852: 'Myth 4/6' },
+    )
+    expect(gear[0]!.track).toBe('Myth 4/6')
+  })
+
   it('handles a character with no gear data', () => {
     expect(toGear(undefined)).toEqual([])
   })
