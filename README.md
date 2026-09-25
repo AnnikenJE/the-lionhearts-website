@@ -99,6 +99,14 @@ In the Cloudflare dashboard, open the `thelionhearts` project, go to **Settings 
 
 Set them **before** the raids pages reach `main`: a push to `main` deploys straight to production.
 
+### 4. Shared cache (Cloudflare KV)
+
+Without it, every Cloudflare instance keeps its own cache in memory, empty after every deploy, and refetches the same data from Warcraft Logs. With it, all instances share one cache that survives deploys.
+
+1. In the Cloudflare dashboard, go to **Storage & Databases > KV** and create a namespace, for example `thelionhearts-cache`.
+2. Open the `thelionhearts` Pages project, **Settings > Bindings**, add a **KV namespace** binding with the variable name `CACHE` and pick that namespace. Add it for **Production** (and Preview if you want previews to share it too).
+3. Redeploy (or push). The site uses KV as soon as the binding is there; without it, it falls back to memory as before.
+
 ### Terms to keep in mind
 
 The [RPGLogs API terms](https://www.archon.gg/wow/articles/help/rpg-logs-api-terms-of-service) apply to everything fetched from Warcraft Logs. The ones that matter for this site:
