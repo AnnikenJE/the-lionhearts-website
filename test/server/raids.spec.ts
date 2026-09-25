@@ -1,49 +1,54 @@
 import { describe, expect, it } from 'vitest'
-import { dedupeRaidNights } from '../../server/utils/raids'
+import { countRosterPlayers, groupRaidNights } from '../../server/utils/raids'
 
-const night = (
-  code: string,
-  start: string,
-  end: string,
-  bossesPulled = 8,
-  bossesKilled = 8,
-) => ({
+const log = (code: string, start: string, end: string) => ({
   code,
-  startedAt: `2026-09-13T${start}:00.000Z`,
-  endedAt: `2026-09-13T${end}:00.000Z`,
-  durationMs: Date.parse(`2026-09-13T${end}:00Z`) - Date.parse(`2026-09-13T${start}:00Z`),
-  bossesPulled,
-  bossesKilled,
+  startTime: Date.parse(`2026-09-13T${start}:00Z`),
+  endTime: Date.parse(`2026-09-13T${end}:00Z`),
 })
 
-describe('dedupeRaidNights', () => {
-  it('keeps nights that do not overlap', () => {
-    const raids = [night('a', '17:00', '20:00'), night('b', '12:00', '14:00')]
-    expect(dedupeRaidNights(raids).map(raid => raid.code)).toEqual(['a', 'b'])
+const codes = (nights: { code: string }[][]) => nights.map(night => night.map(l => l.code))
+
+describe('groupRaidNights', () => {
+  it('puts two overlapping logs of the same night together', () => {
+    expect(codes(groupRaidNights([log('a', '17:02', '19:55'), log('b', '16:43', '19:56')]))).toEqual([['b', 'a']])
   })
 
-  it('collapses two logs of the same night into one', () => {
-    const raids = [night('a', '17:02', '19:55'), night('b', '16:43', '19:56')]
-    expect(dedupeRaidNights(raids)).toHaveLength(1)
+  it('puts a night logged in parts together, gaps and all', () => {
+    const parts = [log('heroic', '17:04', '18:07'), log('normal', '18:15', '19:28'), log('last', '19:32', '19:42')]
+    expect(codes(groupRaidNights(parts))).toEqual([['heroic', 'normal', 'last']])
   })
 
-  it('keeps the log with more bosses pulled', () => {
-    const raids = [night('partial', '17:00', '20:00', 3, 3), night('full', '17:05', '20:00', 8, 7)]
-    expect(dedupeRaidNights(raids).map(raid => raid.code)).toEqual(['full'])
+  it('keeps nights apart when the break is longer than a raid night allows', () => {
+    const early = log('early', '08:00', '09:00')
+    const evening = log('evening', '17:00', '20:00')
+    expect(codes(groupRaidNights([early, evening]))).toEqual([['evening'], ['early']])
   })
 
-  it('breaks a tie on bosses with kills, then with the longer log', () => {
-    const fewerKills = night('fewer', '17:00', '20:00', 8, 6)
-    const moreKills = night('more', '17:10', '19:00', 8, 7)
-    expect(dedupeRaidNights([fewerKills, moreKills]).map(raid => raid.code)).toEqual(['more'])
+  it('returns the newest night first', () => {
+    const sunday = { code: 'sun', startTime: Date.parse('2026-09-13T17:00:00Z'), endTime: Date.parse('2026-09-13T20:00:00Z') }
+    const thursday = { code: 'thu', startTime: Date.parse('2026-09-10T17:00:00Z'), endTime: Date.parse('2026-09-10T20:00:00Z') }
+    expect(codes(groupRaidNights([thursday, sunday]))).toEqual([['sun'], ['thu']])
+  })
+})
 
-    const shorter = night('shorter', '17:10', '19:40')
-    const longer = night('longer', '16:50', '20:00')
-    expect(dedupeRaidNights([shorter, longer]).map(raid => raid.code)).toEqual(['longer'])
+describe('countRosterPlayers', () => {
+  const actors = [
+    { id: 1, name: 'Anniken' },
+    { id: 2, name: 'Destructo' },
+    { id: 3, name: 'Pugger' },
+  ]
+  const roster = new Set(['anniken', 'destructo'])
+
+  it('counts the players who are on the roster, ignoring case', () => {
+    expect(countRosterPlayers([1, 2, 3], actors, roster)).toBe(2)
   })
 
-  it('does not treat back-to-back logs as the same night', () => {
-    const raids = [night('a', '19:00', '20:00'), night('b', '18:00', '19:00')]
-    expect(dedupeRaidNights(raids)).toHaveLength(2)
+  it('counts a player once however many boss fights they were in', () => {
+    expect(countRosterPlayers([1, 1, 1, 3], actors, roster)).toBe(1)
+  })
+
+  it('skips ids with no name in the log', () => {
+    expect(countRosterPlayers([99], actors, roster)).toBe(0)
   })
 })

@@ -138,17 +138,7 @@ usePageSeo(() => ({
         </p>
 
         <template v-else>
-          <nav aria-label="Raid tier" class="flex flex-wrap gap-2">
-            <NuxtLink
-              v-for="(tier, index) in character.logs.tiers"
-              :key="tier.id"
-              :to="{ query: index === 0 ? {} : { tier: tier.id } }"
-              :class="[pill, tier.id === character.logs.tier.id ? pillOn : pillOff]"
-              :aria-current="tier.id === character.logs.tier.id ? 'page' : undefined"
-            >
-              {{ tier.name }}
-            </NuxtLink>
-          </nav>
+          <TierNav :tiers="character.logs.tiers" :current-id="character.logs.tier.id" />
 
           <p v-if="!difficulty" class="mt-6 text-fg-muted">
             No kills logged in {{ character.logs.tier.name }}.

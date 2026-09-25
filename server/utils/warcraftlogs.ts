@@ -41,7 +41,27 @@ export const RAID_TIERS = [
   { id: 46, name: 'VS / DR / MQD' },
   { id: 44, name: 'Manaforge Omega' },
   { id: 42, name: 'Liberation of Undermine' },
+  { id: 38, name: 'Nerub-ar Palace' },
+  { id: 35, name: "Amirdrassil, the Dream's Hope" },
+  { id: 33, name: 'Aberrus, the Shadowed Crucible' },
+  { id: 31, name: 'Vault of the Incarnates' },
   { id: 26, name: 'Castle Nathria' },
+] as const
+
+/**
+ * Warcraft Logs users who log the guild's raids, by user id. Until late 2024 the
+ * guild's logs were uploaded as personal logs with no guild set, so the guild query
+ * misses every Dragonflight raid and Nerub-ar Palace. Their logs fill that gap.
+ * Found by profiling who uploaded the old logs a long-time raider appears in; each
+ * of these logged guild nights with 15 to 22 current roster members in the group.
+ */
+export const GUILD_LOGGERS = [
+  { id: 334947, name: 'LightBladeNinja' },
+  { id: 1434422, name: 'Exavu' },
+  { id: 2045364, name: 'MrMcsqueezy' },
+  { id: 2170668, name: 'Starcrypt' },
+  { id: 206767, name: 'Molgran' },
+  { id: 2219845, name: 'Lethargy' },
 ] as const
 
 export type RaidTier = (typeof RAID_TIERS)[number]
