@@ -17,6 +17,9 @@ export async function useTierFetch<T>(
 ) {
   const route = useRoute()
   const query = computed(() => (route.query.tier ? { tier: String(route.query.tier) } : {}))
+
+  // A tier other than the default is not a page of its own for search engines.
+  useSeoMeta({ robots: () => (route.query.tier ? 'noindex, nofollow' : undefined) })
   const { data, pending, error } = await useFetch<T>(url, { query, key })
 
   const shown = shallowRef(data.value)

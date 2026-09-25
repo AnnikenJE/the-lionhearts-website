@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { budgetAllows, difficultyName, isGuildRaidDifficulty, isNotConfigured, withRateLimitData } from '../../server/utils/warcraftlogs'
+import { budgetAllows, difficultyName, isGuildRaidDifficulty, isNotConfigured, operationName, withRateLimitData } from '../../server/utils/warcraftlogs'
 
 describe('difficultyName', () => {
   it('names the retail raid difficulties', () => {
@@ -66,5 +66,12 @@ describe('isGuildRaidDifficulty', () => {
     expect(isGuildRaidDifficulty(1)).toBe(false)
     expect(isGuildRaidDifficulty(10)).toBe(false)
     expect(isGuildRaidDifficulty(null)).toBe(false)
+  })
+})
+
+describe('operationName', () => {
+  it('reads the operation name for the logs', () => {
+    expect(operationName('\n  query Raid($code: String!) {\n reportData { } }')).toBe('Raid')
+    expect(operationName('{ rateLimitData { limitPerHour } }')).toBe('anonymous')
   })
 })
