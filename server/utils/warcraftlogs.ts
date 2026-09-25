@@ -30,23 +30,6 @@ const DIFFICULTY_NAMES: Record<number, string> = {
 export const difficultyName = (difficulty: number | null | undefined) =>
   difficulty == null ? null : DIFFICULTY_NAMES[difficulty] ?? null
 
-/**
- * The Warcraft Logs quota docs split report caching in two: a report with fights in
- * the last couple of hours may still be live-logging, so cache it for 5-10 minutes;
- * anything older almost never changes, so cache it for as long as you like.
- */
-export const LIVE_REPORT_WINDOW_MS = 2 * 60 * 60 * 1000
-export const LIVE_REPORT_MAX_AGE_MS = 10 * 60 * 1000
-
-/**
- * Whether a cached report is still good. `fetchedAt` is when it was cached and
- * `reportEnd` the report's own end time, both epoch milliseconds. A report that was
- * still live when fetched goes stale after ten minutes; one that had already ended
- * stays good until the cache's own maxAge drops it.
- */
-export const isReportCacheFresh = (fetchedAt: number, reportEnd: number, now: number) =>
-  fetchedAt - reportEnd >= LIVE_REPORT_WINDOW_MS || now - fetchedAt < LIVE_REPORT_MAX_AGE_MS
-
 interface TokenResponse {
   access_token: string
   expires_in: number

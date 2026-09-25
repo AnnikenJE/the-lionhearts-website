@@ -7,10 +7,8 @@ interface WclFight {
   name: string
   kill: boolean | null
   difficulty: number | null
-}
-
-interface WclActor {
-  id: number
+  /** Actor ids of the players in the fight. */
+  friendlyPlayers: number[] | null
 }
 
 interface WclReport {
@@ -20,7 +18,6 @@ interface WclReport {
   endTime: number
   zone: { name: string } | null
   fights: WclFight[] | null
-  masterData: { actors: WclActor[] | null } | null
 }
 
 interface ReportsResponse {
@@ -56,8 +53,7 @@ const REPORTS_QUERY = `
           startTime
           endTime
           zone { name }
-          fights(killType: Encounters) { id name kill difficulty }
-          masterData { actors(type: "Player") { id } }
+          fights(killType: Encounters) { id name kill difficulty friendlyPlayers }
         }
       }
     }
@@ -73,7 +69,7 @@ export default defineCachedEventHandler(
       limit: 10,
     })
 
-    return data.reportData.reports.data
+    const raids = data.reportData.reports.data
       .map((report) => {
         const fights = report.fights ?? []
 
@@ -101,15 +97,23 @@ export default defineCachedEventHandler(
           difficulty: difficultyName(maxDifficulty),
           bossesKilled: killedBosses.size,
           bossesPulled: pulledBosses.size,
-          raiderCount: report.masterData?.actors?.length ?? 0,
+          // Players who were in at least one boss pull. Every player the log ever saw
+          // would also count people who only joined for trash or left before the first
+          // boss, which once made a 20-player night read as 58 raiders.
+          raiderCount: new Set(fights.flatMap(fight => fight.friendlyPlayers ?? [])).size,
         }
       })
       // The API already returns newest first, but sorting here is a cheap guarantee
       // rather than a fix for any known ordering bug. ISO strings sort lexicographically
       // in the same order as chronologically.
       .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
+      // A log with no boss pulls is not a raid night: a short trash or test log that
+      // someone uploaded under the guild. It has nothing to show on the detail page.
+      .filter(raid => raid.bossesPulled > 0)
+
+    return dedupeRaidNights(raids)
   },
-  // Fifteen minutes so a raid night appears shortly after the log is uploaded, while
-  // staying far inside the 3600 points per hour Warcraft Logs rate limit.
-  { maxAge: 15 * 60, name: 'raids', getKey: () => 'lionhearts' },
+  // Refreshed once an hour: a new raid night shows up within the hour of its upload,
+  // and Warcraft Logs is asked at most once an hour however many people visit.
+  { maxAge: 60 * 60, name: 'raids', getKey: () => 'lionhearts' },
 )

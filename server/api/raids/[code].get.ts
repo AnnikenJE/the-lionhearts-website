@@ -150,19 +150,20 @@ const unwrapPlayerDetails = (raw: unknown) => {
   }
 }
 
+// Warcraft Logs writes multi-word specs as one word ("BeastMastery"), the same way it
+// writes class names ("DeathKnight").
+const spaceWords = (value: string) => value.replace(/([a-z])([A-Z])/g, '$1 $2')
+
 const toPlayer = (entry: WclPlayerEntry): RaidPlayer => ({
   name: entry.name ?? 'Unknown',
   className: entry.type ?? 'Unknown',
-  spec: entry.specs?.[0]?.spec ?? null,
+  spec: entry.specs?.[0]?.spec ? spaceWords(entry.specs[0].spec) : null,
   server: entry.server ?? null,
 })
 
 // The report is cached as a function rather than the whole route being a cached
-// handler, for two reasons. A cached handler fixes one maxAge for every report, and
-// Warcraft Logs asks for a short one on a live log but is happy with a long one on a
-// finished log; `validate` can tell the two apart, but only on a cached function.
-// And opt-outs are applied after the cache, so adding a name takes effect on the next
-// request even if the cache ever outlives a deploy (see the Workers KV issue).
+// handler, so opt-outs can be applied after the cache: adding a name takes effect on
+// the next request even if the cache ever outlives a deploy (see the Workers KV issue).
 const fetchRaid = defineCachedFunction(
   async (code: string): Promise<RaidDetail> => {
     const data = await wclQuery<WclResponse>(QUERY, { code })
@@ -191,12 +192,8 @@ const fetchRaid = defineCachedFunction(
   {
     name: 'raid',
     getKey: (code: string) => code,
-    // A day for a finished log. The docs would allow longer, but the in-memory cache
-    // resets on every deploy anyway, so a longer window buys almost nothing.
-    maxAge: 24 * 60 * 60,
-    validate: entry =>
-      entry.value !== undefined
-      && isReportCacheFresh(entry.mtime ?? 0, Date.parse(entry.value.endedAt), Date.now()),
+    // Refreshed once an hour, the same as the raid list.
+    maxAge: 60 * 60,
   },
 )
 
