@@ -57,6 +57,10 @@ usePageSeo({
             <span>{{ raid.bossesKilled }} of {{ plural(raid.bossesPulled, 'boss', 'bosses') }} down</span>
             <span aria-hidden="true">·</span>
             <span>{{ plural(raid.raiderCount, 'raider') }}</span>
+            <template v-if="raid.logCount > 1">
+              <span aria-hidden="true">·</span>
+              <span>{{ raid.logCount }} logs</span>
+            </template>
           </span>
         </NuxtLink>
       </li>

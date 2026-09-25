@@ -31,6 +31,7 @@ interface ReportsResponse {
 }
 
 export interface RaidSummary {
+  /** The log the row links to: the one that captured the most of the night. */
   code: string
   title: string
   zone: string | null
@@ -43,6 +44,59 @@ export interface RaidSummary {
   bossesKilled: number
   bossesPulled: number
   raiderCount: number
+  /** How many logs the night was recorded in, when more than one covered it. */
+  logCount: number
+}
+
+const bossNames = (fights: WclFight[], killedOnly = false) =>
+  new Set(fights.filter(fight => !killedOnly || fight.kill).map(fight => fight.name))
+
+// Players who were in at least one boss pull. Every player the log ever saw would also
+// count people who only joined for trash or left before the first boss, which once
+// made a 20-player night read as 58 raiders.
+const bossPlayerCount = (report: WclReport) =>
+  new Set((report.fights ?? []).flatMap(fight => fight.friendlyPlayers ?? [])).size
+
+/**
+ * One raid night from the logs that recorded it. Bosses are counted across all of
+ * them, so a night logged in parts shows everything that happened. The row links to
+ * the log with the most bosses (then kills, then length), and the headcount is that
+ * of the largest log: actor ids differ between logs, so players cannot be added up.
+ */
+const toRaidSummary = (logs: WclReport[]): RaidSummary => {
+  const fights = logs.flatMap(log => log.fights ?? [])
+
+  const main = [...logs].sort((a, b) =>
+    bossNames(b.fights ?? []).size - bossNames(a.fights ?? []).size
+    || bossNames(b.fights ?? [], true).size - bossNames(a.fights ?? [], true).size
+    || (b.endTime - b.startTime) - (a.endTime - a.startTime),
+  )[0]!
+
+  // Higher integer means harder, and a night can span difficulties (e.g. a Heroic
+  // clear followed by Mythic prog), so the summary reflects the hardest pull.
+  const maxDifficulty = fights.reduce<number | null>((max, fight) => {
+    if (fight.difficulty == null) return max
+    return max == null ? fight.difficulty : Math.max(max, fight.difficulty)
+  }, null)
+
+  const start = Math.min(...logs.map(log => log.startTime))
+  const end = Math.max(...logs.map(log => log.endTime))
+
+  return {
+    code: main.code,
+    title: main.title,
+    zone: main.zone?.name ?? null,
+    startedAt: new Date(start).toISOString(),
+    endedAt: new Date(end).toISOString(),
+    durationMs: end - start,
+    difficulty: difficultyName(maxDifficulty),
+    // Distinct boss names, not raw fight counts: twenty pulls on one boss is one boss
+    // pulled, not twenty.
+    bossesKilled: bossNames(fights, true).size,
+    bossesPulled: bossNames(fights).size,
+    raiderCount: Math.max(...logs.map(bossPlayerCount)),
+    logCount: logs.length,
+  }
 }
 
 const REPORTS_QUERY = `
@@ -139,49 +193,11 @@ const loadRaidNights = async (tierId: number): Promise<RaidSummary[]> => {
   // A log tagged to the guild and uploaded by a logger comes back from both queries.
   const reports = new Map([...loggerReports, ...guildReports].map(report => [report.code, report]))
 
-  const raids = [...reports.values()]
-    .map((report) => {
-      const fights = report.fights ?? []
+  // A log with no boss pulls is not a raid night: a short trash or test log that
+  // someone uploaded under the guild. It has nothing to show on the detail page.
+  const withBosses = [...reports.values()].filter(report => (report.fights ?? []).length > 0)
 
-      // Higher integer means harder, and a night can span difficulties (e.g. a Heroic
-      // clear followed by Mythic prog), so the summary reflects the hardest pull.
-      const maxDifficulty = fights.reduce<number | null>((max, fight) => {
-        if (fight.difficulty == null) return max
-        return max == null ? fight.difficulty : Math.max(max, fight.difficulty)
-      }, null)
-
-      // Distinct boss names, not raw fight counts: twenty pulls on one boss is one
-      // boss pulled, not twenty.
-      const pulledBosses = new Set(fights.map(fight => fight.name))
-      const killedBosses = new Set(
-        fights.filter(fight => fight.kill).map(fight => fight.name),
-      )
-
-      return {
-        code: report.code,
-        title: report.title,
-        zone: report.zone?.name ?? null,
-        startedAt: new Date(report.startTime).toISOString(),
-        endedAt: new Date(report.endTime).toISOString(),
-        durationMs: report.endTime - report.startTime,
-        difficulty: difficultyName(maxDifficulty),
-        bossesKilled: killedBosses.size,
-        bossesPulled: pulledBosses.size,
-        // Players who were in at least one boss pull. Every player the log ever saw
-        // would also count people who only joined for trash or left before the first
-        // boss, which once made a 20-player night read as 58 raiders.
-        raiderCount: new Set(fights.flatMap(fight => fight.friendlyPlayers ?? [])).size,
-      }
-    })
-    // The API already returns newest first, but sorting here is a cheap guarantee
-    // rather than a fix for any known ordering bug. ISO strings sort lexicographically
-    // in the same order as chronologically.
-    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
-    // A log with no boss pulls is not a raid night: a short trash or test log that
-    // someone uploaded under the guild. It has nothing to show on the detail page.
-    .filter(raid => raid.bossesPulled > 0)
-
-  return dedupeRaidNights(raids)
+  return groupRaidNights(withBosses).map(toRaidSummary)
 }
 
 // The current tier is refreshed once an hour, so a new raid night shows up within
