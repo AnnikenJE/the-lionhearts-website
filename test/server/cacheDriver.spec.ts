@@ -23,7 +23,7 @@ afterEach(() => {
 
 describe('memoryOverKv', () => {
   it('works as plain memory without a KV binding', async () => {
-    const driver = memoryOverKv({})
+    const driver = memoryOverKv({ writes: true })
     await driver.setItem!('nitro:functions:raids:lionhearts:53.json', 'nights', {})
     expect(await driver.getItem('nitro:functions:raids:lionhearts:53.json', {})).toBe('nights')
   })
@@ -31,7 +31,7 @@ describe('memoryOverKv', () => {
   it('writes to KV too, with an expiry, so other instances and later deploys can read it', async () => {
     const kv = fakeKv()
     withBinding(kv)
-    await memoryOverKv({}).setItem!('nitro:functions:raids:lionhearts:53.json', 'nights', {})
+    await memoryOverKv({ writes: true }).setItem!('nitro:functions:raids:lionhearts:53.json', 'nights', {})
     expect(kv.data.get('nitro:functions:raids:lionhearts:53.json')).toBe('nights')
     expect(kv.put.mock.calls[0]![2]).toMatchObject({ expirationTtl: 8 * 24 * 60 * 60 })
   })
@@ -40,7 +40,7 @@ describe('memoryOverKv', () => {
     const kv = fakeKv()
     kv.data.set('nitro:functions:raid:abc.json', 'detail')
     withBinding(kv)
-    const driver = memoryOverKv({})
+    const driver = memoryOverKv({ writes: true })
     expect(await driver.getItem('nitro:functions:raid:abc.json', {})).toBe('detail')
     await driver.getItem('nitro:functions:raid:abc.json', {})
     expect(kv.get).toHaveBeenCalledTimes(1)
@@ -52,7 +52,7 @@ describe('memoryOverKv', () => {
     kv.put.mockRejectedValue(new Error('KV down'))
     withBinding(kv)
     vi.spyOn(console, 'error').mockImplementation(() => {})
-    const driver = memoryOverKv({})
+    const driver = memoryOverKv({ writes: true })
     await driver.setItem!('nitro:functions:raid:abc.json', 'detail', {})
     expect(await driver.getItem('nitro:functions:raid:abc.json', {})).toBe('detail')
     expect(await driver.getItem('missing', {})).toBeNull()
@@ -76,7 +76,20 @@ describe('isShared', () => {
   it('never writes a Raider.IO entry to KV', async () => {
     const kv = fakeKv()
     withBinding(kv)
-    await memoryOverKv({}).setItem!('nitro:functions:roster:lionhearts.json', 'members', {})
+    await memoryOverKv({ writes: true }).setItem!('nitro:functions:roster:lionhearts.json', 'members', {})
     expect(kv.put).not.toHaveBeenCalled()
+  })
+})
+
+describe('memoryOverKv without writes', () => {
+  it('reads the shared cache but never writes to it, as on a preview', async () => {
+    const kv = fakeKv()
+    kv.data.set('nitro:functions:raid:abc.json', 'detail')
+    withBinding(kv)
+    const driver = memoryOverKv({ writes: false })
+    expect(await driver.getItem('nitro:functions:raid:abc.json', {})).toBe('detail')
+    await driver.setItem!('nitro:functions:raids:lionhearts:53.json', 'nights', {})
+    expect(kv.put).not.toHaveBeenCalled()
+    expect(await driver.getItem('nitro:functions:raids:lionhearts:53.json', {})).toBe('nights')
   })
 })

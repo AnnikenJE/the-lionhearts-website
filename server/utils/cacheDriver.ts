@@ -42,12 +42,14 @@ const attempt = async <T>(run: () => T | Promise<T>, fallback: T): Promise<T> =>
   }
 }
 
-export const memoryOverKv = defineDriver(() => {
+export const memoryOverKv = defineDriver((options: { writes?: boolean } = {}) => {
   const memory = memoryDriver()
   const kv = cloudflareKVBindingDriver({ binding: BINDING })
   // Cloudflare hands the bindings over per request, as globalThis.__env__.
   const hasKv = () => !!(globalThis as { __env__?: Record<string, unknown> }).__env__?.[BINDING]
   const useKv = (key: string) => isShared(key) && hasKv()
+  // Writes only where asked for (production); elsewhere KV is read-only.
+  const writeKv = (key: string) => options.writes === true && useKv(key)
 
   return {
     name: 'memory-over-kv',
@@ -63,11 +65,11 @@ export const memoryOverKv = defineDriver(() => {
     },
     async setItem(key, value) {
       await memory.setItem!(key, value, {})
-      if (useKv(key)) await attempt(() => kv.setItem!(key, value, { ttl: KV_TTL_SECONDS }), undefined)
+      if (writeKv(key)) await attempt(() => kv.setItem!(key, value, { ttl: KV_TTL_SECONDS }), undefined)
     },
     async removeItem(key) {
       await memory.removeItem!(key, {})
-      if (useKv(key)) await attempt(() => kv.removeItem!(key, {}), undefined)
+      if (writeKv(key)) await attempt(() => kv.removeItem!(key, {}), undefined)
     },
     getKeys: base => memory.getKeys(base, {}),
     clear: base => memory.clear!(base, {}),

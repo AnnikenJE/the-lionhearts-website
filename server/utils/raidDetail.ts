@@ -90,11 +90,11 @@ const toPlayer = (entry: WclPlayerEntry): RaidPlayer => ({
 const DAY_MS = 24 * 60 * 60 * 1000
 
 // The report is cached as a function rather than the whole route being a cached
-// handler, so opt-outs can be applied after the cache. A finished log never changes,
+// handler, so opt-outs can be applied after the cache (see defineCache). A finished log never changes,
 // so one that had ended a day before it was fetched is kept for a week; a recent one
 // may still be live-logging and is fetched again after an hour. `priority` is not
 // part of the key: the character pages ask at low priority for the same reports.
-export const fetchRaid = defineCachedFunction(
+export const fetchRaid = defineCache(
   async (code: string, priority: QueryPriority): Promise<RaidDetail> => {
     const report = (await wclQuery<WclResponse>(QUERY, { code }, priority)).reportData.report
 
