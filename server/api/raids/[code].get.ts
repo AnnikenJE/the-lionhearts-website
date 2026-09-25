@@ -157,14 +157,14 @@ const toPlayer = (entry: WclPlayerEntry): RaidPlayer => ({
   server: entry.server ?? null,
 })
 
-export default defineCachedEventHandler(
-  async (event): Promise<RaidDetail> => {
-    const code = getRouterParam(event, 'code')
-
-    if (!code || !CODE_PATTERN.test(code)) {
-      throw createError({ statusCode: 404, statusMessage: 'Raid not found' })
-    }
-
+// The report is cached as a function rather than the whole route being a cached
+// handler, for two reasons. A cached handler fixes one maxAge for every report, and
+// Warcraft Logs asks for a short one on a live log but is happy with a long one on a
+// finished log; `validate` can tell the two apart, but only on a cached function.
+// And opt-outs are applied after the cache, so adding a name takes effect on the next
+// request even if the cache ever outlives a deploy (see the Workers KV issue).
+const fetchRaid = defineCachedFunction(
+  async (code: string): Promise<RaidDetail> => {
     const data = await wclQuery<WclResponse>(QUERY, { code })
     const report = data.reportData.report
 
@@ -183,14 +183,38 @@ export default defineCachedEventHandler(
       durationMs: report.endTime - report.startTime,
       logUrl: `https://www.warcraftlogs.com/reports/${report.code}`,
       fights: collapseFights(report.fights ?? []),
-      // Opt-outs are applied here as well as on the roster, so a character that
-      // asked to be removed is gone from the raid nights too.
-      tanks: withoutOptedOut(tanks.map(toPlayer)),
-      healers: withoutOptedOut(healers.map(toPlayer)),
-      dps: withoutOptedOut(dps.map(toPlayer)),
+      tanks: tanks.map(toPlayer),
+      healers: healers.map(toPlayer),
+      dps: dps.map(toPlayer),
     }
   },
-  // A finished log never changes, so an hour is conservative and keeps repeat visits
-  // off the Warcraft Logs rate limit.
-  { maxAge: 60 * 60, name: 'raid', getKey: event => getRouterParam(event, 'code') ?? '' },
+  {
+    name: 'raid',
+    getKey: (code: string) => code,
+    // A day for a finished log. The docs would allow longer, but the in-memory cache
+    // resets on every deploy anyway, so a longer window buys almost nothing.
+    maxAge: 24 * 60 * 60,
+    validate: entry =>
+      entry.value !== undefined
+      && isReportCacheFresh(entry.mtime ?? 0, Date.parse(entry.value.endedAt), Date.now()),
+  },
 )
+
+export default defineEventHandler(async (event): Promise<RaidDetail> => {
+  const code = getRouterParam(event, 'code')
+
+  if (!code || !CODE_PATTERN.test(code)) {
+    throw createError({ statusCode: 404, statusMessage: 'Raid not found' })
+  }
+
+  const raid = await fetchRaid(code)
+
+  // Opt-outs are applied here as well as on the roster, so a character that asked to
+  // be removed is gone from the raid nights too.
+  return {
+    ...raid,
+    tanks: withoutOptedOut(raid.tanks),
+    healers: withoutOptedOut(raid.healers),
+    dps: withoutOptedOut(raid.dps),
+  }
+})
