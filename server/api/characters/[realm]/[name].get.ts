@@ -1,7 +1,6 @@
 // One character: Raider.IO's profile (gear, Mythic+, raid progression) and Warcraft
 // Logs' rankings for one raid tier, plus the guild raid nights the character was in.
 // Runs server-side so both APIs stay off the browser and the result can be cached.
-import { realmSlug } from '../../../../app/utils/wow'
 import type {
   CharacterDifficultyRankings,
   CharacterGearItem,
@@ -126,7 +125,7 @@ const fetchAttendance = async (realm: string, name: string, soft: Soft) => {
   const details = await Promise.all(nights.map(night => soft(fetchRaid(night.code), null)))
   const raids = details.filter(raid => raid !== null)
 
-  return findRaidNights(raids, name, server => realmSlug(server ?? GUILD.serverSlug) === realm)
+  return findRaidNights(raids, name, server => realmKey(server ?? GUILD.serverSlug) === realmKey(realm))
 }
 
 // Raidbots' bonus id table is 1.7 MB; only the small track lookup built from it is
@@ -244,16 +243,18 @@ export default defineEventHandler(async (event): Promise<CharacterProfile> => {
     throw createError({ statusCode: 404, statusMessage: 'Character not found' })
   }
 
-  // Only the guild's own members get a page. Anyone else, a pug from a raid log say,
-  // gets the same 404 as a name that does not exist.
-  const roster = await fetchRoster().catch(() => {
+  // Only the guild's own members get a page. Anyone else, a pug or a former member,
+  // gets the same 404 as a name that does not exist. The realm is looked up in the
+  // member index too, so the APIs get Raider.IO's own slug for it.
+  const members = await fetchMemberIndex().catch(() => {
     throw createError({ statusCode: 502, statusMessage: 'Could not reach Raider.IO' })
   })
-  if (!rosterKeys(roster).has(rosterKey(name, realm))) {
+  const memberRealm = members.get(rosterKey(name, realm))
+  if (!memberRealm) {
     throw createError({ statusCode: 404, statusMessage: 'Character not found' })
   }
 
-  const { profile, complete } = await fetchCharacter(realm, name, raidTier(getQuery(event).tier).id)
+  const { profile, complete } = await fetchCharacter(memberRealm, name, raidTier(getQuery(event).tier).id)
 
   if (!profile) {
     // Nothing found, but only a real 404 if nothing failed along the way either.

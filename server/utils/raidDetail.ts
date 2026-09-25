@@ -54,6 +54,8 @@ export interface RaidPlayer {
    * Null when the roster could not be read. Only roster members get a character page.
    */
   onRoster?: boolean | null
+  /** The member's realm slug for their character page link, set with onRoster. */
+  realmSlug?: string | null
 }
 
 export interface RaidDetail {

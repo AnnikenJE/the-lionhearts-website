@@ -1,8 +1,9 @@
-// The guild roster from Raider.IO, as a cached function rather than a cached route, so
-// the raid lists can also use it to tell a guild night from a pug.
+// The guild roster from Raider.IO. The raw member list is cached once, an hour, and
+// both the roster page and the membership checks (character pages, raid nights) are
+// built from it.
 import type { RaiderIoMember } from './roster'
 
-export const fetchRoster = defineCachedFunction(
+const fetchGuildMembers = defineCachedFunction(
   async () => {
     const data = await $fetch<{ members: RaiderIoMember[] }>(
       'https://raider.io/api/v1/guilds/profile',
@@ -16,9 +17,14 @@ export const fetchRoster = defineCachedFunction(
         },
       },
     )
-
-    return toRosterMembers(data.members)
+    return data.members
   },
   // Raider.IO crawls roughly daily, so an hour is polite and plenty fresh.
   { maxAge: 60 * 60, name: 'roster', getKey: () => 'lionhearts' },
 )
+
+/** The roster as the roster page shows it: ranked members, sorted, opt-outs removed. */
+export const fetchRoster = async () => toRosterMembers(await fetchGuildMembers())
+
+/** Every guild member, rank 99 included, as rosterKey to realm slug. */
+export const fetchMemberIndex = async () => toMemberIndex(await fetchGuildMembers())

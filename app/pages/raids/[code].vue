@@ -125,7 +125,7 @@ usePageSeo(() => ({
                      player with no realm in the log is on the guild's own realm. -->
                 <NuxtLink
                   v-if="player.onRoster !== false"
-                  :to="characterPath(player.server ?? 'Darkmoon Faire', player.name)"
+                  :to="characterPath(player.realmSlug ?? player.server ?? 'Darkmoon Faire', player.name)"
                   class="hover:underline"
                   :style="{ color: classColor(player.className) }"
                 >{{ player.name }}</NuxtLink>
