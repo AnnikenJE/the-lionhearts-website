@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dedupeRaidNights } from '../../server/utils/raids'
+import { countRosterPlayers, dedupeRaidNights } from '../../server/utils/raids'
 
 const night = (
   code: string,
@@ -45,5 +45,26 @@ describe('dedupeRaidNights', () => {
   it('does not treat back-to-back logs as the same night', () => {
     const raids = [night('a', '19:00', '20:00'), night('b', '18:00', '19:00')]
     expect(dedupeRaidNights(raids)).toHaveLength(2)
+  })
+})
+
+describe('countRosterPlayers', () => {
+  const actors = [
+    { id: 1, name: 'Anniken' },
+    { id: 2, name: 'Destructo' },
+    { id: 3, name: 'Pugger' },
+  ]
+  const roster = new Set(['anniken', 'destructo'])
+
+  it('counts the players who are on the roster, ignoring case', () => {
+    expect(countRosterPlayers([1, 2, 3], actors, roster)).toBe(2)
+  })
+
+  it('counts a player once however many boss fights they were in', () => {
+    expect(countRosterPlayers([1, 1, 1, 3], actors, roster)).toBe(1)
+  })
+
+  it('skips ids with no name in the log', () => {
+    expect(countRosterPlayers([99], actors, roster)).toBe(0)
   })
 })
