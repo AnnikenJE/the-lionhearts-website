@@ -13,9 +13,10 @@ const NAV = [
 ]
 
 // A pill that fills in on hover, and stays filled on the current page. A little tighter
-// on phones, so all six fit on one line instead of wrapping under a sticky header.
+// on phones, so all six fit on one line down to a 360px screen instead of wrapping under a
+// sticky header.
 const navLink
-  = 'shrink-0 rounded-md px-2.5 py-1.5 text-sm font-medium text-fg-muted transition hover:bg-surface hover:text-fg sm:px-3 '
+  = 'shrink-0 rounded-md px-2 py-1.5 text-sm font-medium text-fg-muted transition hover:bg-surface hover:text-fg sm:px-3 '
     + '[&.router-link-active]:bg-surface [&.router-link-active]:text-fg'
 
 // Padded to a comfortable touch target, with the padding taken back out of the layout.
@@ -33,7 +34,7 @@ const footerLink = '-my-1.5 inline-block py-1.5 text-sm text-fg-muted transition
           <span class="inline-flex w-7"><GuildCrest /></span>
           The Lionhearts
         </NuxtLink>
-        <nav class="flex max-w-full gap-0.5 overflow-x-auto [scrollbar-width:none] sm:gap-1" aria-label="Primary">
+        <nav class="flex max-w-full overflow-x-auto [scrollbar-width:none] sm:gap-1" aria-label="Primary">
           <NuxtLink v-for="item in NAV" :key="item.to" :to="item.to" :class="navLink">
             {{ item.label }}
           </NuxtLink>
