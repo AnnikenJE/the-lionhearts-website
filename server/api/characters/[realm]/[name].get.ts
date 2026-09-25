@@ -111,16 +111,18 @@ const fetchLogs = async (realm: string, name: string, zone: number, metric: 'dps
   }
   catch (error) {
     // Not configured: the page still has Raider.IO's half, so it renders without logs.
-    if ((error as { statusCode?: number }).statusCode === 503) return null
+    if (isNotConfigured(error)) return null
     throw error
   }
 }
 
+type Soft = <T>(promise: Promise<T>, fallback: T) => Promise<T>
+
 // Every guild raid night currently listed, in detail. Both are cached on their own,
 // so this is cheap after the first character page of the hour.
-const fetchAttendance = async (realm: string, name: string) => {
-  const nights = await fetchRaidNights().catch(() => [])
-  const details = await Promise.all(nights.map(night => fetchRaid(night.code).catch(() => null)))
+const fetchAttendance = async (realm: string, name: string, soft: Soft) => {
+  const nights = await soft(fetchRaidNights(), [])
+  const details = await Promise.all(nights.map(night => soft(fetchRaid(night.code), null)))
   const raids = details.filter(raid => raid !== null)
 
   return findRaidNights(raids, name, server => realmSlug(server ?? GUILD.serverSlug) === realm)
@@ -134,25 +136,42 @@ const fetchUpgradeTracks = defineCachedFunction(
   { name: 'upgrade-tracks', getKey: () => 'live', maxAge: 24 * 60 * 60 },
 )
 
+interface CharacterResult {
+  profile: CharacterProfile | null
+  /**
+   * False when a part failed for a reason that passes on its own (an outage, a
+   * timeout). The page still renders without that part, but the result is not
+   * cached, so the next visit tries again instead of showing a gap for an hour.
+   */
+  complete: boolean
+}
+
 const fetchCharacter = defineCachedFunction(
-  async (realm: string, name: string, tierId: number): Promise<CharacterProfile | null> => {
+  async (realm: string, name: string, tierId: number): Promise<CharacterResult> => {
+    let complete = true
+    const soft: Soft = (promise, fallback) =>
+      promise.catch(() => {
+        complete = false
+        return fallback
+      })
+
     const tier = raidTier(tierId)
     const raiderIo = await fetchRaiderIo(realm, name)
     const metric = rankingMetric(raiderIo?.active_spec_role)
 
     const [wcl, raidNights, tracks] = await Promise.all([
-      fetchLogs(realm, name, tier.id, metric),
-      fetchAttendance(realm, name),
-      fetchUpgradeTracks().catch(() => ({})),
+      soft(fetchLogs(realm, name, tier.id, metric), null),
+      fetchAttendance(realm, name, soft),
+      soft(fetchUpgradeTracks(), {}),
     ])
 
-    if (!raiderIo && !wcl) return null
+    if (!raiderIo && !wcl) return { profile: null, complete }
 
     const displayName = raiderIo?.name ?? wcl?.name ?? name
     const season = raiderIo?.mythic_plus_scores_by_season?.[0]
     const bestRuns = toMythicPlusRuns(raiderIo?.mythic_plus_best_runs)
 
-    return {
+    const profile: CharacterProfile = {
       name: displayName,
       realm: raiderIo?.realm ?? realm,
       realmSlug: realm,
@@ -188,12 +207,15 @@ const fetchCharacter = defineCachedFunction(
         armory: `https://worldofwarcraft.blizzard.com/en-gb/character/eu/${realm}/${encodeURIComponent(displayName.toLowerCase())}`,
       },
     }
+
+    return { profile, complete }
   },
   {
     name: 'character',
     getKey: (realm: string, name: string, tierId: number) => `${realm}:${name.toLowerCase()}:${tierId}`,
     // Refreshed once an hour, like the raid pages.
     maxAge: 60 * 60,
+    validate: entry => entry.value !== undefined && entry.value.complete,
   },
 )
 
@@ -207,11 +229,14 @@ export default defineEventHandler(async (event): Promise<CharacterProfile> => {
     throw createError({ statusCode: 404, statusMessage: 'Character not found' })
   }
 
-  const character = await fetchCharacter(realm, name, raidTier(getQuery(event).tier).id)
+  const { profile, complete } = await fetchCharacter(realm, name, raidTier(getQuery(event).tier).id)
 
-  if (!character) {
-    throw createError({ statusCode: 404, statusMessage: 'Character not found' })
+  if (!profile) {
+    // Nothing found, but only a real 404 if nothing failed along the way either.
+    throw complete
+      ? createError({ statusCode: 404, statusMessage: 'Character not found' })
+      : createError({ statusCode: 502, statusMessage: 'Could not reach Raider.IO or Warcraft Logs' })
   }
 
-  return character
+  return profile
 })

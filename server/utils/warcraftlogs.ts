@@ -64,6 +64,16 @@ interface GraphQLResponse<T> {
 // per request. A cold start just fetches a new one, which is cheap and harmless.
 let cached: { token: string, expiresAt: number } | null = null
 
+const NOT_CONFIGURED = 'Warcraft Logs is not configured'
+
+/**
+ * True only for the missing-credentials error. Warcraft Logs itself can also answer
+ * 503 during an outage, and that must not be mistaken for "not configured": one is
+ * permanent until someone sets the secrets, the other passes on its own.
+ */
+export const isNotConfigured = (error: unknown) =>
+  (error as { statusMessage?: string }).statusMessage === NOT_CONFIGURED
+
 const readCredentials = () => {
   const { wcl: config } = useRuntimeConfig()
 
@@ -80,7 +90,7 @@ const readCredentials = () => {
   if (!wcl.clientId || !wcl.clientSecret) {
     throw createError({
       statusCode: 503,
-      statusMessage: 'Warcraft Logs is not configured',
+      statusMessage: NOT_CONFIGURED,
     })
   }
 
