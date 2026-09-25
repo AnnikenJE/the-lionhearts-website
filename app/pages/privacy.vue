@@ -12,18 +12,18 @@ const SOURCES = [
   {
     name: 'Raider.IO',
     url: 'https://raider.io/guilds/eu/darkmoon-faire/The%20Lionhearts',
-    body: 'The roster page, and the Mythic+ numbers that go with it. Raider.IO builds its guild profile from public game data.',
+    body: 'The roster page, and on a character page the equipped gear, item level, Mythic+ score and best runs, and raid progression. Raider.IO builds its profiles from public game data.',
   },
   {
     name: 'Warcraft Logs',
     url: 'https://www.warcraftlogs.com/guild/eu/darkmoon-faire/the%20lionhearts',
-    body: 'The raid nights: which bosses we pulled, which ones died, and who was in the group. Those logs are uploaded by our own raiders and are already public on Warcraft Logs.',
+    body: 'The raid nights: which bosses we pulled, which ones died, and who was in the group. On a character page, their parses: the percentile rankings, best damage or healing per boss, kill counts and realm ranks that Warcraft Logs publishes for every ranked character. Logs are uploaded by our own raiders and are already public on Warcraft Logs; a character hidden there is not shown here either.',
   },
 ]
 
 const link = 'text-accent underline underline-offset-4 transition hover:no-underline'
 
-const LAST_UPDATED = '3 September 2026'
+const LAST_UPDATED = '25 September 2026'
 
 usePageSeo({
   title: 'Privacy',
@@ -50,6 +50,9 @@ usePageSeo({
         The roster lists each character in the guild by name, with their class,
         specialisation, realm and guild rank. The raid pages list the bosses we
         pulled on a given night and which characters were in the raid group.
+        Each character also has a page of their own, with their raid parses,
+        gear, Mythic+ runs, raid progression and the guild raid nights they were
+        in, for anyone on the roster or in one of our raid logs.
       </p>
       <p class="mt-4 text-fg-muted">
         All of it is character data. None of it is account data: no real names,
@@ -79,9 +82,9 @@ usePageSeo({
         </div>
       </dl>
       <p class="mt-6 text-fg-muted">
-        Those calls are made by our server, not by your browser, so visiting this
-        site does not hand your IP address to Blizzard, Raider.IO or Warcraft
-        Logs.
+        Those calls are made by our server, not by your browser, so loading a
+        page does not hand your IP address to Raider.IO or Warcraft Logs. The
+        images on character pages are the exception, see below.
       </p>
     </section>
 
@@ -93,9 +96,10 @@ usePageSeo({
         and there is nothing to opt in or out of.
       </p>
       <p class="mt-4 text-fg-muted">
-        The one thing loaded from outside is the site's typeface, served by
-        Google Fonts, which means your browser requests the font file from
-        Google. The site itself does not pass anything to them.
+        A few things are loaded from outside, which means your browser requests
+        them directly: the site's typeface from Google Fonts, and on character
+        pages the character portrait from Blizzard's image server and the item
+        icons from Wowhead's. The site itself does not pass anything to them.
       </p>
     </section>
 
@@ -106,7 +110,8 @@ usePageSeo({
         Lionheart or one of the Royal Advisors on
         <a :href="DISCORD_URL" target="_blank" rel="noopener" :class="link">our Discord</a>
         and say which character you mean. We add the name to the site's opt-out
-        list and it disappears from the roster and from every raid page.
+        list and it disappears from the roster, from every raid page, and its
+        character page stops existing.
       </p>
       <p class="mt-4 text-fg-muted">
         That covers this site only. Your character stays visible in game, on the

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { plural } from '../../app/utils/text'
+import { compactNumber, plural } from '../../app/utils/text'
 
 describe('plural', () => {
   it('keeps the singular at one', () => {
@@ -14,5 +14,14 @@ describe('plural', () => {
   it('takes an irregular plural rather than guessing', () => {
     expect(plural(3, 'boss', 'bosses')).toBe('3 bosses')
     expect(plural(1, 'boss', 'bosses')).toBe('1 boss')
+  })
+})
+
+describe('compactNumber', () => {
+  it('shortens thousands and millions to one decimal', () => {
+    expect(compactNumber(140897.03)).toBe('140.9k')
+    expect(compactNumber(1525.56)).toBe('1.5k')
+    expect(compactNumber(46196672)).toBe('46.2m')
+    expect(compactNumber(950)).toBe('950')
   })
 })

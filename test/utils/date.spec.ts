@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatDuration, formatTime } from '../../app/utils/date'
+import { formatClock, formatDate, formatDuration, formatTime } from '../../app/utils/date'
 
 // Both formatters render in the viewer's own timezone, so the fixtures are built
 // from local parts rather than a fixed UTC string. That keeps the assertions true
@@ -44,5 +44,17 @@ describe('formatDuration', () => {
   it('treats zero and negative spans as nothing', () => {
     expect(formatDuration(0)).toBe('0m')
     expect(formatDuration(-1)).toBe('0m')
+  })
+})
+
+describe('formatClock', () => {
+  it('reads as minutes and seconds', () => {
+    expect(formatClock(336463)).toBe('5:36')
+    expect(formatClock(1158706)).toBe('19:19')
+    expect(formatClock(59_000)).toBe('0:59')
+  })
+
+  it('never goes negative', () => {
+    expect(formatClock(-5)).toBe('0:00')
   })
 })

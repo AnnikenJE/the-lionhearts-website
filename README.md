@@ -19,7 +19,8 @@ Live at **https://thelionhearts.eu/**.
 
 - **Landing page.** Hero, raid nights, links into the other pages, and the latest news.
 - **About.** What the guild runs, the raid schedule, and who to contact.
-- **Roster.** Pulled live from the Raider.IO API and grouped by in-game rank, with collapsible sections, search across name, class and spec, class and role filters, and official WoW class colours. Members link to their Raider.IO profiles.
+- **Roster.** Pulled live from the Raider.IO API and grouped by in-game rank, with collapsible sections, search across name, class and spec, class and role filters, and official WoW class colours. Every member links to their character page.
+- **Characters.** A page for every raider, on the roster or in a guild raid log: Warcraft Logs parses per boss for any of the guild's raid tiers (best and median percentile, best DPS or HPS, kills, fastest kill, realm rank, All Stars), the guild raid nights they were in, Mythic+ score and best runs, equipped gear and raid progression from Raider.IO.
 - **Raids.** Recent raid nights from the Warcraft Logs API: bosses down and headcount per night, and a detail page per log with the boss list and who attended. Needs API credentials, see below.
 - **Rules.** Guild and raid rules.
 - **News.** Markdown posts from `content/news/`, currently switched off behind a flag (see below).
