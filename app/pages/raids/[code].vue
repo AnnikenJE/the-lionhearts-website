@@ -120,7 +120,12 @@ usePageSeo(() => ({
             </h3>
             <div class="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-3 md:grid-cols-4">
               <p v-for="player in group.members" :key="player.name" class="truncate text-sm">
-                <span :style="{ color: classColor(player.className) }">{{ player.name }}</span>
+                <!-- A player with no realm in the log is on the guild's own. -->
+                <NuxtLink
+                  :to="characterPath(player.server ?? 'Darkmoon Faire', player.name)"
+                  class="hover:underline"
+                  :style="{ color: classColor(player.className) }"
+                >{{ player.name }}</NuxtLink>
                 <span v-if="player.spec" class="ml-1.5 text-fg-subtle">{{ player.spec }}</span>
               </p>
             </div>

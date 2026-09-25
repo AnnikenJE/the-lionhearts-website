@@ -171,13 +171,11 @@ usePageSeo({
             :key="m.name + m.realm"
             class="flex break-inside-avoid flex-col rounded-lg px-3 py-2 transition hover:bg-surface"
           >
-            <a
-              :href="m.profileUrl"
-              target="_blank"
-              rel="noopener"
+            <NuxtLink
+              :to="characterPath(m.realm, m.name)"
               class="font-medium hover:underline"
               :style="{ color: classColor(m.class) }"
-            >{{ m.name }}</a>
+            >{{ m.name }}</NuxtLink>
             <span class="text-sm text-fg-subtle">
               {{ m.spec ? `${m.spec} ${m.class}` : m.class }}
             </span>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { difficultyName } from '../../server/utils/warcraftlogs'
+import { difficultyName, isNotConfigured } from '../../server/utils/warcraftlogs'
 
 describe('difficultyName', () => {
   it('names the retail raid difficulties', () => {
@@ -12,5 +12,15 @@ describe('difficultyName', () => {
     expect(difficultyName(99)).toBeNull()
     expect(difficultyName(null)).toBeNull()
     expect(difficultyName(undefined)).toBeNull()
+  })
+})
+
+describe('isNotConfigured', () => {
+  it('recognises the missing-credentials error', () => {
+    expect(isNotConfigured({ statusCode: 503, statusMessage: 'Warcraft Logs is not configured' })).toBe(true)
+  })
+
+  it('does not mistake an outage at Warcraft Logs for missing credentials', () => {
+    expect(isNotConfigured({ statusCode: 503, statusMessage: 'Service Unavailable' })).toBe(false)
   })
 })
