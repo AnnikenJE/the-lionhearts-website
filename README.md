@@ -68,7 +68,7 @@ nuxt.config.ts             # Nuxt config
 
 **News.** `NEWS_ENABLED` in `app/data/news.ts` gates the whole section. While it is false the list page shows a coming-soon notice, post routes return 404, and nothing is queried, so unpublished drafts never reach the page payload. Flipping it to true is the whole launch.
 
-**Raid data.** Fetched server-side from the Warcraft Logs v2 GraphQL API. The raid list is cached for 15 minutes. A single log is cached for 10 minutes while it may still be live-logging (fights in the last two hours) and for a day once it has finished, which is the split the Warcraft Logs quota docs recommend.
+**Raid data.** Fetched server-side from the Warcraft Logs v2 GraphQL API. The raid list and each log are cached and refreshed once an hour, so Warcraft Logs is asked at most once an hour per page however many people visit. A night being logged live therefore shows up to an hour behind. Two logs of the same night (two raiders logging) are shown as one, and logs with no boss pulls are left out.
 
 **Crawlers.** `public/robots.txt` currently disallows everything while the site is still being built.
 
@@ -106,7 +106,7 @@ The [RPGLogs API terms](https://www.archon.gg/wow/articles/help/rpg-logs-api-ter
 - **Non-commercial.** Ads, subscriptions or selling data would need prior approval from RPGLogs (and are ruled out by the Blizzard terms anyway).
 - **Only public reports.** The site uses `/api/v2/client`, which only sees public logs.
 - **Attribution.** Every raid page links back to its log on Warcraft Logs, and the footer names Warcraft Logs as a data source. Do not present the site as partnered with or endorsed by RPGLogs.
-- **Caching.** Keep cached copies within what the API allows. The current windows follow the quota docs, see *Raid data* above.
+- **Caching.** Keep cached copies within what the API allows. An hour is well inside what the quota docs recommend, see *Raid data* above.
 - **Privacy.** The terms require a privacy policy that describes what the site collects. `/privacy` covers the Warcraft Logs data, so update it whenever a page starts showing something new from the API.
 
 ## Useful links
