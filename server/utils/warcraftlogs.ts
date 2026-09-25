@@ -153,6 +153,9 @@ export const budgetAllows = (budget: Budget | null, priority: QueryPriority, now
 export const withRateLimitData = (query: string) =>
   query.replace('{', '{ rateLimitData { limitPerHour pointsSpentThisHour pointsResetIn }')
 
+/** The operation name of a query ("query Raid(...)" is "Raid"), for the logs. */
+export const operationName = (query: string) => /query\s+(\w+)/.exec(query)?.[1] ?? 'anonymous'
+
 // The last reading, in module scope like the token.
 let budget: Budget | null = null
 
@@ -221,7 +224,10 @@ export const wclQuery = async <T>(
   variables: Record<string, unknown> = {},
   priority: QueryPriority = 'high',
 ): Promise<T> => {
+  const operation = operationName(query)
+
   if (!budgetAllows(budget, priority, Date.now())) {
+    console.warn(`[wcl] refused ${operation} (${priority}): ${budget?.spent}/${budget?.limit} points this hour`)
     throw createError({ statusCode: 503, statusMessage: BUDGET_EXHAUSTED })
   }
 
@@ -252,6 +258,9 @@ export const wclQuery = async <T>(
 
   const rate = response.data?.rateLimitData
   if (rate) {
+    // One line per query in Cloudflare's function logs, so the hourly spend can be
+    // traced to the queries and variables behind it.
+    console.log(`[wcl] ${operation} (${priority}) ${JSON.stringify(variables)}: ${Math.round(rate.pointsSpentThisHour)}/${rate.limitPerHour} points this hour`)
     budget = {
       spent: rate.pointsSpentThisHour,
       limit: rate.limitPerHour,
