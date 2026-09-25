@@ -126,7 +126,7 @@ usePageSeo(() => ({
       </p>
 
       <div class="mt-6 flex flex-wrap gap-3">
-        <AppButton :href="character.links.warcraftLogs">Warcraft Logs</AppButton>
+        <AppButton :href="character.links.warcraftLogs" variant="secondary">Warcraft Logs</AppButton>
         <AppButton v-if="character.links.raiderIo" :href="character.links.raiderIo" variant="secondary">Raider.IO</AppButton>
         <AppButton :href="character.links.armory" variant="secondary">Armory</AppButton>
       </div>
