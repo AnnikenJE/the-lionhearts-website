@@ -31,7 +31,7 @@ usePageSeo({
       <h1 class="text-display text-fg">Raids</h1>
       <p class="mt-5 text-lg text-fg-muted">
         The guild's raid nights, tier by tier, pulled straight from its Warcraft
-        Logs uploads. Click one to see who was there.
+        Logs uploads.
       </p>
     </header>
 
