@@ -73,7 +73,7 @@ const WCL_QUERY = `
 // Raider.IO's half does not depend on the tier, so it is cached per character on its
 // own and a tier switch only asks Warcraft Logs. An unknown character is a 400 there,
 // which means "not found".
-const fetchRaiderIo = defineCachedFunction(
+const fetchRaiderIo = defineCache(
   (realm: string, name: string) =>
     $fetch<RaiderIoProfile>('https://raider.io/api/v1/characters/profile', {
       timeout: UPSTREAM_TIMEOUT_MS,
@@ -108,12 +108,12 @@ const fetchAttendance = async (realm: string, name: string, soft: Soft) => {
 // Raidbots' bonus id table is 1.7 MB; only the small track lookup built from it is
 // cached, for a day, since tracks only change with a new season. If Raidbots is down
 // the gear simply shows without tracks.
-const fetchUpgradeTracks = defineCachedFunction(
+const fetchUpgradeTracks = defineCache(
   async () => toUpgradeTracks(await $fetch('https://www.raidbots.com/static/data/live/bonuses.json', { timeout: UPSTREAM_TIMEOUT_MS })),
   { name: 'upgrade-tracks', getKey: () => 'live', maxAge: 24 * 60 * 60 },
 )
 
-const fetchCharacter = defineCachedFunction(
+const fetchCharacter = defineCache(
   async (realm: string, name: string, zone: number) => {
     // A part that fails for a reason that passes on its own (an outage, a timeout, a
     // query refused to protect the budget) leaves the page without it and makes the

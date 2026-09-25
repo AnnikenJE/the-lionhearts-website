@@ -190,7 +190,7 @@ const loadRaidNights = async (zone: number) => {
 // logs makes one cost about 130 points of a 3600 an hour budget, so it is refreshed
 // once a week. Either way a tier missing the loggers' nights is only kept briefly.
 const cachedTier = (name: string, maxAge: number) =>
-  defineCachedFunction(loadRaidNights, {
+  defineCache(loadRaidNights, {
     name,
     maxAge,
     validate: keepIfComplete,
