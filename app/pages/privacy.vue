@@ -122,7 +122,8 @@ usePageSeo({
         affiliated with, endorsed by or sponsored by Blizzard Entertainment.
         World of Warcraft and Blizzard Entertainment are trademarks or registered
         trademarks of Blizzard Entertainment, Inc. in the U.S. and other
-        countries. Game data is retrieved through the Blizzard Developer API.
+        countries. The character data shown here is Blizzard's public game
+        data, as collected by Raider.IO and Warcraft Logs.
       </p>
     </section>
 

@@ -61,8 +61,8 @@ const footerLink = 'text-sm text-fg-muted transition hover:text-fg'
         <p class="mt-5 max-w-3xl text-xs leading-relaxed text-fg-subtle">
           A fan site run by the guild, not affiliated with or endorsed by Blizzard
           Entertainment. World of Warcraft and Blizzard Entertainment are trademarks
-          of Blizzard Entertainment, Inc. Character and raid data comes from the
-          Blizzard Developer API, Raider.IO and Warcraft Logs.
+          of Blizzard Entertainment, Inc. Character and raid data comes from
+          Raider.IO and Warcraft Logs.
         </p>
       </div>
     </footer>
