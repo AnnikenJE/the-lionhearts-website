@@ -26,10 +26,8 @@ export interface RosterMember {
   class: string
   spec: string | null
   role: string | null
-  realm: string
   /** The realm as Raider.IO, Warcraft Logs and the Armory spell it in URLs. */
   realmSlug: string
-  profileUrl: string
 }
 
 /**
@@ -57,9 +55,7 @@ export const toRosterMembers = (members: RaiderIoMember[]): RosterMember[] =>
       class: m.character.class,
       spec: m.character.active_spec_name,
       role: m.character.active_spec_role,
-      realm: m.character.realm,
       realmSlug: slugFromProfile(m),
-      profileUrl: m.character.profile_url,
     }))
     .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name))
 

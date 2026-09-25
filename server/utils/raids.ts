@@ -1,15 +1,39 @@
-// Kept out of server/api/raids.get.ts so it can be tested without a Nitro runtime, the
-// same split as server/utils/roster.ts.
+// The Warcraft Logs report shapes and the pure transforms both raid fetchers share
+// (server/utils/raidNights.ts and raidDetail.ts). Kept free of Nitro so it can be
+// tested under plain Vitest, the same split as server/utils/roster.ts.
 
-// Imported explicitly rather than left to Nitro's auto-import, so this module also
-// loads under plain Vitest.
-import { difficultyName } from './warcraftlogs'
+// Imported explicitly rather than left to Nitro's auto-import, for the same reason.
+import { difficultyName, isGuildRaidDifficulty } from './warcraftlogs'
 
-interface TimedLog {
-  /** Epoch milliseconds, as Warcraft Logs reports them. */
-  startTime: number
-  endTime: number
+export interface WclFight {
+  id: number
+  name: string
+  kill: boolean | null
+  difficulty: number | null
+  /** Health left on a wipe, percent. Only the raid detail query asks for it. */
+  fightPercentage?: number | null
+  /** Actor ids of the players in the fight. */
+  friendlyPlayers?: number[] | null
 }
+
+export interface WclActor {
+  id: number
+  name: string
+  /** The realm as Warcraft Logs spells it, "DefiasBrotherhood". */
+  server?: string | null
+}
+
+/** Only the Normal, Heroic and Mythic encounters; see isGuildRaidDifficulty. */
+export const guildRaidFights = <T extends WclFight>(fights: T[] | null | undefined): T[] =>
+  (fights ?? []).filter(fight => isGuildRaidDifficulty(fight.difficulty))
+
+/**
+ * Actor ids of everyone in at least one of these fights. Every player a log ever saw
+ * would also count people who only joined for trash or left before the first boss,
+ * which once made a 20-player night read as 58 raiders.
+ */
+export const bossPlayerIds = (fights: WclFight[]) =>
+  new Set(fights.flatMap(fight => fight.friendlyPlayers ?? []))
 
 /**
  * The longest break between two logs that still makes them one raid night. Long
@@ -24,7 +48,7 @@ export const SAME_NIGHT_GAP_MS = 3 * 60 * 60 * 1000
  * each other with a short break). Either way the list should show it once. Returns
  * the groups newest night first, each group's logs in start order.
  */
-export const groupRaidNights = <T extends TimedLog>(logs: T[]): T[][] => {
+export const groupRaidNights = <T extends { startTime: number, endTime: number }>(logs: T[]): T[][] => {
   const nights: { logs: T[], end: number }[] = []
 
   for (const log of [...logs].sort((a, b) => a.startTime - b.startTime)) {
@@ -43,21 +67,20 @@ export const groupRaidNights = <T extends TimedLog>(logs: T[]): T[][] => {
 }
 
 /**
- * How many of a log's boss-fight players are on the guild roster. A logger's personal
- * log can be a pug, so it only counts as a guild night when enough of the group are
- * guild members. `players` are the actor ids seen in boss fights, `actors` maps ids
- * to names, and `roster` holds lower-cased roster names.
+ * How many of the fights' players are guild members. A log only counts as a guild
+ * night when enough of the group are. `isMember` decides on name and realm, so a pug
+ * who shares a member's name on another realm does not count.
  */
-export const countRosterPlayers = (
-  players: Iterable<number>,
-  actors: { id: number, name: string }[],
-  roster: Set<string>,
+export const countMembers = (
+  fights: WclFight[],
+  actors: WclActor[],
+  isMember: (name: string, server: string | null | undefined) => boolean,
 ): number => {
-  const names = new Map(actors.map(actor => [actor.id, actor.name.toLowerCase()]))
+  const byId = new Map(actors.map(actor => [actor.id, actor]))
   let count = 0
-  for (const id of new Set(players)) {
-    const name = names.get(id)
-    if (name && roster.has(name)) count++
+  for (const id of bossPlayerIds(fights)) {
+    const actor = byId.get(id)
+    if (actor && isMember(actor.name, actor.server)) count++
   }
   return count
 }
@@ -73,25 +96,19 @@ export interface RaidFight {
   bestPercent: number | null
 }
 
-interface FightLike {
-  id: number
-  name: string
-  kill: boolean | null
-  difficulty: number | null
-  fightPercentage: number | null
-}
-
 /**
  * One row per boss and difficulty, in the order they were first pulled. A progression
  * night with twenty wipes on one boss is one row with twenty pulls, and a boss killed
  * on Normal and then on Heroic the same night is two rows, each with its own pulls.
  */
-export const collapseFights = (fights: FightLike[]): RaidFight[] => {
-  const groups = new Map<string, FightLike[]>()
+export const collapseFights = (fights: WclFight[]): RaidFight[] => {
+  const groups = new Map<string, WclFight[]>()
 
   for (const fight of fights) {
     const key = `${fight.name}|${fight.difficulty ?? ''}`
-    groups.set(key, [...(groups.get(key) ?? []), fight])
+    const group = groups.get(key)
+    if (group) group.push(fight)
+    else groups.set(key, [fight])
   }
 
   return [...groups.values()].map((pulls) => {

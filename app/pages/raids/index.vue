@@ -1,33 +1,16 @@
 <script setup lang="ts">
 import type { RaidNightsResponse } from '~~/server/api/raids.get'
 
-const route = useRoute()
+// One key for every tier; see useTierFetch.
+const { shown, pending, error, selectedTierId, switching } = await useTierFetch<RaidNightsResponse>(
+  () => '/api/raids',
+  () => 'raids',
+  response => response,
+)
 
-// The tier lives in the URL (?tier=44) and drives the fetch, so picking a tier in
-// TierNav refetches without a full page load. One fixed key for every tier keeps the
-// previous tier on screen while the next loads: keyed by URL, a new tier would start
-// empty, and a tier not cached yet can take several seconds.
-const query = computed(() => (route.query.tier ? { tier: String(route.query.tier) } : {}))
-const { data, pending, error } = await useFetch<RaidNightsResponse>('/api/raids', { query, key: 'raids' })
-
-// The last tier that loaded. A failed fetch resets `data`, and without this the tier
-// selector would vanish with it, leaving no way to try another tier.
-const shown = shallowRef(data.value)
-watch(data, (value) => {
-  if (value) shown.value = value
-})
-
-// The tier the reader asked for, so the selector moves at once rather than when the
-// data arrives. The first tier is the default with no query.
-const selectedTierId = computed(() => Number(route.query.tier) || shown.value?.tiers[0]?.id || 0)
 const selectedTierName = computed(() => shown.value?.tiers.find(tier => tier.id === selectedTierId.value)?.name ?? 'this tier')
-const switching = computed(() => pending.value && !!shown.value && shown.value.tier.id !== selectedTierId.value)
-
 const raids = computed(() => shown.value?.nights ?? [])
-
-// wclQuery throws a 503 when the Warcraft Logs credentials are not configured,
-// so that specific status gets its own message instead of the generic error one.
-const notConfigured = computed(() => error.value?.statusCode === 503)
+const notConfigured = computed(() => isNotConfigured(error.value))
 
 // Shared by every row, so the left and right halves of the list line up the
 // same way regardless of which fields a given raid has.

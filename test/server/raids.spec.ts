@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { collapseFights, countRosterPlayers, groupRaidNights } from '../../server/utils/raids'
+import { collapseFights, countMembers, groupRaidNights, guildRaidFights } from '../../server/utils/raids'
 
 const log = (code: string, start: string, end: string) => ({
   code,
@@ -32,24 +32,32 @@ describe('groupRaidNights', () => {
   })
 })
 
-describe('countRosterPlayers', () => {
+describe('countMembers', () => {
   const actors = [
-    { id: 1, name: 'Anniken' },
-    { id: 2, name: 'Destructo' },
-    { id: 3, name: 'Pugger' },
+    { id: 1, name: 'Anniken', server: 'DarkmoonFaire' },
+    { id: 2, name: 'Destructo', server: 'Kilrogg' },
+    { id: 3, name: 'Pugger', server: 'Silvermoon' },
+    { id: 4, name: 'Anniken', server: 'Ravencrest' },
   ]
-  const roster = new Set(['anniken', 'destructo'])
+  const members = new Set(['darkmoonfaire:anniken', 'kilrogg:destructo'])
+  const isMember = (name: string, server: string | null | undefined) =>
+    members.has(`${(server ?? '').toLowerCase()}:${name.toLowerCase()}`)
+  const fight = (friendlyPlayers: number[]) => ({ id: 1, name: 'Boss', kill: true, difficulty: 4, friendlyPlayers })
 
-  it('counts the players who are on the roster, ignoring case', () => {
-    expect(countRosterPlayers([1, 2, 3], actors, roster)).toBe(2)
+  it('counts the players who are members', () => {
+    expect(countMembers([fight([1, 2, 3])], actors, isMember)).toBe(2)
   })
 
   it('counts a player once however many boss fights they were in', () => {
-    expect(countRosterPlayers([1, 1, 1, 3], actors, roster)).toBe(1)
+    expect(countMembers([fight([1, 3]), fight([1]), fight([1])], actors, isMember)).toBe(1)
   })
 
-  it('skips ids with no name in the log', () => {
-    expect(countRosterPlayers([99], actors, roster)).toBe(0)
+  it('does not count a pug with a member name on another realm', () => {
+    expect(countMembers([fight([4])], actors, isMember)).toBe(0)
+  })
+
+  it('skips ids with no actor in the log', () => {
+    expect(countMembers([fight([99])], actors, isMember)).toBe(0)
   })
 })
 
@@ -70,5 +78,13 @@ describe('collapseFights', () => {
   it('keeps the order bosses were first pulled in', () => {
     const rows = collapseFights([pull(1, 'B', 4), pull(2, 'A', 4), pull(3, 'B', 4)])
     expect(rows.map(row => row.name)).toEqual(['B', 'A'])
+  })
+})
+
+describe('guildRaidFights', () => {
+  it('keeps Normal, Heroic and Mythic, and drops LFR and Mythic+ runs', () => {
+    const fights = [1, 3, 4, 5, 10].map(difficulty => ({ id: difficulty, name: 'Boss', kill: true, difficulty }))
+    expect(guildRaidFights(fights).map(f => f.difficulty)).toEqual([3, 4, 5])
+    expect(guildRaidFights(null)).toEqual([])
   })
 })

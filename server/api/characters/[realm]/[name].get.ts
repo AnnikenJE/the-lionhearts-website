@@ -10,27 +10,18 @@ import type {
   RaiderIoProfile,
   WclZoneRankings,
 } from '../../../utils/character'
+import type { RaidTier } from '../../../utils/warcraftlogs'
 
-export type {
-  CharacterBossRanking,
-  CharacterDifficultyRankings,
-  CharacterGearItem,
-  CharacterMythicRun,
-  CharacterRaidNight,
-  CharacterRaidProgress,
-} from '../../../utils/character'
+export type { CharacterDifficultyRankings } from '../../../utils/character'
 
 export interface CharacterProfile {
   name: string
   realm: string
-  realmSlug: string
   className: string
   spec: string | null
-  role: string | null
   race: string | null
-  faction: string | null
   thumbnailUrl: string | null
-  guild: { name: string, realm: string } | null
+  guildName: string | null
   achievementPoints: number | null
   itemLevel: number | null
   gear: CharacterGearItem[]
@@ -38,8 +29,8 @@ export interface CharacterProfile {
   raidProgression: CharacterRaidProgress[]
   /** Null when the character has no Warcraft Logs profile, hides it, or the API is not configured. */
   logs: {
-    tier: { id: number, name: string }
-    tiers: { id: number, name: string }[]
+    tier: RaidTier
+    tiers: readonly RaidTier[]
     metric: 'dps' | 'hps'
     difficulties: CharacterDifficultyRankings[]
   } | null
@@ -79,53 +70,39 @@ const WCL_QUERY = `
   }
 `
 
-const fetchRaiderIo = async (realm: string, name: string) => {
-  try {
-    return await $fetch<RaiderIoProfile>('https://raider.io/api/v1/characters/profile', {
+// Raider.IO's half does not depend on the tier, so it is cached per character on its
+// own and a tier switch only asks Warcraft Logs. An unknown character is a 400 there,
+// which means "not found".
+const fetchRaiderIo = defineCachedFunction(
+  (realm: string, name: string) =>
+    $fetch<RaiderIoProfile>('https://raider.io/api/v1/characters/profile', {
       timeout: UPSTREAM_TIMEOUT_MS,
       query: {
-        region: 'eu',
+        region: GUILD.serverRegion.toLowerCase(),
         realm,
         name,
         fields: 'gear,guild,raid_progression,mythic_plus_scores_by_season:current,mythic_plus_best_runs',
       },
-    })
-  }
-  catch (error) {
-    // Raider.IO answers an unknown character with a 400, which means "not found".
-    if ((error as { statusCode?: number }).statusCode === 400) return null
-    throw error
-  }
-}
+    }).catch((error) => {
+      if ((error as { statusCode?: number }).statusCode === 400) return null
+      throw error
+    }),
+  { name: 'raiderio-character', getKey: (realm: string, name: string) => `${realm}:${name.toLowerCase()}`, maxAge: 60 * 60 },
+)
 
-const fetchLogs = async (realm: string, name: string, zone: number, metric: 'dps' | 'hps') => {
-  try {
-    const data = await wclQuery<WclCharacterResponse>(WCL_QUERY, {
-      name,
-      realm,
-      region: GUILD.serverRegion,
-      zone,
-      metric,
-    }, 'low')
-    return data.characterData.character
-  }
-  catch (error) {
-    // Not configured: the page still has Raider.IO's half, so it renders without logs.
-    if (isNotConfigured(error)) return null
-    throw error
-  }
-}
+const fetchLogs = async (realm: string, name: string, zone: number, metric: 'dps' | 'hps') =>
+  (await wclQuery<WclCharacterResponse>(WCL_QUERY, { name, realm, region: GUILD.serverRegion, zone, metric }, 'low'))
+    .characterData.character
 
 type Soft = <T>(promise: Promise<T>, fallback: T) => Promise<T>
 
-// Every guild raid night in the current tier, in detail. Both are cached on their own,
-// so this is cheap after the first character page of the hour.
+// Every guild raid night in the current tier, in detail. Both are cached on their own
+// and shared with the raid pages; asked for at low priority, since a character page is
+// extra and should yield to them when the hourly budget runs short.
 const fetchAttendance = async (realm: string, name: string, soft: Soft) => {
   const nights = await soft(fetchRaidNights(RAID_TIERS[0].id), [])
-  const details = await Promise.all(nights.map(night => soft(fetchRaid(night.code), null)))
-  const raids = details.filter(raid => raid !== null)
-
-  return findRaidNights(raids, name, server => realmKey(server ?? GUILD.serverSlug) === realmKey(realm))
+  const details = await Promise.all(nights.map(night => soft(fetchRaid(night.code, 'low'), null)))
+  return findRaidNights(details.filter(raid => raid !== null), name, realm)
 }
 
 // Raidbots' bonus id table is 1.7 MB; only the small track lookup built from it is
@@ -136,36 +113,29 @@ const fetchUpgradeTracks = defineCachedFunction(
   { name: 'upgrade-tracks', getKey: () => 'live', maxAge: 24 * 60 * 60 },
 )
 
-interface CharacterResult {
-  profile: CharacterProfile | null
-  /**
-   * False when a part failed for a reason that passes on its own (an outage, a
-   * timeout, a query refused to protect the hourly budget). The page still renders
-   * without that part, but the result is only kept for INCOMPLETE_MAX_AGE_MS, so the
-   * gap closes soon instead of lasting the full hour.
-   */
-  complete: boolean
-}
-
 const fetchCharacter = defineCachedFunction(
-  async (realm: string, name: string, tierId: number): Promise<CharacterResult> => {
+  async (realm: string, name: string, zone: number) => {
+    // A part that fails for a reason that passes on its own (an outage, a timeout, a
+    // query refused to protect the budget) leaves the page without it and makes the
+    // result incomplete, so it is kept only briefly (keepIfComplete). Missing
+    // credentials are a setting, not a failure, so they do not count.
     let complete = true
-    // Missing credentials are a setting, not a failure: nothing will change on a
-    // retry, so they do not make the result incomplete.
     const soft: Soft = (promise, fallback) =>
       promise.catch((error) => {
         if (!isNotConfigured(error)) complete = false
         return fallback
       })
 
-    const tier = raidTier(tierId)
+    // Nights and tracks do not depend on Raider.IO, so they start alongside it; the
+    // logs wait for it only because the ranking metric follows the character's role.
+    const nightsPromise = fetchAttendance(realm, name, soft)
+    const tracksPromise = soft(fetchUpgradeTracks(), {})
     const raiderIo = await fetchRaiderIo(realm, name)
     const metric = rankingMetric(raiderIo?.active_spec_role)
-
     const [wcl, raidNights, tracks] = await Promise.all([
-      soft(fetchLogs(realm, name, tier.id, metric), null),
-      fetchAttendance(realm, name, soft),
-      soft(fetchUpgradeTracks(), {}),
+      soft(fetchLogs(realm, name, zone, metric), null),
+      nightsPromise,
+      tracksPromise,
     ])
 
     if (!raiderIo && !wcl) return { profile: null, complete }
@@ -177,14 +147,11 @@ const fetchCharacter = defineCachedFunction(
     const profile: CharacterProfile = {
       name: displayName,
       realm: raiderIo?.realm ?? realm,
-      realmSlug: realm,
       className: raiderIo?.class ?? '',
       spec: raiderIo?.active_spec_name ?? raidNights[0]?.spec ?? null,
-      role: raiderIo?.active_spec_role ?? null,
       race: raiderIo?.race ?? null,
-      faction: raiderIo?.faction ?? null,
       thumbnailUrl: raiderIo?.thumbnail_url ?? null,
-      guild: raiderIo?.guild ?? null,
+      guildName: raiderIo?.guild?.name ?? null,
       achievementPoints: raiderIo?.achievement_points ?? null,
       itemLevel: raiderIo?.gear?.item_level_equipped ?? null,
       gear: toGear(raiderIo?.gear?.items, tracks),
@@ -195,8 +162,8 @@ const fetchCharacter = defineCachedFunction(
       // A character can hide its logs on Warcraft Logs. That is respected here too.
       logs: wcl && !wcl.hidden
         ? {
-            tier: { id: tier.id, name: tier.name },
-            tiers: RAID_TIERS.map(({ id, name }) => ({ id, name })),
+            tier: raidTier(zone),
+            tiers: RAID_TIERS,
             metric,
             difficulties: [wcl.mythic, wcl.heroic, wcl.normal]
               .map(toDifficultyRankings)
@@ -215,14 +182,14 @@ const fetchCharacter = defineCachedFunction(
   },
   {
     name: 'character',
-    getKey: (realm: string, name: string, tierId: number) => `${realm}:${name.toLowerCase()}:${tierId}`,
+    getKey: (realm: string, name: string, zone: number) => `${realm}:${name.toLowerCase()}:${zone}`,
     // Refreshed once an hour, like the raid pages.
     maxAge: 60 * 60,
-    validate: entry =>
-      entry.value !== undefined
-      && (entry.value.complete || Date.now() - (entry.mtime ?? 0) < INCOMPLETE_MAX_AGE_MS),
+    validate: keepIfComplete,
   },
 )
+
+const notFound = () => createError({ statusCode: 404, statusMessage: 'Character not found' })
 
 export default defineEventHandler(async (event): Promise<CharacterProfile> => {
   const realm = getRouterParam(event, 'realm') ?? ''
@@ -237,30 +204,23 @@ export default defineEventHandler(async (event): Promise<CharacterProfile> => {
     }
   })()
 
-  // An opted-out character gets the same 404 as one that does not exist, so the page
-  // does not even confirm it is there.
-  if (!REALM_PATTERN.test(realm) || !NAME_PATTERN.test(name) || isOptedOut(name)) {
-    throw createError({ statusCode: 404, statusMessage: 'Character not found' })
-  }
+  if (!REALM_PATTERN.test(realm) || !NAME_PATTERN.test(name)) throw notFound()
 
-  // Only the guild's own members get a page. Anyone else, a pug or a former member,
-  // gets the same 404 as a name that does not exist. The realm is looked up in the
-  // member index too, so the APIs get Raider.IO's own slug for it.
+  // Only the guild's own members get a page; anyone else, a pug or a former member,
+  // gets the same 404 as a name that does not exist, and so does an opted-out member
+  // (the index leaves them out). The realm is looked up in the index too, so the APIs
+  // get Raider.IO's own slug for it.
   const members = await fetchMemberIndex().catch(() => {
     throw createError({ statusCode: 502, statusMessage: 'Could not reach Raider.IO' })
   })
   const memberRealm = members.get(rosterKey(name, realm))
-  if (!memberRealm) {
-    throw createError({ statusCode: 404, statusMessage: 'Character not found' })
-  }
+  if (!memberRealm) throw notFound()
 
   const { profile, complete } = await fetchCharacter(memberRealm, name, raidTier(getQuery(event).tier).id)
 
+  // Nothing found is only a real 404 if nothing failed along the way either.
   if (!profile) {
-    // Nothing found, but only a real 404 if nothing failed along the way either.
-    throw complete
-      ? createError({ statusCode: 404, statusMessage: 'Character not found' })
-      : createError({ statusCode: 502, statusMessage: 'Could not reach Raider.IO or Warcraft Logs' })
+    throw complete ? notFound() : createError({ statusCode: 502, statusMessage: 'Could not reach Raider.IO or Warcraft Logs' })
   }
 
   return profile

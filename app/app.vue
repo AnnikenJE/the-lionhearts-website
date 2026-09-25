@@ -1,7 +1,6 @@
 <script setup lang="ts">
 // Site-wide head defaults. Pages state their own title and description through
 // usePageSeo; whatever a page leaves out falls back to what is set here.
-const SITE_NAME = 'The Lionhearts'
 const DESCRIPTION
   = 'A social raiding and Mythic+ guild on Darkmoon Faire (EU). Beginner-friendly, '
     + 'with a mixed community, from first-time raiders to Mythic veterans.'

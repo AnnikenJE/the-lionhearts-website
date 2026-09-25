@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { GUILD_LINKS } from '~/data/links'
+
 // Primary navigation. Kept as data so the link styling lives in exactly one
 // place rather than being repeated on every <NuxtLink>.
 const NAV = [
@@ -15,8 +17,6 @@ const navLink
   = 'rounded-md px-3 py-1.5 text-sm font-medium text-fg-muted transition hover:bg-surface hover:text-fg '
     + '[&.router-link-active]:bg-surface [&.router-link-active]:text-fg'
 
-// Matches the anchors LinkGrid renders, so the footer row reads as one list
-// whether a link is internal or external.
 const footerLink = 'text-sm text-fg-muted transition hover:text-fg'
 </script>
 
@@ -52,7 +52,14 @@ const footerLink = 'text-sm text-fg-muted transition hover:text-fg'
             The Lionhearts <span aria-hidden="true">·</span> Darkmoon Faire (EU)
           </p>
           <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <LinkGrid />
+            <a
+              v-for="link in GUILD_LINKS"
+              :key="link.url"
+              :href="link.url"
+              target="_blank"
+              rel="noopener"
+              :class="footerLink"
+            >{{ link.label }}</a>
             <NuxtLink to="/privacy" :class="footerLink">Privacy</NuxtLink>
           </div>
         </div>

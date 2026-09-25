@@ -28,9 +28,7 @@ describe('toRosterMembers', () => {
         class: 'Priest',
         spec: 'Holy',
         role: 'HEALING',
-        realm: 'Darkmoon Faire',
         realmSlug: 'darkmoon-faire',
-        profileUrl: 'https://raider.io/characters/eu/darkmoon-faire/Aeliana',
       },
     ])
   })

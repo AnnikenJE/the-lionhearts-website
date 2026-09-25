@@ -3,11 +3,9 @@
 // is a link that sets ?tier=<zone id>, so a tier can be shared and the back button
 // works; the current tier (the first) gets the clean URL with no query at all.
 defineProps<{
-  tiers: { id: number, name: string }[]
+  tiers: readonly { id: number, name: string }[]
   currentId: number
 }>()
-
-const pill = 'rounded-full border px-3 py-1 text-xs font-medium transition'
 </script>
 
 <template>
@@ -16,12 +14,7 @@ const pill = 'rounded-full border px-3 py-1 text-xs font-medium transition'
       v-for="(tier, index) in tiers"
       :key="tier.id"
       :to="{ query: index === 0 ? {} : { tier: tier.id } }"
-      :class="[
-        pill,
-        tier.id === currentId
-          ? 'border-accent/40 bg-accent/10 text-accent'
-          : 'border-line text-fg-muted hover:border-line-strong hover:text-fg',
-      ]"
+      :class="[PILL, tier.id === currentId ? PILL_ON : PILL_OFF]"
       :aria-current="tier.id === currentId ? 'page' : undefined"
     >
       {{ tier.name }}

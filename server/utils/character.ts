@@ -4,6 +4,8 @@
 
 // Imported explicitly rather than left to Nitro's auto-import, so this module also
 // loads under plain Vitest.
+import type { RaidDetail } from './raidDetail'
+import { rosterKey } from './roster'
 import { upgradeTrack, type UpgradeTracks } from './upgradeTracks'
 import { difficultyName } from './warcraftlogs'
 
@@ -21,7 +23,6 @@ interface RaiderIoItem {
 
 interface RaiderIoRun {
   dungeon: string
-  short_name: string
   mythic_level: number
   num_keystone_upgrades: number
   score: number
@@ -32,7 +33,6 @@ interface RaiderIoRun {
 }
 
 interface RaiderIoRaidProgress {
-  summary: string
   total_bosses: number
   normal_bosses_killed: number
   heroic_bosses_killed: number
@@ -111,7 +111,6 @@ export interface CharacterGearItem {
 
 export interface CharacterMythicRun {
   dungeon: string
-  shortName: string
   level: number
   /** Keystone upgrades: 0 is a depleted key, 1 to 3 is timed. */
   upgrades: number
@@ -124,7 +123,6 @@ export interface CharacterMythicRun {
 
 export interface CharacterRaidProgress {
   raid: string
-  summary: string
   total: number
   normal: number
   heroic: number
@@ -149,15 +147,7 @@ export interface CharacterDifficultyRankings {
   difficulty: string
   bestAverage: number | null
   medianAverage: number | null
-  allStars: {
-    spec: string
-    points: number
-    possiblePoints: number
-    rank: number
-    regionRank: number
-    serverRank: number
-    rankPercent: number
-  } | null
+  allStars: Omit<WclAllStars, 'rankPercent'> | null
   bosses: CharacterBossRanking[]
 }
 
@@ -211,7 +201,6 @@ export const toMythicPlusRuns = (runs: RaiderIoRun[] | undefined): CharacterMyth
   (runs ?? [])
     .map(run => ({
       dungeon: run.dungeon,
-      shortName: run.short_name,
       level: run.mythic_level,
       upgrades: run.num_keystone_upgrades,
       score: run.score,
@@ -243,7 +232,6 @@ export const toRaidProgression = (
     .filter(([slug, raid]) => !slug.startsWith('tier-') && raid.normal_bosses_killed + raid.heroic_bosses_killed + raid.mythic_bosses_killed > 0)
     .map(([slug, raid]) => ({
       raid: titleCase(slug),
-      summary: raid.summary,
       total: raid.total_bosses,
       normal: raid.normal_bosses_killed,
       heroic: raid.heroic_bosses_killed,
@@ -273,7 +261,6 @@ export const toDifficultyRankings = (
       rank: allStars.rank,
       regionRank: allStars.regionRank,
       serverRank: allStars.serverRank,
-      rankPercent: allStars.rankPercent,
     },
     bosses: rankings.map((ranking) => {
       const killed = ranking.totalKills > 0
@@ -296,33 +283,23 @@ export const toDifficultyRankings = (
 export const rankingMetric = (role: string | null | undefined): 'dps' | 'hps' =>
   role?.toUpperCase() === 'HEALING' ? 'hps' : 'dps'
 
-interface AttendedRaid {
-  code: string
-  zone: string | null
-  startedAt: string
-  tanks: { name: string, spec: string | null, server: string | null }[]
-  healers: { name: string, spec: string | null, server: string | null }[]
-  dps: { name: string, spec: string | null, server: string | null }[]
-}
-
 /**
- * The raid nights a character was in, from the raid details. A player entry is
- * matched on name (case-insensitive) and on realm, since two characters on different
- * realms can share a name. `sameRealm` decides the realm match so the slug logic stays
- * in one place; an entry with no realm is taken to be on the guild's own.
+ * The raid nights a character was in, from the raid details. Players are matched with
+ * rosterKey, on name and realm however each API spells it, since two characters on
+ * different realms can share a name.
  */
 export const findRaidNights = (
-  raids: AttendedRaid[],
+  raids: Pick<RaidDetail, 'code' | 'zone' | 'startedAt' | 'tanks' | 'healers' | 'dps'>[],
   name: string,
-  sameRealm: (server: string | null) => boolean,
+  realm: string,
 ): CharacterRaidNight[] => {
-  const wanted = name.toLowerCase()
+  const wanted = rosterKey(name, realm)
   const nights: CharacterRaidNight[] = []
 
   for (const raid of raids) {
     const roles = [['tank', raid.tanks], ['healer', raid.healers], ['dps', raid.dps]] as const
     for (const [role, players] of roles) {
-      const player = players.find(p => p.name.toLowerCase() === wanted && sameRealm(p.server))
+      const player = players.find(p => rosterKey(p.name, p.server) === wanted)
       if (player) {
         nights.push({ code: raid.code, zone: raid.zone, startedAt: raid.startedAt, spec: player.spec, role })
         break

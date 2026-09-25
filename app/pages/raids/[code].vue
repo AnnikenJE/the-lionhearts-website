@@ -11,9 +11,7 @@ if (error.value?.statusCode === 404) {
   throw createError({ statusCode: 404, statusMessage: 'Raid not found', fatal: true })
 }
 
-// wclQuery throws a 503 when the Warcraft Logs credentials are not configured,
-// so that specific status gets its own message instead of the generic error one.
-const notConfigured = computed(() => error.value?.statusCode === 503)
+const notConfigured = computed(() => isNotConfigured(error.value))
 
 // formatDate has no weekday, so it is derived separately here rather than faked.
 const weekday = computed(() =>
@@ -121,11 +119,10 @@ usePageSeo(() => ({
             <div class="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-3 md:grid-cols-4">
               <p v-for="player in group.members" :key="player.name" class="truncate text-sm">
                 <!-- Only current guild members have a character page. Anyone else, a pug
-                     or a former member, is plain text in a dimmed colour. A
-                     player with no realm in the log is on the guild's own realm. -->
+                     or a former member, is plain text in a dimmed colour. -->
                 <NuxtLink
                   v-if="player.onRoster !== false"
-                  :to="characterPath(player.realmSlug ?? player.server ?? 'Darkmoon Faire', player.name)"
+                  :to="characterPath(player.realmSlug!, player.name)"
                   class="hover:underline"
                   :style="{ color: classColor(player.className) }"
                 >{{ player.name }}</NuxtLink>
