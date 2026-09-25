@@ -14,6 +14,10 @@ export default defineNuxtConfig({
       clientId: '',
       clientSecret: '',
     },
+    // Only production writes to the shared KV cache. Cloudflare sets CF_PAGES_BRANCH
+    // while building, so this is fixed per build: a preview (or a local build) reads
+    // the same cached data but never spends KV's daily writes on it.
+    cacheKvWrites: process.env.CF_PAGES_BRANCH === 'main',
   },
   // Browsers may reuse the API answers for a minute, so moving between pages does not
   // refetch data the server has cached anyway. Kept short so an opt-out still takes

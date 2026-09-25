@@ -9,5 +9,5 @@ export default defineNitroPlugin(async () => {
 
   const storage = useStorage()
   await storage.unmount('cache', false)
-  storage.mount('cache', memoryOverKv({}))
+  storage.mount('cache', memoryOverKv({ writes: useRuntimeConfig().cacheKvWrites }))
 })
