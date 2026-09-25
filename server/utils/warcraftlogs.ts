@@ -2,6 +2,8 @@
 // a bearer token from the OAuth client_credentials flow. Runs server-side so the
 // credentials never reach the browser and responses can be cached.
 
+import { WCL_NOT_CONFIGURED } from '../../app/utils/wow'
+
 const TOKEN_URL = 'https://www.warcraftlogs.com/oauth/token'
 const API_URL = 'https://www.warcraftlogs.com/api/v2/client'
 
@@ -106,6 +108,14 @@ export const UPSTREAM_TIMEOUT_MS = 15_000
  */
 export const INCOMPLETE_MAX_AGE_MS = 10 * 60 * 1000
 
+/**
+ * The `validate` for a cached result that says whether it is `complete`: a complete
+ * one lives its full maxAge, an incomplete one only INCOMPLETE_MAX_AGE_MS.
+ */
+export const keepIfComplete = (entry: { value?: { complete: boolean }, mtime?: number }) =>
+  entry.value !== undefined
+  && (entry.value.complete || Date.now() - (entry.mtime ?? 0) < INCOMPLETE_MAX_AGE_MS)
+
 // Budget -----------------------------------------------------------------------------
 
 /**
@@ -148,23 +158,12 @@ let budget: Budget | null = null
 
 const BUDGET_EXHAUSTED = 'Warcraft Logs hourly budget reserved'
 
-/** True when a query was refused to protect the hourly points. It passes within the hour. */
-export const isBudgetExhausted = (error: unknown) =>
-  (error as { statusMessage?: string }).statusMessage === BUDGET_EXHAUSTED
-
 // Module scope, so a warm instance reuses the token instead of paying for an exchange
 // per request. A cold start just fetches a new one, which is cheap and harmless.
 let cached: { token: string, expiresAt: number } | null = null
 
-const NOT_CONFIGURED = 'Warcraft Logs is not configured'
-
-/**
- * True only for the missing-credentials error. Warcraft Logs itself can also answer
- * 503 during an outage, and that must not be mistaken for "not configured": one is
- * permanent until someone sets the secrets, the other passes on its own.
- */
-export const isNotConfigured = (error: unknown) =>
-  (error as { statusMessage?: string }).statusMessage === NOT_CONFIGURED
+// Shared with the pages, which tell "not set up" apart from an outage the same way.
+export { isNotConfigured } from '../../app/utils/wow'
 
 const readCredentials = () => {
   const { wcl: config } = useRuntimeConfig()
@@ -182,14 +181,16 @@ const readCredentials = () => {
   if (!wcl.clientId || !wcl.clientSecret) {
     throw createError({
       statusCode: 503,
-      statusMessage: NOT_CONFIGURED,
+      statusMessage: WCL_NOT_CONFIGURED,
     })
   }
 
   return wcl
 }
 
-const fetchAccessToken = async () => {
+const getAccessToken = async () => {
+  if (cached && cached.expiresAt > Date.now()) return cached.token
+
   const { clientId, clientSecret } = readCredentials()
 
   const data = await $fetch<TokenResponse>(TOKEN_URL, {
@@ -210,15 +211,10 @@ const fetchAccessToken = async () => {
   return cached.token
 }
 
-const getAccessToken = async () => {
-  if (cached && cached.expiresAt > Date.now()) return cached.token
-  return fetchAccessToken()
-}
-
 /**
  * Runs one GraphQL query and returns its `data`. Errors are normalised to createError
  * so a route can just let them propagate. A query the hourly budget cannot afford is
- * refused before it is sent, with a 503 that `isBudgetExhausted()` recognises.
+ * refused before it is sent, with a 503.
  */
 export const wclQuery = async <T>(
   query: string,

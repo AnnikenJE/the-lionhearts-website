@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import type { Feature } from '~/components/FeatureGrid.vue'
 import { DISCORD_URL } from '~/data/links'
 
-const WHAT_WE_DO: Feature[] = [
+const WHAT_WE_DO = [
   {
     title: 'Raiding',
     body: 'Two fixed nights a week, Thursday and Sunday. We work through the tier together at a pace that keeps it fun: prepared, but not a second job. Sign-ups are in the in-game calendar.',
@@ -38,7 +37,12 @@ usePageSeo({
 
     <section class="mt-14">
       <SectionHeading class="mb-5">What we do</SectionHeading>
-      <FeatureGrid :items="WHAT_WE_DO" />
+      <ul class="grid gap-4 sm:grid-cols-3">
+        <li v-for="item in WHAT_WE_DO" :key="item.title" class="rounded-xl border border-line bg-surface p-5">
+          <h3 class="font-semibold text-fg">{{ item.title }}</h3>
+          <p class="mt-2 text-sm text-fg-muted">{{ item.body }}</p>
+        </li>
+      </ul>
     </section>
 
     <section class="mt-14">

@@ -15,6 +15,12 @@ export default defineNuxtConfig({
       clientSecret: '',
     },
   },
+  // Browsers may reuse the API answers for a minute, so moving between pages does not
+  // refetch data the server has cached anyway. Kept short so an opt-out still takes
+  // effect almost at once for someone who has the page open.
+  routeRules: {
+    '/api/**': { headers: { 'cache-control': 'public, max-age=60, stale-while-revalidate=600' } },
+  },
   app: {
     head: {
       // Paints the mobile browser chrome the same near-black as the page.

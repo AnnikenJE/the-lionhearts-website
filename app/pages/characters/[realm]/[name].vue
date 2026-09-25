@@ -3,27 +3,11 @@ import type { CharacterDifficultyRankings, CharacterProfile } from '~~/server/ap
 
 const route = useRoute()
 
-// The tier lives in the URL (?tier=44), so a tier can be linked and the back button
-// works. A computed query makes useFetch refetch when it changes.
-const query = computed(() => (route.query.tier ? { tier: String(route.query.tier) } : {}))
-
-// Keyed per character, not per tier, so switching tier keeps the page on screen while
-// the new parses load instead of blanking the whole page.
-const { data: fetched, pending, error } = await useFetch<CharacterProfile>(
+// Keyed per character, not per tier; see useTierFetch.
+const { shown: character, pending, error, selectedTierId, switching: switchingTier } = await useTierFetch<CharacterProfile>(
   () => `/api/characters/${route.params.realm}/${encodeURIComponent(String(route.params.name))}`,
-  { query, key: () => `character:${route.params.realm}:${String(route.params.name).toLowerCase()}` },
-)
-
-// The last profile that loaded. A failed fetch resets `fetched`; without this a
-// failed tier switch would replace the whole page with an error.
-const character = shallowRef(fetched.value)
-watch(fetched, (value) => {
-  if (value) character.value = value
-})
-
-const selectedTierId = computed(() => Number(route.query.tier) || character.value?.logs?.tiers[0]?.id || 0)
-const switchingTier = computed(() =>
-  pending.value && !!character.value?.logs && character.value.logs.tier.id !== selectedTierId.value,
+  () => `character:${route.params.realm}:${String(route.params.name).toLowerCase()}`,
+  profile => profile.logs,
 )
 
 // Same pattern as raids/[code].vue: the route's 404 lands in error, so it is
@@ -77,16 +61,19 @@ const stats = computed(() => {
 
 const roleLabel = { tank: 'Tank', healer: 'Healer', dps: 'DPS' } as const
 
-// Five nights at a time, paged in place like the raids page.
-const nightsPager = usePagination(() => character.value?.raidNights)
+// Five nights at a time, paged in place.
+const NIGHTS_PER_PAGE = 5
+const nightPage = ref(1)
+const nights = computed(() => character.value?.raidNights ?? [])
+const nightPageCount = computed(() => Math.max(1, Math.ceil(nights.value.length / NIGHTS_PER_PAGE)))
+const pageNights = computed(() => nights.value.slice((nightPage.value - 1) * NIGHTS_PER_PAGE, nightPage.value * NIGHTS_PER_PAGE))
+watch(nights, () => (nightPage.value = 1))
 
 const section = 'mt-16 border-t border-line pt-16'
 const card = 'overflow-hidden rounded-xl border border-line bg-surface'
 const th = 'px-4 py-3 text-left text-xs font-medium text-fg-subtle'
 const td = 'px-4 py-3 tabular-nums'
-const pill = 'rounded-full border px-3 py-1 text-xs font-medium transition'
-const pillOn = 'border-accent/40 bg-accent/10 text-accent'
-const pillOff = 'border-line text-fg-muted hover:border-line-strong hover:text-fg'
+const pagerButton = 'cursor-pointer rounded-lg border border-line-strong px-3 py-1.5 text-sm font-medium text-fg transition hover:bg-surface-hover disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent'
 
 usePageSeo(() => ({
   title: character.value ? `${character.value.name}, ${character.value.realm}` : 'Character',
@@ -122,7 +109,7 @@ usePageSeo(() => ({
 
       <p class="mt-5 text-lg text-fg-muted">
         {{ specLine }}<template v-if="character.race">, {{ character.race }}</template>
-        on {{ character.realm }}<template v-if="character.guild">, &lt;{{ character.guild.name }}&gt;</template>
+        on {{ character.realm }}<template v-if="character.guildName">, &lt;{{ character.guildName }}&gt;</template>
       </p>
 
       <div class="mt-6 flex flex-wrap gap-3">
@@ -171,7 +158,7 @@ usePageSeo(() => ({
                 type="button"
                 role="tab"
                 :aria-selected="d.difficulty === difficulty.difficulty"
-                :class="[pill, 'cursor-pointer', d.difficulty === difficulty.difficulty ? pillOn : pillOff]"
+                :class="[PILL, 'cursor-pointer', d.difficulty === difficulty.difficulty ? PILL_ON : PILL_OFF]"
                 @click="selectedDifficulty = d.difficulty"
               >
                 {{ d.difficulty }}
@@ -241,7 +228,7 @@ usePageSeo(() => ({
           <template #end>{{ plural(character.raidNights.length, 'night') }} with the guild</template>
         </SectionHeading>
         <ul :class="[card, 'divide-y divide-line']">
-          <li v-for="night in nightsPager.pageItems.value" :key="night.code">
+          <li v-for="night in pageNights" :key="night.code">
             <NuxtLink
               :to="`/raids/${night.code}`"
               class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4 transition hover:bg-surface-hover"
@@ -253,14 +240,15 @@ usePageSeo(() => ({
             </NuxtLink>
           </li>
         </ul>
-        <PagerControls
-          :page="nightsPager.page.value"
-          :page-count="nightsPager.pageCount.value"
-          :has-previous="nightsPager.hasPrevious.value"
-          :has-next="nightsPager.hasNext.value"
-          @previous="nightsPager.previous"
-          @next="nightsPager.next"
-        />
+        <nav v-if="nightPageCount > 1" aria-label="Pages" class="mt-4 flex items-center justify-between gap-4">
+          <button type="button" :class="pagerButton" :disabled="nightPage === 1" @click="nightPage--">
+            <span aria-hidden="true">←</span> Previous
+          </button>
+          <span class="text-sm tabular-nums text-fg-subtle" aria-live="polite">Page {{ nightPage }} of {{ nightPageCount }}</span>
+          <button type="button" :class="pagerButton" :disabled="nightPage === nightPageCount" @click="nightPage++">
+            Next <span aria-hidden="true">→</span>
+          </button>
+        </nav>
       </section>
 
       <!-- Mythic+ -->

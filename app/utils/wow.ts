@@ -23,14 +23,19 @@ export const classColor = (className: string): string =>
   CLASS_COLORS[className.toLowerCase().replace(/[\s-]/g, '')] ?? 'var(--color-fg)'
 
 /**
+ * Splits the one-word spellings Warcraft Logs uses for realms, classes and specs
+ * ("DefiasBrotherhood", "BeastMastery") back into words.
+ */
+export const spaceWords = (value: string) => value.replace(/([a-z])([A-Z])/g, '$1 $2')
+
+/**
  * A realm's URL slug, from any of the ways the APIs spell it: Raider.IO says
  * "Defias Brotherhood", a Warcraft Logs player entry says "DefiasBrotherhood", and
  * both become "defias-brotherhood". Apostrophes drop out ("Kel'Thuzad" is
  * "kelthuzad"), which is how Blizzard, Raider.IO and Warcraft Logs all slug them.
  */
 export const realmSlug = (realm: string): string =>
-  realm
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
+  spaceWords(realm)
     .replace(/'/g, '')
     .trim()
     .toLowerCase()
@@ -92,3 +97,15 @@ const TRACK_QUALITY: Record<string, number> = {
 /** Colour for an upgrade track such as "Hero 4/6". Returns a CSS colour, bound with `:style`. */
 export const trackColor = (track: string): string =>
   itemQualityColor(TRACK_QUALITY[track.split(' ')[0]!.toLowerCase()] ?? 1)
+
+/** The statusMessage the server answers with when the Warcraft Logs secrets are unset. */
+export const WCL_NOT_CONFIGURED = 'Warcraft Logs is not configured'
+
+/**
+ * True only for the missing-credentials error, on the server and in a page's fetch
+ * error alike. Warcraft Logs can also answer 503 during an outage, and the budget guard
+ * refuses queries with a 503; neither must read as "not set up": one is permanent until
+ * someone sets the secrets, the others pass on their own.
+ */
+export const isNotConfigured = (error: unknown) =>
+  (error as { statusMessage?: string } | null | undefined)?.statusMessage === WCL_NOT_CONFIGURED

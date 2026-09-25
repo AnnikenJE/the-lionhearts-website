@@ -3,8 +3,8 @@ import type { RosterMember } from '~~/server/api/roster.get'
 
 // Raider.IO exposes only the numeric rank index (0 = Guild Master), so the
 // labels live here and must be kept in sync with the in-game ranks. Rank 99 is
-// Raider.IO's placeholder for an unresolved rank and is filtered out in
-// server/api/roster.get.ts.
+// Raider.IO's placeholder for an unresolved rank and is left off this page by
+// toRosterMembers() in server/utils/roster.ts.
 const RANK_NAMES: Record<number, string> = {
   0: 'King Lionheart',
   1: 'Royal Advisor',
@@ -56,13 +56,14 @@ const clearFilters = () => {
 }
 
 const groups = computed(() => {
+  // The server already sorts by rank, so the groups come out in rank order.
   const byRank = new Map<number, RosterMember[]>()
   for (const m of matches.value) {
-    byRank.set(m.rank, [...(byRank.get(m.rank) ?? []), m])
+    const group = byRank.get(m.rank)
+    if (group) group.push(m)
+    else byRank.set(m.rank, [m])
   }
-  return [...byRank.entries()]
-    .sort(([a], [b]) => a - b)
-    .map(([rank, list]) => ({ rank, name: rankName(rank), members: list }))
+  return [...byRank].map(([rank, list]) => ({ rank, name: rankName(rank), members: list }))
 })
 
 const collapsed = ref<Set<number>>(new Set())
@@ -168,7 +169,7 @@ usePageSeo({
         <ul v-show="isOpen(group.rank)" class="mt-3 columns-[280px] gap-x-6">
           <li
             v-for="m in group.members"
-            :key="m.name + m.realm"
+            :key="m.realmSlug + m.name"
             class="flex break-inside-avoid flex-col rounded-lg px-3 py-2 transition hover:bg-surface"
           >
             <NuxtLink

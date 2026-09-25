@@ -89,7 +89,8 @@ Early-stage Nuxt 4 + TypeScript project (Vue 3 + Vite under the hood). Uses the 
 - `content.config.ts`: @nuxt/content collection schema for news
 - `app/data/schedule.ts`, `app/data/links.ts`: typed static data (raid schedule, links)
 - `app/data/news.ts`: `NEWS_ENABLED` flag. While it's false the news section is hidden everywhere at once (list page shows coming soon, post routes 404, landing page drops its news block) and nothing is queried, so draft titles never reach the payload. Flipping it to true is the whole launch.
-- `app/components/RaidSchedule.vue`, `app/components/LinkGrid.vue`: render the static data
+- `app/components/RaidSchedule.vue` renders the raid schedule; the guild links are rendered straight into the footer
+- `app/composables/useTierFetch.ts`: the fetch behind the raids page and the character pages. Reads `?tier=`, keeps the previous tier on screen while the next loads and through a failed fetch, and reports which tier is selected
 - `app/utils/wow.ts`: `classColor()`, the official WoW class colours. Returns a CSS colour, so call sites bind it with `:style`, not `:class`. Normalises the key because Raider.IO says "Death Knight" and Warcraft Logs says "DeathKnight". Also `realmSlug()` (every API spells realms differently: "Defias Brotherhood", "DefiasBrotherhood"), `characterPath()`, which every character link goes through, `parseColor()` (the usual grey-to-gold parse brackets), `itemQualityColor()` and the Wowhead icon and item URLs
 - `app/components/SectionHeading.vue` is the recurring section header: a heading with an optional muted note (a count, a link) pinned to the far end
 - `app/assets/css/main.css` holds the whole theme: Tailwind import, `@theme` tokens, and the handful of base rules that cannot be utilities

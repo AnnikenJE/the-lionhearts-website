@@ -116,7 +116,7 @@ describe('toRaidProgression', () => {
       'sporefall': raid(0),
     })
     expect(result).toEqual([
-      { raid: 'The Venomous Abyss', summary: '6/8 H', total: 8, normal: 8, heroic: 6, mythic: 0 },
+      { raid: 'The Venomous Abyss', total: 8, normal: 8, heroic: 6, mythic: 0 },
     ])
   })
 
@@ -126,25 +126,24 @@ describe('toRaidProgression', () => {
 })
 
 describe('findRaidNights', () => {
-  const night = (code: string, dps: { name: string, server: string | null }[]) => ({
+  const night = (code: string, dps: { name: string, server: string }[]) => ({
     code,
     zone: 'The Venomous Abyss',
     startedAt: '2026-09-24T16:49:53.397Z',
     tanks: [],
     healers: [],
-    dps: dps.map(p => ({ ...p, spec: 'Arcane' })),
+    dps: dps.map(p => ({ ...p, spec: 'Arcane', className: 'Mage' })),
   })
-  const onDefias = (server: string | null) => server === 'DefiasBrotherhood'
 
-  it('finds the nights a character was in, with their spec and role', () => {
+  it('finds the nights a character was in, with their spec and role, however the realm is spelled', () => {
     const raids = [night('a', [{ name: 'Hidril', server: 'DefiasBrotherhood' }]), night('b', [])]
-    expect(findRaidNights(raids, 'hidril', onDefias)).toEqual([
+    expect(findRaidNights(raids, 'hidril', 'defias-brotherhood')).toEqual([
       { code: 'a', zone: 'The Venomous Abyss', startedAt: '2026-09-24T16:49:53.397Z', spec: 'Arcane', role: 'dps' },
     ])
   })
 
   it('does not mix up two characters with the same name on different realms', () => {
     const raids = [night('a', [{ name: 'Hidril', server: 'Kilrogg' }])]
-    expect(findRaidNights(raids, 'Hidril', onDefias)).toEqual([])
+    expect(findRaidNights(raids, 'Hidril', 'defias-brotherhood')).toEqual([])
   })
 })

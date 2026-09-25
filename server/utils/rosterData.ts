@@ -23,8 +23,19 @@ const fetchGuildMembers = defineCachedFunction(
   { maxAge: 60 * 60, name: 'roster', getKey: () => 'lionhearts' },
 )
 
+// The cache hands back the same array until it refreshes, so each view of it is built
+// once per refresh rather than on every request.
+const memo = <T>(build: (members: RaiderIoMember[]) => T) => {
+  const built = new WeakMap<RaiderIoMember[], T>()
+  return async () => {
+    const members = await fetchGuildMembers()
+    if (!built.has(members)) built.set(members, build(members))
+    return built.get(members)!
+  }
+}
+
 /** The roster as the roster page shows it: ranked members, sorted, opt-outs removed. */
-export const fetchRoster = async () => toRosterMembers(await fetchGuildMembers())
+export const fetchRoster = memo(toRosterMembers)
 
 /** Every guild member, rank 99 included, as rosterKey to realm slug. */
-export const fetchMemberIndex = async () => toMemberIndex(await fetchGuildMembers())
+export const fetchMemberIndex = memo(toMemberIndex)

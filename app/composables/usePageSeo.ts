@@ -17,7 +17,7 @@ export interface PageSeo {
   type?: 'website' | 'article'
 }
 
-const SITE_NAME = 'The Lionhearts'
+export const SITE_NAME = 'The Lionhearts'
 const DEFAULT_IMAGE = '/lionhearts-crest.png'
 
 /**
