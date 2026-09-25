@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { RaiderIoMember } from '../../server/utils/roster'
-import { rosterKey, rosterKeys, toRosterMembers } from '../../server/utils/roster'
+import { realmKey, rosterKey, toMemberIndex, toRosterMembers } from '../../server/utils/roster'
 
 const member = (
   rank: number,
@@ -29,6 +29,7 @@ describe('toRosterMembers', () => {
         spec: 'Holy',
         role: 'HEALING',
         realm: 'Darkmoon Faire',
+        realmSlug: 'darkmoon-faire',
         profileUrl: 'https://raider.io/characters/eu/darkmoon-faire/Aeliana',
       },
     ])
@@ -85,10 +86,34 @@ describe('rosterKey', () => {
   })
 })
 
-describe('rosterKeys', () => {
-  it('holds every member, so a pug is not in it', () => {
-    const keys = rosterKeys([{ name: 'Destructo', realm: 'Kilrogg' }, { name: 'Anniken', realm: 'Darkmoon Faire' }])
-    expect(keys.has(rosterKey('Destructo', 'kilrogg'))).toBe(true)
-    expect(keys.has(rosterKey('Grakal', 'defias-brotherhood'))).toBe(false)
+describe('realmKey', () => {
+  it('reduces every spelling of a realm to the same key', () => {
+    // Raider.IO names, Warcraft Logs names and URL slugs, including the three realms
+    // on the roster that a derived slug got wrong.
+    expect(realmKey('Chamber of Aspects')).toBe(realmKey('ChamberofAspects'))
+    expect(realmKey('Kult der Verdammten')).toBe(realmKey('kult-der-verdammten'))
+    expect(realmKey('Azjol-Nerub')).toBe(realmKey('azjolnerub'))
+    expect(realmKey('Aggra (Português)')).toBe(realmKey('aggra-portugues'))
+  })
+})
+
+describe('toMemberIndex', () => {
+  const index = toMemberIndex([
+    member(1, 'Destructo', { realm: 'Kilrogg', profile_url: 'https://raider.io/characters/eu/kilrogg/Destructo' }),
+    member(99, 'Killshaak', { realm: 'Silvermoon', profile_url: 'https://raider.io/characters/eu/silvermoon/Killshaak' }),
+    member(3, 'Nerubian', { realm: 'Azjol-Nerub', profile_url: 'https://raider.io/characters/eu/azjolnerub/Nerubian' }),
+  ])
+
+  it('holds every member, so someone outside the guild is not in it', () => {
+    expect(index.has(rosterKey('Destructo', 'kilrogg'))).toBe(true)
+    expect(index.has(rosterKey('Grakal', 'defias-brotherhood'))).toBe(false)
+  })
+
+  it('keeps rank 99: the rank is unknown, but the character is in the guild', () => {
+    expect(index.has(rosterKey('Killshaak', 'Silvermoon'))).toBe(true)
+  })
+
+  it('gives the realm slug from Raider.IO, not one guessed from the name', () => {
+    expect(index.get(rosterKey('Nerubian', 'AzjolNerub'))).toBe('azjolnerub')
   })
 })

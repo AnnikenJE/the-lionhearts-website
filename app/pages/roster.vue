@@ -172,7 +172,7 @@ usePageSeo({
             class="flex break-inside-avoid flex-col rounded-lg px-3 py-2 transition hover:bg-surface"
           >
             <NuxtLink
-              :to="characterPath(m.realm, m.name)"
+              :to="characterPath(m.realmSlug, m.name)"
               class="font-medium hover:underline"
               :style="{ color: classColor(m.class) }"
             >{{ m.name }}</NuxtLink>
