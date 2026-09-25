@@ -7,6 +7,7 @@ export const fetchRoster = defineCachedFunction(
     const data = await $fetch<{ members: RaiderIoMember[] }>(
       'https://raider.io/api/v1/guilds/profile',
       {
+        timeout: UPSTREAM_TIMEOUT_MS,
         query: {
           region: 'eu',
           realm: GUILD.serverSlug,

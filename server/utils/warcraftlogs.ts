@@ -75,10 +75,73 @@ interface TokenResponse {
   expires_in: number
 }
 
+interface RateLimitData {
+  limitPerHour: number
+  pointsSpentThisHour: number
+  /** Seconds until the hourly points reset. */
+  pointsResetIn: number
+}
+
 interface GraphQLResponse<T> {
-  data?: T
+  data?: T & { rateLimitData?: RateLimitData }
   errors?: { message: string }[]
 }
+
+/** Every outbound call gives up after this long, so a hanging API cannot hold a page open. */
+export const UPSTREAM_TIMEOUT_MS = 15_000
+
+/**
+ * How long a result that is missing a part (an outage, a timeout, a refused query)
+ * may be served before it is fetched again. Long enough that a struggling API is not
+ * asked again on every page view, short enough that the gap closes soon after.
+ */
+export const INCOMPLETE_MAX_AGE_MS = 10 * 60 * 1000
+
+// Budget -----------------------------------------------------------------------------
+
+/**
+ * How urgent a query is. "high" is what a raid page needs to show anything at all;
+ * "low" is extra (character parses, scanning the loggers' personal logs) and yields
+ * first when the hourly points run short.
+ */
+export type QueryPriority = 'high' | 'low'
+
+/** Share of the hourly points each priority may use before it is refused. */
+const BUDGET_SHARE: Record<QueryPriority, number> = { low: 0.8, high: 0.95 }
+
+export interface Budget {
+  spent: number
+  limit: number
+  /** Epoch milliseconds when the points reset. */
+  resetsAt: number
+}
+
+/**
+ * Whether a query of this priority may run. Warcraft Logs reports points for the
+ * whole API client, not per server, so the last reading holds across instances; once
+ * the reset time passes, the old reading no longer says anything and every query may
+ * run again until the next one comes back.
+ */
+export const budgetAllows = (budget: Budget | null, priority: QueryPriority, now: number) =>
+  !budget || now >= budget.resetsAt || budget.spent < budget.limit * BUDGET_SHARE[priority]
+
+/**
+ * Adds `rateLimitData` to a query's top-level selection, as Warcraft Logs' quota docs
+ * suggest, so every answer also says how many points are left. The first brace in
+ * every query here opens the operation's selection set, since variables sit in
+ * parentheses.
+ */
+export const withRateLimitData = (query: string) =>
+  query.replace('{', '{ rateLimitData { limitPerHour pointsSpentThisHour pointsResetIn }')
+
+// The last reading, in module scope like the token.
+let budget: Budget | null = null
+
+const BUDGET_EXHAUSTED = 'Warcraft Logs hourly budget reserved'
+
+/** True when a query was refused to protect the hourly points. It passes within the hour. */
+export const isBudgetExhausted = (error: unknown) =>
+  (error as { statusMessage?: string }).statusMessage === BUDGET_EXHAUSTED
 
 // Module scope, so a warm instance reuses the token instead of paying for an exchange
 // per request. A cold start just fetches a new one, which is cheap and harmless.
@@ -122,6 +185,7 @@ const fetchAccessToken = async () => {
 
   const data = await $fetch<TokenResponse>(TOKEN_URL, {
     method: 'POST',
+    timeout: UPSTREAM_TIMEOUT_MS,
     headers: {
       // btoa rather than Buffer, so this keeps working on a Workers runtime.
       Authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
@@ -144,17 +208,24 @@ const getAccessToken = async () => {
 
 /**
  * Runs one GraphQL query and returns its `data`. Errors are normalised to createError
- * so a route can just let them propagate.
+ * so a route can just let them propagate. A query the hourly budget cannot afford is
+ * refused before it is sent, with a 503 that `isBudgetExhausted()` recognises.
  */
 export const wclQuery = async <T>(
   query: string,
   variables: Record<string, unknown> = {},
+  priority: QueryPriority = 'high',
 ): Promise<T> => {
+  if (!budgetAllows(budget, priority, Date.now())) {
+    throw createError({ statusCode: 503, statusMessage: BUDGET_EXHAUSTED })
+  }
+
   const send = async (token: string) =>
     $fetch<GraphQLResponse<T>>(API_URL, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
-      body: { query, variables },
+      body: { query: withRateLimitData(query), variables },
+      timeout: UPSTREAM_TIMEOUT_MS,
     })
 
   let response: GraphQLResponse<T>
@@ -171,6 +242,15 @@ export const wclQuery = async <T>(
     }
     else {
       throw error
+    }
+  }
+
+  const rate = response.data?.rateLimitData
+  if (rate) {
+    budget = {
+      spent: rate.pointsSpentThisHour,
+      limit: rate.limitPerHour,
+      resetsAt: Date.now() + rate.pointsResetIn * 1000,
     }
   }
 

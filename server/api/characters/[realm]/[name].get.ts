@@ -83,6 +83,7 @@ const WCL_QUERY = `
 const fetchRaiderIo = async (realm: string, name: string) => {
   try {
     return await $fetch<RaiderIoProfile>('https://raider.io/api/v1/characters/profile', {
+      timeout: UPSTREAM_TIMEOUT_MS,
       query: {
         region: 'eu',
         realm,
@@ -106,7 +107,7 @@ const fetchLogs = async (realm: string, name: string, zone: number, metric: 'dps
       region: GUILD.serverRegion,
       zone,
       metric,
-    })
+    }, 'low')
     return data.characterData.character
   }
   catch (error) {
@@ -132,7 +133,7 @@ const fetchAttendance = async (realm: string, name: string, soft: Soft) => {
 // cached, for a day, since tracks only change with a new season. If Raidbots is down
 // the gear simply shows without tracks.
 const fetchUpgradeTracks = defineCachedFunction(
-  async () => toUpgradeTracks(await $fetch('https://www.raidbots.com/static/data/live/bonuses.json')),
+  async () => toUpgradeTracks(await $fetch('https://www.raidbots.com/static/data/live/bonuses.json', { timeout: UPSTREAM_TIMEOUT_MS })),
   { name: 'upgrade-tracks', getKey: () => 'live', maxAge: 24 * 60 * 60 },
 )
 
@@ -140,8 +141,9 @@ interface CharacterResult {
   profile: CharacterProfile | null
   /**
    * False when a part failed for a reason that passes on its own (an outage, a
-   * timeout). The page still renders without that part, but the result is not
-   * cached, so the next visit tries again instead of showing a gap for an hour.
+   * timeout, a query refused to protect the hourly budget). The page still renders
+   * without that part, but the result is only kept for INCOMPLETE_MAX_AGE_MS, so the
+   * gap closes soon instead of lasting the full hour.
    */
   complete: boolean
 }
@@ -215,7 +217,9 @@ const fetchCharacter = defineCachedFunction(
     getKey: (realm: string, name: string, tierId: number) => `${realm}:${name.toLowerCase()}:${tierId}`,
     // Refreshed once an hour, like the raid pages.
     maxAge: 60 * 60,
-    validate: entry => entry.value !== undefined && entry.value.complete,
+    validate: entry =>
+      entry.value !== undefined
+      && (entry.value.complete || Date.now() - (entry.mtime ?? 0) < INCOMPLETE_MAX_AGE_MS),
   },
 )
 

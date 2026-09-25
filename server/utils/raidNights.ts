@@ -162,43 +162,63 @@ const fetchGuildReports = async (zone: number) => {
 }
 
 // The guild's raid loggers' personal logs that are guild nights. If the roster cannot
-// be read, there is no way to tell a guild night from a pug, so none are added.
-const fetchLoggerReports = async (zone: number) => {
+// be read, there is no way to tell a guild night from a pug, so none are added. Low
+// priority: this is the expensive half of a tier and the first to yield to the budget.
+// `complete` is false when any part could not be fetched.
+const fetchLoggerReports = async (zone: number): Promise<{ reports: WclReport[], complete: boolean }> => {
   const roster = await fetchRoster().catch(() => null)
-  if (!roster) return []
+  if (!roster) return { reports: [], complete: false }
   const rosterNames = new Set(roster.map(member => member.name.toLowerCase()))
 
+  let complete = true
   const perLogger = await Promise.all(
     GUILD_LOGGERS.map(logger =>
-      wclQuery<ReportsResponse>(LOGGER_REPORTS_QUERY, { user: logger.id, zone, limit: 25 })
+      wclQuery<ReportsResponse>(LOGGER_REPORTS_QUERY, { user: logger.id, zone, limit: 25 }, 'low')
         .then(data => data.reportData.reports.data)
-        .catch(() => []),
+        .catch(() => {
+          complete = false
+          return []
+        }),
     ),
   )
 
-  return perLogger.flat().filter((report) => {
+  const reports = perLogger.flat().filter((report) => {
     const players = (report.fights ?? []).flatMap(fight => fight.friendlyPlayers ?? [])
     return new Set(players).size <= RAID_GROUP_MAX
       && countRosterPlayers(players, report.masterData?.actors ?? [], rosterNames) >= GUILD_NIGHT_MIN_ROSTER
   })
+
+  return { reports, complete }
 }
 
-const loadRaidNights = async (tierId: number): Promise<RaidSummary[]> => {
+interface RaidNightsResult {
+  nights: RaidSummary[]
+  /** False when the loggers' half could not be fetched; see INCOMPLETE_MAX_AGE_MS. */
+  complete: boolean
+}
+
+const loadRaidNights = async (tierId: number): Promise<RaidNightsResult> => {
   const zone = raidTier(tierId).id
-  const [guildReports, loggerReports] = await Promise.all([
+  const [guildReports, logger] = await Promise.all([
     fetchGuildReports(zone),
     fetchLoggerReports(zone),
   ])
 
   // A log tagged to the guild and uploaded by a logger comes back from both queries.
-  const reports = new Map([...loggerReports, ...guildReports].map(report => [report.code, report]))
+  const reports = new Map([...logger.reports, ...guildReports].map(report => [report.code, report]))
 
   // A log with no boss pulls is not a raid night: a short trash or test log that
   // someone uploaded under the guild. It has nothing to show on the detail page.
   const withBosses = [...reports.values()].filter(report => (report.fights ?? []).length > 0)
 
-  return groupRaidNights(withBosses).map(toRaidSummary)
+  return { nights: groupRaidNights(withBosses).map(toRaidSummary), complete: logger.complete }
 }
+
+// A tier missing the loggers' nights is only kept briefly, never for the full window,
+// so a busy hour cannot leave a finished tier short for a week.
+const keepIfComplete = (entry: { value?: RaidNightsResult, mtime?: number }) =>
+  entry.value !== undefined
+  && (entry.value.complete || Date.now() - (entry.mtime ?? 0) < INCOMPLETE_MAX_AGE_MS)
 
 // The current tier is refreshed once an hour, so a new raid night shows up within
 // the hour of its upload. A finished tier never changes, and checking the loggers'
@@ -206,18 +226,21 @@ const loadRaidNights = async (tierId: number): Promise<RaidSummary[]> => {
 // it is refreshed once a week.
 const fetchCurrentTier = defineCachedFunction(loadRaidNights, {
   maxAge: 60 * 60,
+  validate: keepIfComplete,
   name: 'raids',
   getKey: (tierId: number) => `lionhearts:${tierId}`,
 })
 
 const fetchPastTier = defineCachedFunction(loadRaidNights, {
   maxAge: 7 * 24 * 60 * 60,
+  validate: keepIfComplete,
   name: 'raids-past',
   getKey: (tierId: number) => `lionhearts:${tierId}`,
 })
 
 /** The guild's raid nights in one tier, newest first. An unknown tier id means the current tier. */
-export const fetchRaidNights = (tierId: number): Promise<RaidSummary[]> => {
+export const fetchRaidNights = async (tierId: number): Promise<RaidSummary[]> => {
   const tier = raidTier(tierId)
-  return tier.id === RAID_TIERS[0].id ? fetchCurrentTier(tier.id) : fetchPastTier(tier.id)
+  const result = tier.id === RAID_TIERS[0].id ? await fetchCurrentTier(tier.id) : await fetchPastTier(tier.id)
+  return result.nights
 }
