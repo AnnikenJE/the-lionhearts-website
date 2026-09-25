@@ -85,7 +85,7 @@ usePageSeo(() => ({
 
 <template>
   <main class="mx-auto max-w-5xl px-4 py-16 sm:px-6">
-    <NuxtLink to="/roster" class="text-sm text-fg-muted transition hover:text-fg">
+    <NuxtLink to="/roster" class="-my-2 inline-block py-2 text-sm text-fg-muted transition hover:text-fg">
       <span aria-hidden="true">←</span> Roster
     </NuxtLink>
 
@@ -275,7 +275,7 @@ usePageSeo(() => ({
             <tbody class="divide-y divide-line">
               <tr v-for="run in character.mythicPlus.bestRuns" :key="run.url">
                 <td :class="[td, 'text-fg']">
-                  <a :href="run.url" target="_blank" rel="noopener" class="hover:underline">{{ run.dungeon }}</a>
+                  <a :href="run.url" target="_blank" rel="noopener" class="-my-1 inline-block py-1 hover:underline">{{ run.dungeon }}</a>
                 </td>
                 <td :class="[td, 'text-right', run.upgrades > 0 ? 'text-fg' : 'text-fg-subtle']">
                   +{{ run.level }}<span v-if="run.upgrades > 0" class="text-accent">{{ '+'.repeat(run.upgrades) }}</span>

@@ -38,7 +38,7 @@ const prose = [
 
 <template>
   <main v-if="post" class="mx-auto max-w-5xl px-4 py-16 sm:px-6">
-    <NuxtLink to="/news" class="text-sm font-medium text-fg-subtle transition hover:text-fg">
+    <NuxtLink to="/news" class="-my-2 inline-block py-2 text-sm text-fg-muted transition hover:text-fg">
       <span aria-hidden="true">←</span> All news
     </NuxtLink>
 
