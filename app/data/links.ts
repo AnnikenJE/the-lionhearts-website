@@ -1,4 +1,4 @@
-export const DISCORD_URL = 'https://discord.gg/dVWddC6aq'
+export const DISCORD_URL = 'https://discord.gg/xP488F7yrr'
 
 export interface GuildLink {
   label: string
