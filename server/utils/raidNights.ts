@@ -110,6 +110,7 @@ const REPORTS_QUERY = `
           endTime
           zone { name }
           fights(killType: Encounters) { id name kill difficulty friendlyPlayers }
+          masterData { actors(type: "Player") { id name } }
         }
       }
     }
@@ -137,12 +138,14 @@ const LOGGER_REPORTS_QUERY = `
 `
 
 /**
- * A logger's personal log counts as a guild night when at least this many of the
- * players in its boss fights are on the roster. Guild nights run 15 to 22, pugs 1 to
- * 3, so eight sits well clear of both, and still holds for an old night whose raiders
- * have partly left the guild since.
+ * How many roster members a log needs in its boss fights to count as a guild night.
+ * Guild nights run 11 to 22, except two Castle Nathria nights from 2021 with 6 and 7,
+ * since many of those raiders have left. A guild-tagged log only needs 5, enough to
+ * keep out a member's pug or solo run; a logger's personal log, which is far more often
+ * a pug, needs 8. Measured 2026-09-25.
  */
-const GUILD_NIGHT_MIN_ROSTER = 8
+const GUILD_TAGGED_MIN_ROSTER = 5
+const PERSONAL_LOG_MIN_ROSTER = 8
 
 /** A raid group is thirty players at most; a bigger log is an event, not a raid night. */
 const RAID_GROUP_MAX = 30
@@ -161,15 +164,10 @@ const fetchGuildReports = async (zone: number) => {
   return data.reportData.reports.data
 }
 
-// The guild's raid loggers' personal logs that are guild nights. If the roster cannot
-// be read, there is no way to tell a guild night from a pug, so none are added. Low
-// priority: this is the expensive half of a tier and the first to yield to the budget.
-// `complete` is false when any part could not be fetched.
+// The guild's raid loggers' personal logs in the tier, unfiltered. Low priority: this
+// is the expensive half of a tier and the first to yield to the budget. `complete` is
+// false when any logger's logs could not be fetched.
 const fetchLoggerReports = async (zone: number): Promise<{ reports: WclReport[], complete: boolean }> => {
-  const roster = await fetchRoster().catch(() => null)
-  if (!roster) return { reports: [], complete: false }
-  const rosterNames = new Set(roster.map(member => member.name.toLowerCase()))
-
   let complete = true
   const perLogger = await Promise.all(
     GUILD_LOGGERS.map(logger =>
@@ -181,15 +179,21 @@ const fetchLoggerReports = async (zone: number): Promise<{ reports: WclReport[],
         }),
     ),
   )
-
-  const reports = perLogger.flat().filter((report) => {
-    const players = (report.fights ?? []).flatMap(fight => fight.friendlyPlayers ?? [])
-    return new Set(players).size <= RAID_GROUP_MAX
-      && countRosterPlayers(players, report.masterData?.actors ?? [], rosterNames) >= GUILD_NIGHT_MIN_ROSTER
-  })
-
-  return { reports, complete }
+  return { reports: perLogger.flat(), complete }
 }
+
+/** The log with only its Normal, Heroic and Mythic encounters. */
+const withGuildRaidFights = (report: WclReport): WclReport => ({
+  ...report,
+  fights: (report.fights ?? []).filter(fight => isGuildRaidDifficulty(fight.difficulty)),
+})
+
+const rosterPlayersIn = (report: WclReport, rosterNames: Set<string>) =>
+  countRosterPlayers(
+    (report.fights ?? []).flatMap(fight => fight.friendlyPlayers ?? []),
+    report.masterData?.actors ?? [],
+    rosterNames,
+  )
 
 interface RaidNightsResult {
   nights: RaidSummary[]
@@ -199,23 +203,42 @@ interface RaidNightsResult {
 
 const loadRaidNights = async (tierId: number): Promise<RaidNightsResult> => {
   const zone = raidTier(tierId).id
-  const [guildReports, logger] = await Promise.all([
+  const [guildReports, logger, roster] = await Promise.all([
     fetchGuildReports(zone),
     fetchLoggerReports(zone),
+    fetchRoster().catch(() => null),
   ])
 
-  // A log tagged to the guild and uploaded by a logger comes back from both queries.
-  // Only raid encounters count; see isRaidDifficulty for the Mythic+ runs this drops.
-  const reports = new Map([...logger.reports, ...guildReports].map(report => [
-    report.code,
-    { ...report, fights: (report.fights ?? []).filter(fight => isRaidDifficulty(fight.difficulty)) },
-  ]))
+  // Without the roster there is no telling a guild night from a pug: guild-tagged logs
+  // are kept unchecked, the loggers' personal logs are left out, and the result counts
+  // as incomplete so it is fetched again soon.
+  const rosterNames = roster && new Set(roster.map(member => member.name.toLowerCase()))
 
-  // A log with no boss pulls is not a raid night: a short trash or test log that
-  // someone uploaded under the guild. It has nothing to show on the detail page.
+  // Only Normal, Heroic and Mythic encounters count, so an LFR or Mythic+ log ends up
+  // with no fights and drops out with the trash and test logs below.
+  const guildNights = guildReports
+    .map(withGuildRaidFights)
+    .filter(report => !rosterNames || rosterPlayersIn(report, rosterNames) >= GUILD_TAGGED_MIN_ROSTER)
+
+  const loggerNights = rosterNames
+    ? logger.reports
+        .map(withGuildRaidFights)
+        .filter(report =>
+          bossPlayerCount(report) <= RAID_GROUP_MAX
+          && rosterPlayersIn(report, rosterNames) >= PERSONAL_LOG_MIN_ROSTER)
+    : []
+
+  // A log tagged to the guild and uploaded by a logger comes back from both queries.
+  const reports = new Map([...loggerNights, ...guildNights].map(report => [report.code, report]))
+
+  // A log with no boss pulls left is not a raid night: a trash, test, LFR or Mythic+
+  // log. It has nothing to show on the detail page.
   const withBosses = [...reports.values()].filter(report => (report.fights ?? []).length > 0)
 
-  return { nights: groupRaidNights(withBosses).map(toRaidSummary), complete: logger.complete }
+  return {
+    nights: groupRaidNights(withBosses).map(toRaidSummary),
+    complete: logger.complete && rosterNames !== null,
+  }
 }
 
 // A tier missing the loggers' nights is only kept briefly, never for the full window,

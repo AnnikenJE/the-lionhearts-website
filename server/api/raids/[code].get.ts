@@ -1,6 +1,7 @@
 // Runs server-side so credentials stay off the browser; the fetch and its hourly cache
 // live in server/utils/raidDetail.ts.
-export type { RaidDetail, RaidFight, RaidPlayer } from '../../utils/raidDetail'
+export type { RaidDetail, RaidPlayer } from '../../utils/raidDetail'
+export type { RaidFight } from '../../utils/raids'
 
 export default defineEventHandler(async (event): Promise<RaidDetail> => {
   const code = getRouterParam(event, 'code')

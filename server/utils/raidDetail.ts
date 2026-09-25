@@ -1,6 +1,8 @@
 // One raid night in detail. Kept in server/utils so both the raid route and the
 // character pages (which list the nights a character attended) can use it.
 
+import type { RaidFight } from './raids'
+
 // A report code is an opaque alphanumeric id copied from a Warcraft Logs URL, never
 // user-composed. Anything that fails this shape cannot be a real code, so it is
 // rejected before it is ever forwarded upstream.
@@ -42,17 +44,6 @@ interface WclPlayerEntry {
   specs?: { spec?: string }[]
 }
 
-export interface RaidFight {
-  /** The id of the first pull, enough to key a list row. */
-  id: number
-  name: string
-  kill: boolean
-  difficulty: string | null
-  pulls: number
-  /** Health remaining on the best pull, percent. Null on a kill or when unreported. */
-  bestPercent: number | null
-}
-
 export interface RaidPlayer {
   name: string
   className: string
@@ -90,47 +81,6 @@ const QUERY = `
     }
   }
 `
-
-// Fights collapse to one row per boss: a progression night with twenty wipes on one
-// boss should render as one row with pulls: 20, not twenty near-identical lines.
-const collapseFights = (fights: WclFight[]): RaidFight[] => {
-  const order: string[] = []
-  const groups = new Map<string, WclFight[]>()
-
-  for (const fight of fights) {
-    if (!groups.has(fight.name)) {
-      order.push(fight.name)
-      groups.set(fight.name, [])
-    }
-    groups.get(fight.name)!.push(fight)
-  }
-
-  return order.map((name) => {
-    const pulls = groups.get(name)!
-    const kill = pulls.some(pull => pull.kill === true)
-
-    const maxDifficulty = pulls.reduce<number | null>((max, pull) => {
-      if (pull.difficulty == null) return max
-      return max == null ? pull.difficulty : Math.max(max, pull.difficulty)
-    }, null)
-
-    // Lower fightPercentage means closer to a kill, so the best pull is the minimum.
-    // A kill has nothing left to report, so it is null regardless of what pulls logged.
-    const percentages = pulls
-      .map(pull => pull.fightPercentage)
-      .filter((percent): percent is number => percent != null)
-    const bestPercent = kill || percentages.length === 0 ? null : Math.min(...percentages)
-
-    return {
-      id: pulls[0]!.id,
-      name,
-      kill,
-      difficulty: difficultyName(maxDifficulty),
-      pulls: pulls.length,
-      bestPercent,
-    }
-  })
-}
 
 const asRecord = (value: unknown): Record<string, unknown> | undefined =>
   typeof value === 'object' && value !== null ? value as Record<string, unknown> : undefined
@@ -177,9 +127,9 @@ export const fetchRaid = defineCachedFunction(
       throw createError({ statusCode: 404, statusMessage: 'Raid not found' })
     }
 
-    // Raid encounters only: a Mythic+ run later in the same log is neither a boss of
-    // this night nor a reason to list its players as raiders.
-    const fights = (report.fights ?? []).filter(fight => isRaidDifficulty(fight.difficulty))
+    // Guild raid encounters only: an LFR run or a Mythic+ run in the same log is neither
+    // a boss of this night nor a reason to list its players as raiders.
+    const fights = (report.fights ?? []).filter(fight => isGuildRaidDifficulty(fight.difficulty))
     const raiders = new Set(fights.flatMap(fight => fight.friendlyPlayers ?? []))
     const inRaid = (entry: WclPlayerEntry) => raiders.size === 0 || entry.id === undefined || raiders.has(entry.id)
 

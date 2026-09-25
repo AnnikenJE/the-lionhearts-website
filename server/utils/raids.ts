@@ -1,6 +1,10 @@
 // Kept out of server/api/raids.get.ts so it can be tested without a Nitro runtime, the
 // same split as server/utils/roster.ts.
 
+// Imported explicitly rather than left to Nitro's auto-import, so this module also
+// loads under plain Vitest.
+import { difficultyName } from './warcraftlogs'
+
 interface TimedLog {
   /** Epoch milliseconds, as Warcraft Logs reports them. */
   startTime: number
@@ -56,4 +60,58 @@ export const countRosterPlayers = (
     if (name && roster.has(name)) count++
   }
   return count
+}
+
+export interface RaidFight {
+  /** The id of the first pull, enough to key a list row. */
+  id: number
+  name: string
+  kill: boolean
+  difficulty: string | null
+  pulls: number
+  /** Health remaining on the best pull, percent. Null on a kill or when unreported. */
+  bestPercent: number | null
+}
+
+interface FightLike {
+  id: number
+  name: string
+  kill: boolean | null
+  difficulty: number | null
+  fightPercentage: number | null
+}
+
+/**
+ * One row per boss and difficulty, in the order they were first pulled. A progression
+ * night with twenty wipes on one boss is one row with twenty pulls, and a boss killed
+ * on Normal and then on Heroic the same night is two rows, each with its own pulls.
+ */
+export const collapseFights = (fights: FightLike[]): RaidFight[] => {
+  const groups = new Map<string, FightLike[]>()
+
+  for (const fight of fights) {
+    const key = `${fight.name}|${fight.difficulty ?? ''}`
+    groups.set(key, [...(groups.get(key) ?? []), fight])
+  }
+
+  return [...groups.values()].map((pulls) => {
+    const first = pulls[0]!
+    const kill = pulls.some(pull => pull.kill === true)
+
+    // Lower fightPercentage means closer to a kill, so the best pull is the minimum.
+    // A kill has nothing left to report, so it is null regardless of what pulls logged.
+    const percentages = pulls
+      .map(pull => pull.fightPercentage)
+      .filter((percent): percent is number => percent != null)
+    const bestPercent = kill || percentages.length === 0 ? null : Math.min(...percentages)
+
+    return {
+      id: first.id,
+      name: first.name,
+      kill,
+      difficulty: difficultyName(first.difficulty),
+      pulls: pulls.length,
+      bestPercent,
+    }
+  })
 }

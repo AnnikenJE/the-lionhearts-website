@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { budgetAllows, difficultyName, isNotConfigured, withRateLimitData } from '../../server/utils/warcraftlogs'
+import { budgetAllows, difficultyName, isGuildRaidDifficulty, isNotConfigured, withRateLimitData } from '../../server/utils/warcraftlogs'
 
 describe('difficultyName', () => {
   it('names the retail raid difficulties', () => {
@@ -54,5 +54,17 @@ describe('withRateLimitData', () => {
     expect(withRateLimitData(query)).toBe(
       'query Raid($code: String!) { rateLimitData { limitPerHour pointsSpentThisHour pointsResetIn } reportData { report(code: $code) { code } } }',
     )
+  })
+})
+
+describe('isGuildRaidDifficulty', () => {
+  it('counts Normal, Heroic and Mythic', () => {
+    expect([3, 4, 5].every(isGuildRaidDifficulty)).toBe(true)
+  })
+
+  it('leaves out LFR and Mythic+ dungeons', () => {
+    expect(isGuildRaidDifficulty(1)).toBe(false)
+    expect(isGuildRaidDifficulty(10)).toBe(false)
+    expect(isGuildRaidDifficulty(null)).toBe(false)
   })
 })
