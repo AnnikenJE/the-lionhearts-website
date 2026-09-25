@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { RaiderIoMember } from '../../server/utils/roster'
-import { toRosterMembers } from '../../server/utils/roster'
+import { rosterKey, rosterKeys, toRosterMembers } from '../../server/utils/roster'
 
 const member = (
   rank: number,
@@ -70,5 +70,25 @@ describe('toRosterMembers', () => {
 
   it('returns an empty roster rather than throwing on an empty response', () => {
     expect(toRosterMembers([])).toEqual([])
+  })
+})
+
+describe('rosterKey', () => {
+  it('matches however an API spells the realm, and ignores case', () => {
+    const key = rosterKey('Hidril', 'Defias Brotherhood')
+    expect(rosterKey('hidril', 'DefiasBrotherhood')).toBe(key)
+    expect(rosterKey('HIDRIL', 'defias-brotherhood')).toBe(key)
+  })
+
+  it('tells two characters with the same name on different realms apart', () => {
+    expect(rosterKey('Hidril', 'Kilrogg')).not.toBe(rosterKey('Hidril', 'Defias Brotherhood'))
+  })
+})
+
+describe('rosterKeys', () => {
+  it('holds every member, so a pug is not in it', () => {
+    const keys = rosterKeys([{ name: 'Destructo', realm: 'Kilrogg' }, { name: 'Anniken', realm: 'Darkmoon Faire' }])
+    expect(keys.has(rosterKey('Destructo', 'kilrogg'))).toBe(true)
+    expect(keys.has(rosterKey('Grakal', 'defias-brotherhood'))).toBe(false)
   })
 })

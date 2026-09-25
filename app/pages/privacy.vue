@@ -52,7 +52,9 @@ usePageSeo({
         pulled on a given night and which characters were in the raid group.
         Each character also has a page of their own, with their raid parses,
         gear, Mythic+ runs, raid progression and the guild raid nights they were
-        in, for anyone on the roster or in one of our raid logs.
+        in, for everyone on the guild roster. Players from outside the guild who
+        join a raid appear by name on that raid night, marked as a pug, with no
+        page of their own.
       </p>
       <p class="mt-4 text-fg-muted">
         All of it is character data. None of it is account data: no real names,

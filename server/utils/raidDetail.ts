@@ -49,6 +49,11 @@ export interface RaidPlayer {
   className: string
   spec: string | null
   server: string | null
+  /**
+   * Whether the character is on the guild roster, set by the route after the cache.
+   * Null when the roster could not be read. Only roster members get a character page.
+   */
+  onRoster?: boolean | null
 }
 
 export interface RaidDetail {

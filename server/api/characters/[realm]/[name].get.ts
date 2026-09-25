@@ -244,6 +244,15 @@ export default defineEventHandler(async (event): Promise<CharacterProfile> => {
     throw createError({ statusCode: 404, statusMessage: 'Character not found' })
   }
 
+  // Only the guild's own members get a page. Anyone else, a pug from a raid log say,
+  // gets the same 404 as a name that does not exist.
+  const roster = await fetchRoster().catch(() => {
+    throw createError({ statusCode: 502, statusMessage: 'Could not reach Raider.IO' })
+  })
+  if (!rosterKeys(roster).has(rosterKey(name, realm))) {
+    throw createError({ statusCode: 404, statusMessage: 'Character not found' })
+  }
+
   const { profile, complete } = await fetchCharacter(realm, name, raidTier(getQuery(event).tier).id)
 
   if (!profile) {

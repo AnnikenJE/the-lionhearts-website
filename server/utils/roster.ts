@@ -4,6 +4,7 @@
 
 // Imported explicitly rather than left to Nitro's auto-import, for the same
 // reason: this module has to load under plain Vitest too.
+import { realmSlug } from '../../app/utils/wow'
 import { isOptedOut } from './optOut'
 
 /** The slice of Raider.IO's guild profile response the roster actually reads. */
@@ -50,3 +51,13 @@ export const toRosterMembers = (members: RaiderIoMember[]): RosterMember[] =>
       profileUrl: m.character.profile_url,
     }))
     .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name))
+
+/**
+ * One character, as a key that matches however an API spells the realm ("Defias
+ * Brotherhood", "DefiasBrotherhood", "defias-brotherhood") and whatever the name's case.
+ */
+export const rosterKey = (name: string, realm: string) => `${realmSlug(realm)}:${name.toLowerCase()}`
+
+/** Every roster member as a rosterKey, to check whether a character is in the guild. */
+export const rosterKeys = (members: Pick<RosterMember, 'name' | 'realm'>[]) =>
+  new Set(members.map(member => rosterKey(member.name, member.realm)))
