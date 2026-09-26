@@ -1,2 +1,37 @@
-User-agent: *
+# Aggressive or low-value foreign crawlers, no reach for an EU guild site
+User-agent: Bytespider
+User-agent: PetalBot
+User-agent: Baiduspider
+User-agent: Sogou web spider
+User-agent: 360Spider
+User-agent: Yisouspider
 Disallow: /
+
+# SEO and backlink scrapers, no value to a visitor, just load
+User-agent: AhrefsBot
+User-agent: SemrushBot
+User-agent: MJ12bot
+User-agent: DotBot
+User-agent: BLEXBot
+User-agent: DataForSeoBot
+Disallow: /
+
+# AI training crawlers. See the pull request that added this file for the
+# tradeoff (Blizzard's API terms forbid passing API data to third parties).
+User-agent: GPTBot
+User-agent: CCBot
+User-agent: ClaudeBot
+User-agent: anthropic-ai
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: meta-externalagent
+User-agent: PerplexityBot
+Disallow: /
+
+# Everyone else: open, except the API (server routes, not pages) and the
+# tier query variants, already noindex per page (see useTierFetch.ts) and
+# each uncached one costs Warcraft Logs API points.
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /*?tier=
