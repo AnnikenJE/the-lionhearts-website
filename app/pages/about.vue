@@ -60,5 +60,19 @@ usePageSeo({
       </p>
       <AppButton :href="DISCORD_URL" class="mt-5">Join our Discord</AppButton>
     </section>
+
+    <section class="mt-14">
+      <SectionHeading class="mb-5">About this site</SectionHeading>
+      <p class="max-w-3xl text-fg-muted">
+        This website is made by and for The Lionhearts, just for fun. It covers
+        our own guild and nothing else, and it is not meant to compete with
+        Raider.IO, Warcraft Logs or any other site: they are where the data comes
+        from, and the site links back to them. There are no ads and nothing for
+        sale. Every raid log shown here was uploaded by a member of the guild.
+        The
+        <NuxtLink to="/privacy" class="font-medium text-accent hover:text-accent-bright">privacy page</NuxtLink>
+        lists what the site shows and where each part comes from.
+      </p>
+    </section>
   </main>
 </template>

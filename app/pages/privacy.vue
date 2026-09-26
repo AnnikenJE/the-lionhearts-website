@@ -17,13 +17,13 @@ const SOURCES = [
   {
     name: 'Warcraft Logs',
     url: 'https://www.warcraftlogs.com/guild/eu/darkmoon-faire/the%20lionhearts',
-    body: 'The raid nights: which bosses we pulled, which ones died, and who was in the group. On a character page, their parses: the percentile rankings, best damage or healing per boss, kill counts and realm ranks that Warcraft Logs publishes for every ranked character. Logs are uploaded by our own raiders and are already public on Warcraft Logs; a character hidden there is not shown here either.',
+    body: 'The raid nights: which bosses we pulled, which ones died, and who was in the group. On a character page, their parses: the percentile rankings, best damage or healing per boss, kill counts and realm ranks that Warcraft Logs publishes for every ranked character. Every log shown here was uploaded by a member of the guild and is already public on Warcraft Logs; a character hidden there is not shown here either.',
   },
 ]
 
 const link = 'text-accent underline underline-offset-4 transition hover:no-underline'
 
-const LAST_UPDATED = '25 September 2026'
+const LAST_UPDATED = '26 September 2026'
 
 usePageSeo({
   title: 'Privacy',

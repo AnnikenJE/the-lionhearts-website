@@ -28,8 +28,8 @@ usePageSeo({
     <header>
       <h1 class="text-display text-fg">Raids</h1>
       <p class="mt-5 text-lg text-fg-muted">
-        The guild's raid nights, tier by tier, pulled straight from its Warcraft
-        Logs uploads.
+        The guild's raid nights, tier by tier, pulled straight from Warcraft
+        Logs. Every log here was uploaded by a member of the guild.
       </p>
     </header>
 
