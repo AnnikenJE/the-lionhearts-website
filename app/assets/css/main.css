@@ -2,6 +2,10 @@
    the components and pages themselves. There are no <style> blocks in app/. */
 
 @import "tailwindcss";
+/* Nunito Sans, served from the site itself rather than Google Fonts, so no
+   visitor's browser is sent to Google. Upright weight axis only: the site has
+   no italics. */
+@import "@fontsource-variable/nunito-sans/wght.css";
 @plugin "@tailwindcss/typography";
 
 /* Tokens declared in `@theme` are both plain CSS variables and Tailwind scale
@@ -30,7 +34,7 @@
   --color-accent-bright: #e6c98d;
   --color-accent-ink: #191510;
 
-  --font-sans: "Nunito Sans", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Nunito Sans Variable", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
 
   /* Carries its own weight, leading and tracking, so `text-display` is all a
      page title needs. */
