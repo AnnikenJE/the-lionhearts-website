@@ -66,8 +66,8 @@ const groups = computed(() => {
   return [...byRank].map(([rank, list]) => ({ rank, name: rankName(rank), members: list }))
 })
 
-// Civilians and Peasants are almost always alts or inactive characters, so
-// the roster opens with them collapsed and the core ranks visible first.
+// The two lowest ranks, Civilian and Peasant, start collapsed so the roster
+// opens on the core of the guild.
 const DEFAULT_COLLAPSED_RANKS = [8, 9]
 const collapsed = ref<Set<number>>(new Set(DEFAULT_COLLAPSED_RANKS))
 const toggle = (rank: number) => {
