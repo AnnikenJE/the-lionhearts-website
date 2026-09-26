@@ -29,8 +29,11 @@ User-agent: PerplexityBot
 Disallow: /
 
 # Everyone else: open, except the API (server routes, not pages) and the
-# tier query variants, already noindex per page (see useTierFetch.ts) and
-# each uncached one costs Warcraft Logs API points.
+# tier query variants, already noindex per page (see useTierFetch.ts).
+# Character pages are cached per character and tier for one hour, roughly
+# 545 characters x 10 tiers, ~5400 keys, so a crawler walking tier variants
+# mostly hits cold keys and can trip the Warcraft Logs 'low' budget guard,
+# leaving real visitors with incomplete parses.
 User-agent: *
 Allow: /
 Disallow: /api/
