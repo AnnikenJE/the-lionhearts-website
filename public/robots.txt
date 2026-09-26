@@ -16,8 +16,9 @@ User-agent: BLEXBot
 User-agent: DataForSeoBot
 Disallow: /
 
-# AI training crawlers. See the pull request that added this file for the
-# tradeoff (Blizzard's API terms forbid passing API data to third parties).
+# AI training crawlers. A cautious choice rather than a requirement: keeps
+# guild character and raid data out of training sets. See the pull request
+# that added this file for the tradeoff.
 User-agent: GPTBot
 User-agent: CCBot
 User-agent: ClaudeBot
