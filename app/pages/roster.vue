@@ -66,7 +66,10 @@ const groups = computed(() => {
   return [...byRank].map(([rank, list]) => ({ rank, name: rankName(rank), members: list }))
 })
 
-const collapsed = ref<Set<number>>(new Set())
+// Civilians and Peasants are almost always alts or inactive characters, so
+// the roster opens with them collapsed and the core ranks visible first.
+const DEFAULT_COLLAPSED_RANKS = [8, 9]
+const collapsed = ref<Set<number>>(new Set(DEFAULT_COLLAPSED_RANKS))
 const toggle = (rank: number) => {
   const next = new Set(collapsed.value)
   if (!next.delete(rank)) next.add(rank)
