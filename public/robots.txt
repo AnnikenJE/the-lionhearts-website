@@ -31,10 +31,10 @@ Disallow: /
 
 # Everyone else: open, except the API (server routes, not pages) and the
 # tier query variants, already noindex per page (see useTierFetch.ts).
-# Character pages are cached per character and tier for one hour, roughly
-# 545 characters x 10 tiers, ~5400 keys, so a crawler walking tier variants
-# mostly hits cold keys and can trip the Warcraft Logs 'low' budget guard,
-# leaving real visitors with incomplete parses.
+# Character pages are cached separately for every tier, so a crawler walking
+# every character in every tier fetches mostly uncached pages from Warcraft
+# Logs. That uses up the shared API budget and leaves real visitors with
+# incomplete parses.
 User-agent: *
 Allow: /
 Disallow: /api/
