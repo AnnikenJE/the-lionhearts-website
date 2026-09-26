@@ -98,10 +98,15 @@ usePageSeo({
         and there is nothing to opt in or out of.
       </p>
       <p class="mt-4 text-fg-muted">
-        A few things are loaded from outside, which means your browser requests
-        them directly: the site's typeface from Google Fonts, and on character
-        pages the character portrait from Blizzard's image server and the item
-        icons from Wowhead's. The site itself does not pass anything to them.
+        The site is hosted on Cloudflare, which, like any host, sees your IP
+        address when your browser asks for a page. The site itself logs no
+        visitors, and the typeface is served from the site too.
+      </p>
+      <p class="mt-4 text-fg-muted">
+        Two things on character pages are loaded from outside, which means your
+        browser requests them directly: the character portrait from Blizzard's
+        image server and the item icons from Wowhead's. The site itself does not
+        pass anything to them.
       </p>
     </section>
 

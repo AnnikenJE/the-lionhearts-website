@@ -35,15 +35,6 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
         { rel: 'icon', type: 'image/png', href: '/lionhearts-crest.png' },
         { rel: 'apple-touch-icon', href: '/lionhearts-crest.png' },
-        // Nunito Sans is the site's only typeface, headings included.
-        // Preconnect to both Google Fonts hosts so it isn't held up by
-        // DNS + TLS.
-        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-        {
-          rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400..700&display=swap',
-        },
       ],
     },
   },
