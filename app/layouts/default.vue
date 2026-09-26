@@ -70,10 +70,10 @@ const footerLink = '-my-1.5 inline-block py-1.5 text-sm text-fg-muted transition
         <!-- Required by the Blizzard Developer API Terms of Use: name the source,
              and make clear the site is not Blizzard's. -->
         <p class="mt-5 max-w-3xl text-xs leading-relaxed text-fg-subtle">
-          A fan site run by the guild, not affiliated with or endorsed by Blizzard
-          Entertainment. World of Warcraft and Blizzard Entertainment are trademarks
-          of Blizzard Entertainment, Inc. Character and raid data comes from
-          Raider.IO and Warcraft Logs.
+          A fan site run by the guild for its own members, not affiliated with or
+          endorsed by Blizzard Entertainment. World of Warcraft and Blizzard
+          Entertainment are trademarks of Blizzard Entertainment, Inc. Character
+          and raid data comes from Raider.IO and Warcraft Logs.
         </p>
       </div>
     </footer>
