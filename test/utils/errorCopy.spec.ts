@@ -15,7 +15,7 @@ describe('errorCopy', () => {
   it('never uses an em dash', () => {
     for (const code of [404, 500, undefined]) {
       const { title, lede } = errorCopy(code)
-      expect(`${title} ${lede}`).not.toContain('—')
+      expect(`${title} ${lede}`).not.toContain('\u2014')
     }
   })
 })
