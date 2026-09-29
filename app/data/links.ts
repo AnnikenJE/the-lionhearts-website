@@ -1,5 +1,8 @@
 export const DISCORD_URL = 'https://discord.gg/xP488F7yrr'
 
+// Discord username of the person who runs the website, for questions about the site itself.
+export const SITE_MAINTAINER_DISCORD = 'chinde'
+
 export interface GuildLink {
   label: string
   url: string
