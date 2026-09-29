@@ -23,6 +23,9 @@ useSeoMeta({
 </script>
 
 <template>
+  <!-- Every page awaits its fetch before it appears, so a slow navigation would
+       otherwise show nothing at all. The accent is fine here: a thin bar at the top. -->
+  <NuxtLoadingIndicator color="var(--color-accent)" :height="2" />
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
