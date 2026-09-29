@@ -37,7 +37,7 @@ Copy is English, has no em dash, and never tells the visitor to click or select 
 
 ## Testing
 
-- `test/errorCopy.test.ts` (node environment): 404 gives the not-found copy; 500, 503 and `undefined` give the fallback; no returned string contains an em dash.
+- `test/utils/errorCopy.spec.ts` (node environment): 404 gives the not-found copy; 500, 503 and `undefined` give the fallback; no returned string contains an em dash.
 - `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build` all pass.
 - In the browser on the dev server: `/does-not-exist` and `/news/does-not-exist` render the themed 404 inside the site header and footer; a thrown 500 renders the fallback with no internal message or stack; the home button clears the error and lands on `/`; a header nav link from the error page leaves the error screen.
   - The 500 check uses a temporary route or page that throws, removed before committing.
