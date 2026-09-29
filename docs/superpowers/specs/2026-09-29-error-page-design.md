@@ -32,7 +32,6 @@ Copy is English, has no em dash, and never tells the visitor to click or select 
 - `<NuxtLayout>` around the standard page shell: `<main class="mx-auto max-w-5xl px-4 py-16 sm:px-6">`, a left-aligned `<h1 class="text-display text-fg">`, a lede `<p class="mt-5 text-lg text-fg-muted">`.
 - The status code as small `text-fg-subtle` meta above the heading (e.g. "Error 404").
 - A primary `<button type="button">` styled like `AppButton`'s primary variant, labelled "Back to the home page", calling `clearError({ redirect: '/' })`. A real button because it must clear the error state, not just navigate. `AppButton` is not changed; the class string is hoisted to a `const`.
-- 404 only: a short row of shortcut links below the button to Raids, Roster and About (`NuxtLink`, styled as regular accent links).
 - `useHead`: title from `errorCopy`, so the tab reads "Page not found · The Lionhearts" via the existing `titleTemplate`; `useSeoMeta({ robots: 'noindex' })`.
 
 ## Testing
@@ -48,4 +47,4 @@ Root `CLAUDE.md` (the only one in the repo) gets an Architecture entry for `app/
 
 ## Out of scope
 
-Status-specific copy beyond 404, reporting errors anywhere, changes to `AppButton` or the layout.
+Shortcut links on the 404 (the header nav already has them), status-specific copy beyond 404, reporting errors anywhere, changes to `AppButton` or the layout.
