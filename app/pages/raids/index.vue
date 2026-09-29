@@ -2,7 +2,7 @@
 import type { RaidNightsResponse } from '~~/server/api/raids.get'
 
 // One key for every tier; see useTierFetch.
-const { shown, pending, error, selectedTierId, switching } = await useTierFetch<RaidNightsResponse>(
+const { shown, pending, error, selectedTierId, switching, refresh } = await useTierFetch<RaidNightsResponse>(
   () => '/api/raids',
   () => 'raids',
   response => response,
@@ -33,40 +33,50 @@ usePageSeo({
       </p>
     </header>
 
-    <TierNav v-if="shown" class="mt-10" :tiers="shown.tiers" :current-id="selectedTierId" />
+    <TierNav v-if="shown" class="mt-10" :tiers="shown.tiers" :current-id="selectedTierId" :busy="switching" />
 
-    <p v-if="pending && !shown" class="mt-12 text-fg-muted">Loading raids…</p>
-    <p v-else-if="notConfigured" class="mt-12 text-fg-muted">
-      The Warcraft Logs connection is not set up yet, so there is nothing to show here.
-    </p>
-    <p v-else-if="error" class="mt-8 text-fg-muted">Could not load {{ selectedTierName }} right now.</p>
-    <p v-else-if="!raids.length" class="mt-8 text-fg-muted">No raid nights logged in {{ shown?.tier.name }}.</p>
-
-    <ul
-      v-else
-      class="mt-6 divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface transition-opacity"
-      :class="{ 'opacity-50': switching }"
-      :aria-busy="switching"
-    >
-      <li v-for="raid in raids" :key="raid.code">
-        <NuxtLink :to="`/raids/${raid.code}`" :class="row">
-          <span class="flex flex-wrap items-center gap-2">
-            <span class="font-medium text-fg">{{ raid.zone ?? raid.title }}</span>
-            <AppBadge v-if="raid.difficulty" tone="neutral">{{ raid.difficulty }}</AppBadge>
-          </span>
-          <span class="flex flex-wrap items-baseline gap-x-2 text-sm text-fg-subtle">
-            <time :datetime="raid.startedAt">{{ formatDate(raid.startedAt) }}</time>
-            <span aria-hidden="true">·</span>
-            <span>{{ raid.bossesKilled }} of {{ plural(raid.bossesPulled, 'boss', 'bosses') }} down</span>
-            <span aria-hidden="true">·</span>
-            <span>{{ plural(raid.raiderCount, 'raider') }}</span>
-            <template v-if="raid.logCount > 1">
-              <span aria-hidden="true">·</span>
-              <span>{{ raid.logCount }} logs</span>
-            </template>
-          </span>
-        </NuxtLink>
-      </li>
-    </ul>
+    <!-- Before anything has loaded there is no TierNav yet, so the skeleton carries the pills. -->
+    <LoadingSkeleton v-if="pending && !shown" shape="raids" label="Loading the raid nights" />
+    <template v-else>
+      <!-- A failed tier switch keeps the previous tier's list below the error. -->
+      <FetchError
+        v-if="error"
+        :class="shown ? 'mt-8' : 'mt-12'"
+        :subject="notConfigured ? 'the raid nights' : selectedTierName"
+        :not-configured="notConfigured"
+        :note="shown ? `Showing ${shown.tier.name}.` : ''"
+        :retrying="pending"
+        @retry="refresh()"
+      />
+      <template v-if="shown">
+        <p v-if="!raids.length" class="mt-8 text-fg-muted">No raid nights logged in {{ shown.tier.name }}.</p>
+        <ul
+          v-else
+          class="mt-6 divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface transition-opacity"
+          :class="{ 'opacity-50': switching }"
+          :aria-busy="switching"
+        >
+          <li v-for="raid in raids" :key="raid.code">
+            <NuxtLink :to="`/raids/${raid.code}`" :class="row">
+              <span class="flex flex-wrap items-center gap-2">
+                <span class="font-medium text-fg">{{ raid.zone ?? raid.title }}</span>
+                <AppBadge v-if="raid.difficulty" tone="neutral">{{ raid.difficulty }}</AppBadge>
+              </span>
+              <span class="flex flex-wrap items-baseline gap-x-2 text-sm text-fg-subtle">
+                <time :datetime="raid.startedAt">{{ formatDate(raid.startedAt) }}</time>
+                <span aria-hidden="true">·</span>
+                <span>{{ raid.bossesKilled }} of {{ plural(raid.bossesPulled, 'boss', 'bosses') }} down</span>
+                <span aria-hidden="true">·</span>
+                <span>{{ plural(raid.raiderCount, 'raider') }}</span>
+                <template v-if="raid.logCount > 1">
+                  <span aria-hidden="true">·</span>
+                  <span>{{ raid.logCount }} logs</span>
+                </template>
+              </span>
+            </NuxtLink>
+          </li>
+        </ul>
+      </template>
+    </template>
   </main>
 </template>

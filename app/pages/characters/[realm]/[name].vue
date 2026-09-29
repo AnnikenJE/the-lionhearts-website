@@ -4,17 +4,15 @@ import type { CharacterDifficultyRankings, CharacterProfile } from '~~/server/ap
 const route = useRoute()
 
 // Keyed per character, not per tier; see useTierFetch.
-const { shown: character, pending, error, selectedTierId, switching: switchingTier } = await useTierFetch<CharacterProfile>(
+const { shown: character, pending, error, selectedTierId, switching: switchingTier, refresh } = await useTierFetch<CharacterProfile>(
   () => `/api/characters/${route.params.realm}/${encodeURIComponent(String(route.params.name))}`,
   () => `character:${route.params.realm}:${String(route.params.name).toLowerCase()}`,
   profile => profile.logs,
 )
 
 // Same pattern as raids/[code].vue: the route's 404 lands in error, so it is
-// re-thrown for Nuxt's error page.
-if (error.value?.statusCode === 404) {
-  throw createError({ statusCode: 404, statusMessage: 'Character not found', fatal: true })
-}
+// sent on to Nuxt's error page by useNotFound.
+useNotFound(error, 'Character not found')
 
 // Mythic, Heroic, Normal, only those with a kill; the first is the hardest one the
 // character has killed anything on, which is the one worth showing first.
@@ -89,8 +87,13 @@ usePageSeo(() => ({
       <span aria-hidden="true">←</span> Roster
     </NuxtLink>
 
-    <p v-if="pending && !character" class="mt-12 text-fg-muted">Loading character…</p>
-    <p v-else-if="error && !character" class="mt-12 text-fg-muted">Could not load this character right now.</p>
+    <LoadingSkeleton v-if="pending && !character" shape="character" label="Loading this character" />
+    <FetchError
+      v-else-if="error && !character"
+      class="mt-12"
+      subject="this character"
+      @retry="refresh()"
+    />
 
     <template v-else-if="character">
       <div class="mt-6 flex items-center gap-5">
@@ -139,11 +142,16 @@ usePageSeo(() => ({
         </p>
 
         <template v-else>
-          <TierNav :tiers="character.logs.tiers" :current-id="selectedTierId" />
+          <TierNav :tiers="character.logs.tiers" :current-id="selectedTierId" :busy="switchingTier" />
 
-          <p v-if="error" class="mt-6 text-fg-muted">
-            Could not load that tier right now. Showing {{ character.logs.tier.name }}.
-          </p>
+          <FetchError
+            v-if="error"
+            class="mt-6"
+            subject="that tier"
+            :note="`Showing ${character.logs.tier.name}.`"
+            :retrying="pending"
+            @retry="refresh()"
+          />
 
           <div class="transition-opacity" :class="{ 'opacity-50': switchingTier }" :aria-busy="switchingTier">
           <p v-if="!difficulty" class="mt-6 text-fg-muted">
