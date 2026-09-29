@@ -4,7 +4,7 @@ import type { CharacterDifficultyRankings, CharacterProfile } from '~~/server/ap
 const route = useRoute()
 
 // Keyed per character, not per tier; see useTierFetch.
-const { shown: character, pending, error, selectedTierId, switching: switchingTier } = await useTierFetch<CharacterProfile>(
+const { shown: character, pending, error, selectedTierId, switching: switchingTier, refresh } = await useTierFetch<CharacterProfile>(
   () => `/api/characters/${route.params.realm}/${encodeURIComponent(String(route.params.name))}`,
   () => `character:${route.params.realm}:${String(route.params.name).toLowerCase()}`,
   profile => profile.logs,
@@ -89,8 +89,14 @@ usePageSeo(() => ({
       <span aria-hidden="true">←</span> Roster
     </NuxtLink>
 
-    <p v-if="pending && !character" class="mt-12 text-fg-muted">Loading character…</p>
-    <p v-else-if="error && !character" class="mt-12 text-fg-muted">Could not load this character right now.</p>
+    <LoadingSkeleton v-if="pending && !character" shape="character" label="Loading this character" />
+    <FetchError
+      v-else-if="error && !character"
+      class="mt-12"
+      subject="this character"
+      :retrying="pending"
+      @retry="refresh()"
+    />
 
     <template v-else-if="character">
       <div class="mt-6 flex items-center gap-5">
@@ -139,11 +145,16 @@ usePageSeo(() => ({
         </p>
 
         <template v-else>
-          <TierNav :tiers="character.logs.tiers" :current-id="selectedTierId" />
+          <TierNav :tiers="character.logs.tiers" :current-id="selectedTierId" :busy="switchingTier" />
 
-          <p v-if="error" class="mt-6 text-fg-muted">
-            Could not load that tier right now. Showing {{ character.logs.tier.name }}.
-          </p>
+          <FetchError
+            v-if="error"
+            class="mt-6"
+            subject="that tier"
+            :note="`Showing ${character.logs.tier.name}.`"
+            :retrying="pending"
+            @retry="refresh()"
+          />
 
           <div class="transition-opacity" :class="{ 'opacity-50': switchingTier }" :aria-busy="switchingTier">
           <p v-if="!difficulty" class="mt-6 text-fg-muted">

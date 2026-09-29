@@ -2,7 +2,7 @@
 import type { RaidNightsResponse } from '~~/server/api/raids.get'
 
 // One key for every tier; see useTierFetch.
-const { shown, pending, error, selectedTierId, switching } = await useTierFetch<RaidNightsResponse>(
+const { shown, pending, error, selectedTierId, switching, refresh } = await useTierFetch<RaidNightsResponse>(
   () => '/api/raids',
   () => 'raids',
   response => response,
@@ -33,13 +33,18 @@ usePageSeo({
       </p>
     </header>
 
-    <TierNav v-if="shown" class="mt-10" :tiers="shown.tiers" :current-id="selectedTierId" />
+    <TierNav v-if="shown" class="mt-10" :tiers="shown.tiers" :current-id="selectedTierId" :busy="switching" />
 
-    <p v-if="pending && !shown" class="mt-12 text-fg-muted">Loading raids…</p>
-    <p v-else-if="notConfigured" class="mt-12 text-fg-muted">
-      The Warcraft Logs connection is not set up yet, so there is nothing to show here.
-    </p>
-    <p v-else-if="error" class="mt-8 text-fg-muted">Could not load {{ selectedTierName }} right now.</p>
+    <!-- Before anything has loaded there is no TierNav yet, so the skeleton carries the pills. -->
+    <LoadingSkeleton v-if="pending && !shown" shape="raids" label="Loading the raid nights" />
+    <FetchError
+      v-else-if="error"
+      :class="shown ? 'mt-8' : 'mt-12'"
+      :subject="notConfigured ? 'the raid nights' : selectedTierName"
+      :not-configured="notConfigured"
+      :retrying="pending"
+      @retry="refresh()"
+    />
     <p v-else-if="!raids.length" class="mt-8 text-fg-muted">No raid nights logged in {{ shown?.tier.name }}.</p>
 
     <ul
