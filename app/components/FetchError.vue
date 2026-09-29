@@ -11,6 +11,9 @@ const { subject, notConfigured = false, retrying = false, note = '' } = definePr
 }>()
 
 const emit = defineEmits<{ retry: [] }>()
+
+// One string, so exactly one space separates the message from the note.
+const message = computed(() => [fetchErrorMessage(subject, notConfigured), note].filter(Boolean).join(' '))
 </script>
 
 <template>
@@ -19,7 +22,7 @@ const emit = defineEmits<{ retry: [] }>()
     class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-xl border border-line bg-surface px-5 py-4"
   >
     <p class="text-fg-muted">
-      {{ fetchErrorMessage(subject, notConfigured) }}<template v-if="note"> {{ note }}</template>
+      {{ message }}
     </p>
     <button
       v-if="!notConfigured"
