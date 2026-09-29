@@ -20,7 +20,12 @@ const RANK_NAMES: Record<number, string> = {
 
 const rankName = (rank: number) => RANK_NAMES[rank] ?? `Rank ${rank}`
 
-const { data: members, pending, error, refresh } = await useFetch<RosterMember[]>('/api/roster')
+// Lazy and not awaited on the client, so a navigation lands on the page at once and
+// shows its skeleton instead of holding the previous page until the data arrives.
+// The server still waits, so the first render has the data.
+const request = useFetch<RosterMember[]>('/api/roster', { lazy: true })
+if (import.meta.server) await request
+const { data: members, pending, error, refresh } = request
 
 const total = computed(() => members.value?.length ?? 0)
 

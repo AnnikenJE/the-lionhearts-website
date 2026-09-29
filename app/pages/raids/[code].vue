@@ -2,14 +2,17 @@
 import type { RaidDetail, RaidFight } from '~~/server/api/raids/[code].get'
 
 const route = useRoute()
-const { data: raid, pending, error, refresh } = await useFetch<RaidDetail>(`/api/raids/${route.params.code}`)
+// Lazy and not awaited on the client, so a navigation lands on the page at once and
+// shows its skeleton instead of holding the previous page until the data arrives.
+// The server still waits, so the first render has the data.
+const request = useFetch<RaidDetail>(`/api/raids/${route.params.code}`, { lazy: true })
+if (import.meta.server) await request
+const { data: raid, pending, error, refresh } = request
 
 // The server route already 404s for a bad code or a report Warcraft Logs doesn't
-// know, but useFetch captures that into error rather than throwing, so it has to
-// be re-thrown here for Nuxt to render its error page, same as news/[slug].vue.
-if (error.value?.statusCode === 404) {
-  throw createError({ statusCode: 404, statusMessage: 'Raid not found', fatal: true })
-}
+// know, but useFetch captures that into error rather than throwing, so useNotFound
+// sends it on to Nuxt's error page, same as news/[slug].vue.
+useNotFound(error, 'Raid not found')
 
 const notConfigured = computed(() => isNotConfigured(error.value))
 

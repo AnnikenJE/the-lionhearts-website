@@ -11,10 +11,8 @@ const { shown: character, pending, error, selectedTierId, switching: switchingTi
 )
 
 // Same pattern as raids/[code].vue: the route's 404 lands in error, so it is
-// re-thrown for Nuxt's error page.
-if (error.value?.statusCode === 404) {
-  throw createError({ statusCode: 404, statusMessage: 'Character not found', fatal: true })
-}
+// sent on to Nuxt's error page by useNotFound.
+useNotFound(error, 'Character not found')
 
 // Mythic, Heroic, Normal, only those with a kill; the first is the hardest one the
 // character has killed anything on, which is the one worth showing first.

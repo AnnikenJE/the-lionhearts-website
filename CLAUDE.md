@@ -77,7 +77,7 @@ Tests run on Vitest, configured in `vitest.config.ts` through `defineVitestConfi
 Early-stage Nuxt 4 + TypeScript project (Vue 3 + Vite under the hood). Uses the Nuxt 4 `app/` source directory convention (auto-detected: `app/` is the default `srcDir` in Nuxt 4).
 
 - `nuxt.config.ts`: Nuxt config; global CSS registered here
-- `app/app.vue`: root layout, renders `<NuxtPage />`, plus `<NuxtLoadingIndicator>` in the accent so every navigation shows progress (each page awaits its fetch before it appears)
+- `app/app.vue`: root layout, renders `<NuxtPage />`, plus `<NuxtLoadingIndicator>` in the accent so every navigation shows progress (pages land at once and show their skeleton, so the bar is brief)
 - `app/layouts/default.vue` holds the shared shell: header nav (Home, About, News, Raids, Roster, Rules) plus the footer links
 - `app/pages/index.vue`: home page / landing hero (file-based routing)
 - `app/pages/about.vue`: who the guild is, what it plays, and who to contact (GM / Royal Advisors)
@@ -90,7 +90,8 @@ Early-stage Nuxt 4 + TypeScript project (Vue 3 + Vite under the hood). Uses the 
 - `app/data/schedule.ts`, `app/data/links.ts`: typed static data (raid schedule, links)
 - `app/data/news.ts`: `NEWS_ENABLED` flag. While it's false the news section is hidden everywhere at once (list page shows coming soon, post routes 404, landing page drops its news block) and nothing is queried, so draft titles never reach the payload. Flipping it to true is the whole launch.
 - `app/components/RaidSchedule.vue` renders the raid schedule; the guild links are rendered straight into the footer
-- `app/composables/useTierFetch.ts`: the fetch behind the raids page and the character pages. Reads `?tier=`, keeps the previous tier on screen while the next loads and through a failed fetch, and reports which tier is selected. Also returns `refresh` for an error's retry
+- `app/composables/useTierFetch.ts`: the fetch behind the raids page and the character pages. Reads `?tier=`, keeps the previous tier on screen while the next loads and through a failed fetch, and reports which tier is selected. Also returns `refresh` for an error's retry. Fetches lazily and awaits only on the server, so a client navigation lands at once on the skeleton
+- `app/composables/useNotFound.ts`: sends a page to the error page when its fetch 404s, at setup on the server and through a watcher after a client navigation
 - `app/utils/wow.ts`: `classColor()`, the official WoW class colours. Returns a CSS colour, so call sites bind it with `:style`, not `:class`. Normalises the key because Raider.IO says "Death Knight" and Warcraft Logs says "DeathKnight". Also `realmSlug()` (every API spells realms differently: "Defias Brotherhood", "DefiasBrotherhood"), `characterPath()`, which every character link goes through, `parseColor()` (the usual grey-to-gold parse brackets), `itemQualityColor()` and the Wowhead icon and item URLs
 - `app/error.vue`: the themed error page, wrapped in `<NuxtLayout>` so the header, footer and Blizzard attribution stay. Shows only the numeric status code and the copy from `errorCopy()` in `app/utils/errorCopy.ts` (404 has its own words, every other status shares one fallback), never the error's message or stack. The home button is a real `<button>` calling `clearError({ redirect: '/' })`, styled like `AppButton`'s primary variant. Noindex
 - `app/components/SectionHeading.vue` is the recurring section header: a heading with an optional muted note (a count, a link) pinned to the far end
