@@ -13,7 +13,7 @@ describe('fetchErrorMessage', () => {
 
   it('never uses an em dash', () => {
     for (const notConfigured of [false, true]) {
-      expect(fetchErrorMessage('x', notConfigured)).not.toContain('—')
+      expect(fetchErrorMessage('x', notConfigured)).not.toContain('\u2014')
     }
   })
 })
