@@ -73,7 +73,6 @@ usePageSeo(() => ({
       class="mt-12"
       subject="this raid"
       :not-configured="notConfigured"
-      :retrying="pending"
       @retry="refresh()"
     />
 

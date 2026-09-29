@@ -102,7 +102,6 @@ usePageSeo({
       v-else-if="error"
       class="mt-12"
       subject="the roster"
-      :retrying="pending"
       @retry="refresh()"
     />
 

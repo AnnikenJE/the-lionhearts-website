@@ -94,7 +94,6 @@ usePageSeo(() => ({
       v-else-if="error && !character"
       class="mt-12"
       subject="this character"
-      :retrying="pending"
       @retry="refresh()"
     />
 
