@@ -6,13 +6,6 @@ import type { NuxtError } from '#app'
 const { error } = defineProps<{ error: NuxtError }>()
 
 const copy = computed(() => errorCopy(error.statusCode))
-const isNotFound = computed(() => error.statusCode === 404)
-
-const SHORTCUTS = [
-  { to: '/raids', label: 'Raids' },
-  { to: '/roster', label: 'Roster' },
-  { to: '/about', label: 'About' },
-]
 
 // Same look as AppButton's primary variant, but a real button: it has to clear the
 // error state, which a plain link would not.
@@ -32,18 +25,9 @@ useSeoMeta({ robots: 'noindex' })
       <p class="text-sm text-fg-subtle">Error {{ error.statusCode }}</p>
       <h1 class="mt-2 text-display text-fg">{{ copy.title }}</h1>
       <p class="mt-5 text-lg text-fg-muted">{{ copy.lede }}</p>
-      <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
-        <button type="button" :class="homeButton" @click="handleError">
-          Back to the home page
-        </button>
-        <ul v-if="isNotFound" class="flex flex-wrap gap-x-6 gap-y-2">
-          <li v-for="item in SHORTCUTS" :key="item.to">
-            <NuxtLink :to="item.to" class="font-medium text-accent hover:text-accent-bright">
-              {{ item.label }}
-            </NuxtLink>
-          </li>
-        </ul>
-      </div>
+      <button type="button" :class="[homeButton, 'mt-8']" @click="handleError">
+        Back to the home page
+      </button>
     </main>
   </NuxtLayout>
 </template>
