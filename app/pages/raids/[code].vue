@@ -2,7 +2,7 @@
 import type { RaidDetail, RaidFight } from '~~/server/api/raids/[code].get'
 
 const route = useRoute()
-const { data: raid, pending, error } = await useFetch<RaidDetail>(`/api/raids/${route.params.code}`)
+const { data: raid, pending, error, refresh } = await useFetch<RaidDetail>(`/api/raids/${route.params.code}`)
 
 // The server route already 404s for a bad code or a report Warcraft Logs doesn't
 // know, but useFetch captures that into error rather than throwing, so it has to
@@ -67,11 +67,15 @@ usePageSeo(() => ({
       <span aria-hidden="true">←</span> All raids
     </NuxtLink>
 
-    <p v-if="pending" class="mt-12 text-fg-muted">Loading raid…</p>
-    <p v-else-if="notConfigured" class="mt-12 text-fg-muted">
-      The Warcraft Logs connection is not set up yet, so this raid can't be shown.
-    </p>
-    <p v-else-if="error" class="mt-12 text-fg-muted">Could not load this raid right now.</p>
+    <LoadingSkeleton v-if="pending" shape="raid" label="Loading this raid" />
+    <FetchError
+      v-else-if="error"
+      class="mt-12"
+      subject="this raid"
+      :not-configured="notConfigured"
+      :retrying="pending"
+      @retry="refresh()"
+    />
 
     <template v-else-if="raid">
       <h1 class="mt-6 text-display text-fg">{{ raid.zone ?? raid.title }}</h1>

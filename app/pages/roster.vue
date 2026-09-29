@@ -20,7 +20,7 @@ const RANK_NAMES: Record<number, string> = {
 
 const rankName = (rank: number) => RANK_NAMES[rank] ?? `Rank ${rank}`
 
-const { data: members, pending, error } = await useFetch<RosterMember[]>('/api/roster')
+const { data: members, pending, error, refresh } = await useFetch<RosterMember[]>('/api/roster')
 
 const total = computed(() => members.value?.length ?? 0)
 
@@ -97,8 +97,14 @@ usePageSeo({
       <h1 class="text-display text-fg">Roster</h1>
     </header>
 
-    <p v-if="pending" class="mt-12 text-fg-muted">Loading roster…</p>
-    <p v-else-if="error" class="mt-12 text-fg-muted">Could not load the roster right now.</p>
+    <LoadingSkeleton v-if="pending" shape="roster" label="Loading the roster" />
+    <FetchError
+      v-else-if="error"
+      class="mt-12"
+      subject="the roster"
+      :retrying="pending"
+      @retry="refresh()"
+    />
 
     <template v-else>
       <!-- Every control is h-10 and none is sized by its own content, so
