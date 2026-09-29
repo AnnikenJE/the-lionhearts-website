@@ -8,7 +8,8 @@ interface Tiered {
  * the character pages. The key does not include the tier, so switching tier keeps the
  * previous tier on screen while the next one loads (a tier not cached yet can take
  * several seconds); and the last data that loaded is kept through a failed fetch, so an
- * error never takes the tier selector with it.
+ * error never takes the tier selector with it. `refresh` re-runs the fetch for the tier
+ * in the URL, for an error's retry.
  */
 export async function useTierFetch<T>(
   url: () => string,
@@ -20,7 +21,7 @@ export async function useTierFetch<T>(
 
   // A tier other than the default is not a page of its own for search engines.
   useSeoMeta({ robots: () => (route.query.tier ? 'noindex, nofollow' : undefined) })
-  const { data, pending, error } = await useFetch<T>(url, { query, key })
+  const { data, pending, error, refresh } = await useFetch<T>(url, { query, key })
 
   const shown = shallowRef(data.value)
   watch(data, (value) => {
@@ -34,5 +35,5 @@ export async function useTierFetch<T>(
   const selectedTierId = computed(() => Number(route.query.tier) || tiered.value?.tiers[0]?.id || 0)
   const switching = computed(() => pending.value && !!tiered.value && tiered.value.tier.id !== selectedTierId.value)
 
-  return { shown, pending, error, selectedTierId, switching }
+  return { shown, pending, error, selectedTierId, switching, refresh }
 }
