@@ -14,7 +14,7 @@ const notConfigured = computed(() => isNotConfigured(error.value))
 
 // Shared by every row, so the left and right halves of the list line up the
 // same way regardless of which fields a given raid has.
-const row = 'flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4 transition hover:bg-surface-hover'
+const row = ROW_LINK
 usePageSeo({
   title: 'Raids',
   description:
@@ -52,8 +52,7 @@ usePageSeo({
         <p v-if="!raids.length" class="mt-8 text-fg-muted">No raid nights logged in {{ shown.tier.name }}.</p>
         <ul
           v-else
-          class="mt-6 divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface transition-opacity"
-          :class="{ 'opacity-50': switching }"
+          :class="[CARD_DIVIDED, 'mt-6 transition-opacity', { 'opacity-50': switching }]"
           :aria-busy="switching"
         >
           <li v-for="raid in raids" :key="raid.code">

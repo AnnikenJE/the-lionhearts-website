@@ -10,7 +10,7 @@ const API_URL = 'https://www.warcraftlogs.com/api/v2/client'
 /** Tokens live about a year, so refresh a minute early rather than mid flight. */
 const EXPIRY_MARGIN_MS = 60 * 1000
 
-/** The one guild this site is about. Hardcoded, as in `roster.get.ts`. */
+/** The one guild this site is about. Hardcoded, as in `rosterData.ts`. */
 export const GUILD = {
   name: 'The Lionhearts',
   serverSlug: 'darkmoon-faire',

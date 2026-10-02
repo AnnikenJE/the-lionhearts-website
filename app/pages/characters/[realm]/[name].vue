@@ -67,8 +67,8 @@ const nightPageCount = computed(() => Math.max(1, Math.ceil(nights.value.length 
 const pageNights = computed(() => nights.value.slice((nightPage.value - 1) * NIGHTS_PER_PAGE, nightPage.value * NIGHTS_PER_PAGE))
 watch(nights, () => (nightPage.value = 1))
 
-const section = 'mt-16 border-t border-line pt-16'
-const card = 'overflow-hidden rounded-xl border border-line bg-surface'
+const section = SECTION
+const card = CARD
 const th = 'px-4 py-3 text-left text-xs font-medium text-fg-subtle'
 const td = 'px-4 py-3 tabular-nums'
 const pagerButton = 'cursor-pointer rounded-lg border border-line-strong px-3 py-1.5 text-sm font-medium text-fg transition hover:bg-surface-hover disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent'
@@ -235,11 +235,11 @@ usePageSeo(() => ({
           Recent raid nights
           <template #end>{{ plural(character.raidNights.length, 'night') }} with the guild</template>
         </SectionHeading>
-        <ul :class="[card, 'divide-y divide-line']">
+        <ul :class="CARD_DIVIDED">
           <li v-for="night in pageNights" :key="night.code">
             <NuxtLink
               :to="`/raids/${night.code}`"
-              class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4 transition hover:bg-surface-hover"
+              :class="ROW_LINK"
             >
               <span class="text-fg">{{ night.zone ?? 'Raid night' }}</span>
               <span class="text-sm text-fg-subtle">
@@ -340,11 +340,11 @@ usePageSeo(() => ({
           Raid progression
           <template #end>From Raider.IO</template>
         </SectionHeading>
-        <ul :class="[card, 'divide-y divide-line']">
+        <ul :class="CARD_DIVIDED">
           <li
             v-for="raid in character.raidProgression"
             :key="raid.raid"
-            class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4"
+            :class="ROW"
           >
             <span class="text-fg">{{ raid.raid }}</span>
             <span class="text-sm tabular-nums text-fg-subtle">

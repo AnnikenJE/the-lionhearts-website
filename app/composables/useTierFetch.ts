@@ -21,11 +21,7 @@ export async function useTierFetch<T>(
 
   // A tier other than the default is not a page of its own for search engines.
   useSeoMeta({ robots: () => (route.query.tier ? 'noindex, nofollow' : undefined) })
-  // Lazy and not awaited on the client, so a navigation lands on the page at once and
-  // shows its skeleton instead of holding the previous page until the data arrives.
-  // The server still waits, so the first render has the data.
-  const request = useFetch<T>(url, { query, key, lazy: true })
-  if (import.meta.server) await request
+  const request = await useLazyServerFetch<T>(url, { query, key })
   const { data, pending, error, refresh } = request
 
   const shown = shallowRef(data.value)
