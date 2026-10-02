@@ -17,7 +17,7 @@ const EXPLORE = [
   { to: '/rules', title: 'Rules', body: 'The guild and raid rules.' },
 ]
 
-const section = 'mt-16 border-t border-line pt-16'
+const section = SECTION
 // The landing page sets no title of its own, so the tab shows the guild name
 // alone rather than repeating it twice.
 usePageSeo({
@@ -92,11 +92,11 @@ usePageSeo({
       <p v-if="!latest?.length" class="text-fg-muted">
         No posts yet, check back soon.
       </p>
-      <ul v-else class="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
+      <ul v-else :class="CARD_DIVIDED">
         <li v-for="post in latest" :key="post.path">
           <NuxtLink
             :to="post.path"
-            class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4 transition hover:bg-surface-hover"
+            :class="ROW_LINK"
           >
             <span class="font-medium text-fg">{{ post.title }}</span>
             <time class="text-sm text-fg-subtle">{{ formatDate(post.date) }}</time>

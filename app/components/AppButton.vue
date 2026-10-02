@@ -8,8 +8,8 @@ const { variant = 'primary', to = '', href = '' } = defineProps<{
 }>()
 
 const VARIANTS = {
-  primary: 'bg-accent text-accent-ink hover:bg-accent-bright',
-  secondary: 'border border-line-strong text-fg hover:bg-surface-hover',
+  primary: BUTTON_PRIMARY,
+  secondary: BUTTON_SECONDARY,
 }
 </script>
 
@@ -18,7 +18,7 @@ const VARIANTS = {
     :to="to || href"
     :target="href ? '_blank' : undefined"
     :rel="href ? 'noopener' : undefined"
-    :class="['inline-block rounded-lg px-4 py-2.5 text-sm font-semibold transition', VARIANTS[variant]]"
+    :class="[BUTTON_BASE, VARIANTS[variant]]"
   >
     <slot />
   </NuxtLink>

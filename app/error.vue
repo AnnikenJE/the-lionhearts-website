@@ -7,10 +7,9 @@ const { error } = defineProps<{ error: NuxtError }>()
 
 const copy = computed(() => errorCopy(error.statusCode))
 
-// Same look as AppButton's primary variant, but a real button: it has to clear the
-// error state, which a plain link would not.
-const homeButton
-  = 'inline-block cursor-pointer rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-ink transition hover:bg-accent-bright'
+// AppButton's primary variant, but a real button: it has to clear the error
+// state, which a plain link would not.
+const homeButton = `${BUTTON_BASE} ${BUTTON_PRIMARY} cursor-pointer`
 
 const handleError = () => clearError({ redirect: '/' })
 

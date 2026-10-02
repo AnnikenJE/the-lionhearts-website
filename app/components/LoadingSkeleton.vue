@@ -9,9 +9,10 @@ const { shape, label } = defineProps<{
 }>()
 
 const bone = 'block bg-surface-hover motion-safe:animate-pulse'
-const card = 'divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface'
+const card = CARD_DIVIDED
+// Centred, not baseline: the bones have no text to align, unlike ROW.
 const row = 'flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5 py-4'
-const section = 'mt-16 border-t border-line pt-16'
+const section = SECTION
 </script>
 
 <template>

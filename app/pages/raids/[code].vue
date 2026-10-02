@@ -2,12 +2,7 @@
 import type { RaidDetail, RaidFight } from '~~/server/api/raids/[code].get'
 
 const route = useRoute()
-// Lazy and not awaited on the client, so a navigation lands on the page at once and
-// shows its skeleton instead of holding the previous page until the data arrives.
-// The server still waits, so the first render has the data.
-const request = useFetch<RaidDetail>(`/api/raids/${route.params.code}`, { lazy: true })
-if (import.meta.server) await request
-const { data: raid, pending, error, refresh } = request
+const { data: raid, pending, error, refresh } = await useLazyServerFetch<RaidDetail>(`/api/raids/${route.params.code}`)
 
 // The server route already 404s for a bad code or a report Warcraft Logs doesn't
 // know, but useFetch captures that into error rather than throwing, so useNotFound
@@ -48,9 +43,7 @@ const subgroups = computed(() => {
   ].filter(group => group.members.length > 0)
 })
 
-// Shared by the Bosses and Who was there blocks, the same divider rule
-// app/pages/index.vue uses between its own top-level sections.
-const section = 'mt-16 border-t border-line pt-16'
+const section = SECTION
 // A getter rather than a plain object, so the tags follow the fetched raid
 // instead of being read once while it is still empty.
 usePageSeo(() => ({
@@ -96,11 +89,11 @@ usePageSeo(() => ({
         </SectionHeading>
 
         <p v-if="!raid.fights.length" class="text-fg-muted">No boss pulls in this log.</p>
-        <ul v-else class="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
+        <ul v-else :class="CARD_DIVIDED">
           <li
             v-for="fight in raid.fights"
             :key="fight.id"
-            class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4"
+            :class="ROW"
           >
             <span class="flex flex-wrap items-center gap-2">
               <span class="text-fg">{{ fight.name }}</span>
