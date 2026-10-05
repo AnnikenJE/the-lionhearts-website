@@ -49,7 +49,7 @@ usePageSeo({
         @retry="refresh()"
       />
       <template v-if="shown">
-        <p v-if="!raids.length" class="mt-8 text-fg-muted">No raid nights logged in {{ shown.tier.name }}.</p>
+        <EmptyState v-if="!raids.length" class="mt-8" :message="`No raid nights logged in ${shown.tier.name}.`" />
         <ul
           v-else
           :class="[CARD_DIVIDED, 'mt-6 transition-opacity', { 'opacity-50': switching }]"
