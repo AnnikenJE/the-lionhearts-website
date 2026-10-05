@@ -57,6 +57,25 @@ const stats = computed(() => {
   ].filter(stat => stat.value != null)
 })
 
+const parseColumns = computed(() => [
+  { key: 'boss', label: 'Boss' },
+  { key: 'best', label: 'Best', align: 'right' as const },
+  { key: 'median', label: 'Median', align: 'right' as const },
+  { key: 'bestAmount', label: `Best ${metricLabel.value}`, align: 'right' as const },
+  { key: 'kills', label: 'Kills', align: 'right' as const },
+  { key: 'fastest', label: 'Fastest', align: 'right' as const },
+  { key: 'itemLevel', label: 'iLvl', align: 'right' as const },
+  { key: 'serverRank', label: 'Realm rank', align: 'right' as const },
+])
+
+const mplusColumns = [
+  { key: 'dungeon', label: 'Dungeon' },
+  { key: 'key', label: 'Key', align: 'right' as const },
+  { key: 'time', label: 'Time', align: 'right' as const },
+  { key: 'score', label: 'Score', align: 'right' as const },
+  { key: 'date', label: 'Date', align: 'right' as const },
+]
+
 const roleLabel = { tank: 'Tank', healer: 'Healer', dps: 'DPS' } as const
 
 // Five nights at a time, paged in place.
@@ -67,10 +86,7 @@ const nightPageCount = computed(() => Math.max(1, Math.ceil(nights.value.length 
 const pageNights = computed(() => nights.value.slice((nightPage.value - 1) * NIGHTS_PER_PAGE, nightPage.value * NIGHTS_PER_PAGE))
 watch(nights, () => (nightPage.value = 1))
 
-const section = SECTION
-const card = CARD
-const th = 'px-4 py-3 text-left text-xs font-medium text-fg-subtle'
-const td = 'px-4 py-3 tabular-nums'
+const section = SECTION_CREST
 const pagerButton = 'cursor-pointer rounded-lg border border-line-strong px-3 py-1.5 text-sm font-medium text-fg transition hover:bg-surface-hover disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent'
 
 usePageSeo(() => ({
@@ -137,9 +153,7 @@ usePageSeo(() => ({
           <template v-if="character.logs" #end>{{ metricLabel }}, from Warcraft Logs</template>
         </SectionHeading>
 
-        <p v-if="!character.logs" class="text-fg-muted">
-          No Warcraft Logs rankings for this character.
-        </p>
+        <EmptyState v-if="!character.logs" message="No Warcraft Logs rankings for this character." />
 
         <template v-else>
           <TierNav :tiers="character.logs.tiers" :current-id="selectedTierId" :busy="switchingTier" />
@@ -154,9 +168,7 @@ usePageSeo(() => ({
           />
 
           <div class="transition-opacity" :class="{ 'opacity-50': switchingTier }" :aria-busy="switchingTier">
-          <p v-if="!difficulty" class="mt-6 text-fg-muted">
-            No kills logged in {{ character.logs.tier.name }}.
-          </p>
+          <EmptyState v-if="!difficulty" class="mt-6" :message="`No kills logged in ${character.logs.tier.name}.`" />
 
           <template v-else>
             <div v-if="character.logs.difficulties.length > 1" class="mt-4 flex flex-wrap gap-2" role="tablist">
@@ -189,41 +201,45 @@ usePageSeo(() => ({
               </span>
             </p>
 
-            <div :class="[card, 'mt-4 overflow-x-auto']">
-              <table class="w-full min-w-[40rem] text-sm">
-                <thead class="border-b border-line">
-                  <tr>
-                    <th :class="th">Boss</th>
-                    <th :class="[th, 'text-right']">Best</th>
-                    <th :class="[th, 'text-right']">Median</th>
-                    <th :class="[th, 'text-right']">Best {{ metricLabel }}</th>
-                    <th :class="[th, 'text-right']">Kills</th>
-                    <th :class="[th, 'text-right']">Fastest</th>
-                    <th :class="[th, 'text-right']">iLvl</th>
-                    <th :class="[th, 'text-right']">Realm rank</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-line">
-                  <tr v-for="boss in difficulty.bosses" :key="boss.boss">
-                    <td :class="[td, 'text-fg']">
-                      {{ boss.boss }}
-                      <span v-if="boss.spec && boss.bestPercent != null" class="ml-1 text-xs text-fg-subtle">{{ boss.spec }}</span>
-                    </td>
-                    <td :class="[td, 'text-right font-semibold']" :style="boss.bestPercent != null ? { color: parseColor(boss.bestPercent) } : undefined">
-                      {{ boss.bestPercent != null ? Math.floor(boss.bestPercent) : '–' }}
-                    </td>
-                    <td :class="[td, 'text-right']" :style="boss.medianPercent != null ? { color: parseColor(boss.medianPercent) } : undefined">
-                      {{ boss.medianPercent != null ? Math.floor(boss.medianPercent) : '–' }}
-                    </td>
-                    <td :class="[td, 'text-right text-fg-muted']">{{ boss.bestAmount != null ? compactNumber(boss.bestAmount) : '–' }}</td>
-                    <td :class="[td, 'text-right text-fg-muted']">{{ boss.kills }}</td>
-                    <td :class="[td, 'text-right text-fg-muted']">{{ boss.fastestKillMs != null ? formatClock(boss.fastestKillMs) : '–' }}</td>
-                    <td :class="[td, 'text-right text-fg-muted']">{{ boss.itemLevel ?? '–' }}</td>
-                    <td :class="[td, 'text-right text-fg-muted']">{{ boss.serverRank != null ? `#${boss.serverRank}` : '–' }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              :columns="parseColumns"
+              :rows="difficulty.bosses"
+              :row-key="row => row.boss"
+              min-width="40rem"
+              class="mt-4"
+            >
+              <template #cell-boss="{ row }">
+                <span class="text-fg">
+                  {{ row.boss }}
+                  <span v-if="row.spec && row.bestPercent != null" class="ml-1 text-xs text-fg-subtle">{{ row.spec }}</span>
+                </span>
+              </template>
+              <template #cell-best="{ row }">
+                <span class="font-semibold" :style="row.bestPercent != null ? { color: parseColor(row.bestPercent) } : undefined">
+                  {{ row.bestPercent != null ? Math.floor(row.bestPercent) : '–' }}
+                </span>
+              </template>
+              <template #cell-median="{ row }">
+                <span :style="row.medianPercent != null ? { color: parseColor(row.medianPercent) } : undefined">
+                  {{ row.medianPercent != null ? Math.floor(row.medianPercent) : '–' }}
+                </span>
+              </template>
+              <template #cell-bestAmount="{ row }">
+                <span class="text-fg-muted">{{ row.bestAmount != null ? compactNumber(row.bestAmount) : '–' }}</span>
+              </template>
+              <template #cell-kills="{ row }">
+                <span class="text-fg-muted">{{ row.kills }}</span>
+              </template>
+              <template #cell-fastest="{ row }">
+                <span class="text-fg-muted">{{ row.fastestKillMs != null ? formatClock(row.fastestKillMs) : '–' }}</span>
+              </template>
+              <template #cell-itemLevel="{ row }">
+                <span class="text-fg-muted">{{ row.itemLevel ?? '–' }}</span>
+              </template>
+              <template #cell-serverRank="{ row }">
+                <span class="text-fg-muted">{{ row.serverRank != null ? `#${row.serverRank}` : '–' }}</span>
+              </template>
+            </DataTable>
           </template>
           </div>
         </template>
@@ -268,35 +284,32 @@ usePageSeo(() => ({
           </template>
         </SectionHeading>
 
-        <p v-if="!character.mythicPlus.bestRuns.length" class="text-fg-muted">No runs this season.</p>
-        <div v-else :class="[card, 'overflow-x-auto']">
-          <table class="w-full min-w-[32rem] text-sm">
-            <thead class="border-b border-line">
-              <tr>
-                <th :class="th">Dungeon</th>
-                <th :class="[th, 'text-right']">Key</th>
-                <th :class="[th, 'text-right']">Time</th>
-                <th :class="[th, 'text-right']">Score</th>
-                <th :class="[th, 'text-right']">Date</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-line">
-              <tr v-for="run in character.mythicPlus.bestRuns" :key="run.url">
-                <td :class="[td, 'text-fg']">
-                  <a :href="run.url" target="_blank" rel="noopener" class="-my-1 inline-block py-1 hover:underline">{{ run.dungeon }}</a>
-                </td>
-                <td :class="[td, 'text-right', run.upgrades > 0 ? 'text-fg' : 'text-fg-subtle']">
-                  +{{ run.level }}<span v-if="run.upgrades > 0" class="text-accent">{{ '+'.repeat(run.upgrades) }}</span>
-                </td>
-                <td :class="[td, 'text-right text-fg-muted']">
-                  {{ formatClock(run.clearTimeMs) }} <span class="text-fg-subtle">/ {{ formatClock(run.parTimeMs) }}</span>
-                </td>
-                <td :class="[td, 'text-right text-fg-muted']">{{ run.score.toFixed(1) }}</td>
-                <td :class="[td, 'text-right text-fg-subtle']">{{ formatDate(run.completedAt) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <EmptyState v-if="!character.mythicPlus.bestRuns.length" message="No runs this season." />
+        <DataTable
+          v-else
+          :columns="mplusColumns"
+          :rows="character.mythicPlus.bestRuns"
+          :row-key="row => row.url"
+          min-width="32rem"
+        >
+          <template #cell-dungeon="{ row }">
+            <a :href="row.url" target="_blank" rel="noopener" class="-my-1 inline-block py-1 text-fg hover:underline">{{ row.dungeon }}</a>
+          </template>
+          <template #cell-key="{ row }">
+            <span :class="row.upgrades > 0 ? 'text-fg' : 'text-fg-subtle'">
+              +{{ row.level }}<span v-if="row.upgrades > 0" class="text-accent">{{ '+'.repeat(row.upgrades) }}</span>
+            </span>
+          </template>
+          <template #cell-time="{ row }">
+            <span class="text-fg-muted">{{ formatClock(row.clearTimeMs) }} <span class="text-fg-subtle">/ {{ formatClock(row.parTimeMs) }}</span></span>
+          </template>
+          <template #cell-score="{ row }">
+            <span class="text-fg-muted">{{ row.score.toFixed(1) }}</span>
+          </template>
+          <template #cell-date="{ row }">
+            <span class="text-fg-subtle">{{ formatDate(row.completedAt) }}</span>
+          </template>
+        </DataTable>
       </section>
 
       <!-- Gear -->
