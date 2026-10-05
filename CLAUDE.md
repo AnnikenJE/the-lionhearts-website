@@ -134,6 +134,29 @@ Warcraft Logs OAuth credentials are the first secrets in this repo, defined as s
   - When a utility string is repeated across several elements in one file, hoist it to a `const` in `<script setup>` (see `roster.vue`'s `fieldSearch` or `rules.vue`'s `marker`) rather than copy-pasting it. When it's repeated across files, make it a component.
   - **Type:** Nunito Sans throughout, headings included, self-hosted as a variable font from `@fontsource-variable/nunito-sans` (imported at the top of `main.css`), never from Google Fonts, so no visitor's browser is sent to Google. Preflight strips heading sizes and weights, so every heading sets its own with utilities.
   - Markdown from @nuxt/content has no classes of its own, so `news/[slug].vue` styles it with `@tailwindcss/typography` (`prose prose-invert`) plus `prose-*` variants that pull it onto the site palette.
+  - **Colour tokens (`@theme` in `main.css`):**
+
+    | Token | Use |
+    |---|---|
+    | `bg` / `surface` / `surface-hover` | page background, cards, hovered rows |
+    | `line` / `line-strong` | thin dividers / input and button borders |
+    | `fg` / `fg-muted` / `fg-subtle` | primary text / body text / labels and meta |
+    | `accent` / `accent-bright` / `accent-ink` | the only interactive colour: links, primary buttons, the active nav/tab state |
+    | `success` / `warning` / `danger` / `info` | a kill / an in-progress pull / a wipe or error / "not configured" |
+    | `crest` | the guild crest's red (`public/lionhearts-crest.png`), decorative only: section dividers, rank headings. Never on anything clickable |
+
+    Every text/accent pair above is checked against WCAG AA in `test/utils/contrast.spec.ts`; add a case there before adding a colour that text will sit on.
+  - **Shared pieces, and when to reach for them, instead of writing new markup:**
+
+    | Need | Use |
+    |---|---|
+    | A bordered panel or list wrapper | `CARD` / `CARD_DIVIDED` (`app/utils/ui.ts`) |
+    | A page's top-level section divider | `SECTION` (neutral) or `SECTION_CREST` (crest red), `app/utils/ui.ts` |
+    | A list row, label left and meta right | `ROW` / `ROW_LINK` (`app/utils/ui.ts`) |
+    | A small status or filter chip | `AppBadge.vue` for a display chip; the `PILL`/`PILL_ON`/`PILL_OFF` tokens for an interactive one (a tab, a toggle) |
+    | A table of rows and columns | `DataTable.vue` |
+    | A "nothing here yet" message | `EmptyState.vue` |
+    | A failed fetch, with or without retry | `FetchError.vue` |
 - **Page shell:** every page uses the same root container so headings never shift position between pages: `<main class="mx-auto max-w-5xl px-4 py-16 sm:px-6">`, with a left-aligned `<h1 class="text-display text-fg">` and a lede `<p class="mt-5 text-lg text-fg-muted">`. Nothing at page level is centred. Where a narrower measure helps readability (rules articles, a news post body, About prose), constrain that block with an inner `max-w-3xl`, never the page container.
 - **Copy:** never use an em dash. Not in page text, not in comments, not in commit messages. Use a colon, a comma, parentheses, or a full stop. En dashes in numeric ranges (`19:00-22:00` uses a true en dash) are fine.
 - **Types:** co-locate types with the code that owns them and export when shared. `RosterMember` is declared in `server/utils/roster.ts` and re-exported from `roster.get.ts`, so a page still imports the response type from the route that returns it. Only promote a type to a shared file once it's used across several unrelated modules.
