@@ -19,6 +19,7 @@ describe('the design system palette (#54)', () => {
   const TOKENS = {
     bg: '#0a0a0a',
     surface: '#121110',
+    surfaceHover: '#1c1a17',
     lineStrong: '#6b6153',
     fg: '#f0e8d8',
     fgMuted: '#c2b9a8',
@@ -36,10 +37,15 @@ describe('the design system palette (#54)', () => {
   it.each([
     ['fg', 'bg'], ['fgMuted', 'bg'], ['fgSubtle', 'bg'], ['fgSubtle', 'surface'],
     ['accent', 'bg'], ['accentInk', 'accent'],
-    ['success', 'bg'], ['success', 'surface'],
-    ['warning', 'bg'], ['warning', 'surface'],
-    ['danger', 'bg'], ['danger', 'surface'],
-    ['info', 'bg'], ['info', 'surface'],
+    ['success', 'bg'], ['success', 'surface'], ['success', 'surfaceHover'],
+    ['warning', 'bg'], ['warning', 'surface'], ['warning', 'surfaceHover'],
+    ['danger', 'bg'], ['danger', 'surface'], ['danger', 'surfaceHover'],
+    ['info', 'bg'], ['info', 'surface'], ['info', 'surfaceHover'],
+    // surface-hover and line-strong are also used as backgrounds (ROW_LINK,
+    // BUTTON_SECONDARY, the roster Clear button), not just as the `surface`/
+    // `line` roles their names suggest.
+    ['fg', 'surfaceHover'], ['fgMuted', 'surfaceHover'], ['fgSubtle', 'surfaceHover'],
+    ['fg', 'lineStrong'],
   ] as const)('%s on %s passes AA for text (4.5:1)', (a, b) => {
     expect(contrastRatio(TOKENS[a], TOKENS[b])).toBeGreaterThanOrEqual(AA_TEXT)
   })

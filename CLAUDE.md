@@ -139,7 +139,7 @@ Warcraft Logs OAuth credentials are the first secrets in this repo, defined as s
     | Token | Use |
     |---|---|
     | `bg` / `surface` / `surface-hover` | page background, cards, hovered rows |
-    | `line` / `line-strong` | thin dividers / input and button borders |
+    | `line` / `line-strong` | thin dividers / input and button borders. `line-strong` also appears as a hover background (the roster Clear button) |
     | `fg` / `fg-muted` / `fg-subtle` | primary text / body text / labels and meta |
     | `accent` / `accent-bright` / `accent-ink` | the only interactive colour: links, primary buttons, the active nav/tab state |
     | `success` / `warning` / `danger` / `info` | a kill / an in-progress pull / a wipe or error / "not configured" |
