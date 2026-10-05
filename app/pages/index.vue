@@ -14,13 +14,7 @@ const { data: latest } = await useAsyncData('news-latest', () =>
 // history. Hidden quietly (not an error) while pending, not configured, or empty, the
 // same way the news block stays out of the way with nothing to show.
 const { data: raidData } = await useLazyServerFetch<RaidNightsResponse>('/api/raids')
-// The hardest difficulty with any pulls: progress is ordered Normal, Heroic, Mythic,
-// so the last entry is whichever one the guild is currently working on.
-const currentProgress = computed(() => {
-  const data = raidData.value
-  const current = data?.progress.at(-1)
-  return current ? { ...current, tierName: data!.tier.name } : null
-})
+const latestNights = computed(() => raidData.value?.nights.slice(0, 3) ?? [])
 
 const section = SECTION
 // The landing page sets no title of its own, so the tab shows the guild name
@@ -45,7 +39,7 @@ usePageSeo({
         <h1 class="mt-5 text-display text-fg">The Lionhearts</h1>
 
         <p class="mt-5 text-lg text-fg-muted">
-          Social guild with a focus on Heroic raiding and Mythic+.
+          Social guild with a focus on raiding and Mythic+.
         </p>
 
         <div class="mt-9 flex flex-wrap items-center gap-3">
@@ -90,14 +84,33 @@ usePageSeo({
       </template>
     </section>
 
-    <section v-if="currentProgress" :class="section">
-      <SectionHeading class="mb-6">Raids</SectionHeading>
+    <section v-if="latestNights.length" :class="section">
+      <SectionHeading class="mb-6">
+        Latest raid logs
+        <template #end>
+          <NuxtLink to="/raids" class="-my-1 inline-block py-1 font-medium text-accent hover:text-accent-bright">
+            All raids <span aria-hidden="true">→</span>
+          </NuxtLink>
+        </template>
+      </SectionHeading>
 
-      <p class="text-sm tabular-nums text-fg-subtle">
-        {{ currentProgress.bossesKilled }}/{{ currentProgress.bossesPulled }} {{ currentProgress.difficulty.toLowerCase() }}, {{ currentProgress.tierName }}
-      </p>
-
-      <AppButton to="/raids" variant="secondary" class="mt-5">View raid logs</AppButton>
+      <ul :class="CARD_DIVIDED">
+        <li v-for="night in latestNights" :key="night.code">
+          <NuxtLink :to="`/raids/${night.code}`" :class="ROW_LINK">
+            <span class="flex flex-wrap items-center gap-2">
+              <span class="font-medium text-fg">{{ night.zone ?? night.title }}</span>
+              <AppBadge v-if="night.difficulty" tone="neutral">{{ night.difficulty }}</AppBadge>
+            </span>
+            <span class="flex flex-wrap items-baseline gap-x-2 text-sm text-fg-subtle">
+              <time :datetime="night.startedAt">{{ formatDate(night.startedAt) }}</time>
+              <span aria-hidden="true">·</span>
+              <span>{{ night.bossesKilled }} of {{ plural(night.bossesPulled, 'boss', 'bosses') }} down</span>
+              <span aria-hidden="true">·</span>
+              <span>{{ plural(night.raiderCount, 'raider') }}</span>
+            </span>
+          </NuxtLink>
+        </li>
+      </ul>
     </section>
   </main>
 </template>
