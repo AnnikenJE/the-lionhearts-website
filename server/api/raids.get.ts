@@ -1,6 +1,7 @@
 // Runs server-side so the browser never talks to Warcraft Logs directly; the fetch and
 // its cache live in server/utils/raidNights.ts.
 import type { RaidSummary } from '../utils/raidNights'
+import type { DifficultyProgress } from '../utils/raids'
 import type { RaidTier } from '../utils/warcraftlogs'
 
 export interface RaidNightsResponse {
@@ -8,10 +9,13 @@ export interface RaidNightsResponse {
   /** Every tier the guild has logs for, newest first, for the selector. */
   tiers: readonly RaidTier[]
   nights: RaidSummary[]
+  /** Bosses killed and pulled per difficulty in this tier, Normal first. */
+  progress: DifficultyProgress[]
 }
 
 // ?tier=<zone id>; a missing or unknown tier falls back to the current one.
 export default defineEventHandler(async (event): Promise<RaidNightsResponse> => {
   const tier = raidTier(getQuery(event).tier)
-  return { tier, tiers: RAID_TIERS, nights: await fetchRaidNights(tier.id) }
+  const { nights, progress } = await fetchRaidTier(tier.id)
+  return { tier, tiers: RAID_TIERS, nights, progress }
 })

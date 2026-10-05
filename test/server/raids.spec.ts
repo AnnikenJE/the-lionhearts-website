@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { collapseFights, countMembers, groupRaidNights, guildRaidFights } from '../../server/utils/raids'
+import { collapseFights, countMembers, groupRaidNights, guildRaidFights, toDifficultyProgress } from '../../server/utils/raids'
 
 const log = (code: string, start: string, end: string) => ({
   code,
@@ -78,6 +78,32 @@ describe('collapseFights', () => {
   it('keeps the order bosses were first pulled in', () => {
     const rows = collapseFights([pull(1, 'B', 4), pull(2, 'A', 4), pull(3, 'B', 4)])
     expect(rows.map(row => row.name)).toEqual(['B', 'A'])
+  })
+})
+
+describe('toDifficultyProgress', () => {
+  const fight = (name: string, difficulty: number, kill: boolean) => ({ id: 1, name, kill, difficulty })
+
+  it('counts distinct bosses pulled and killed per difficulty', () => {
+    const fights = [fight('Boss A', 4, true), fight('Boss B', 4, false), fight('Boss A', 3, true)]
+    expect(toDifficultyProgress(fights)).toEqual([
+      { difficulty: 'Normal', bossesKilled: 1, bossesPulled: 1 },
+      { difficulty: 'Heroic', bossesKilled: 1, bossesPulled: 2 },
+    ])
+  })
+
+  it('counts a boss pulled many times once', () => {
+    const fights = [fight('Boss A', 5, false), fight('Boss A', 5, false), fight('Boss A', 5, true)]
+    expect(toDifficultyProgress(fights)).toEqual([{ difficulty: 'Mythic', bossesKilled: 1, bossesPulled: 1 }])
+  })
+
+  it('orders difficulties Normal, Heroic, Mythic regardless of input order', () => {
+    const fights = [fight('Boss A', 5, true), fight('Boss B', 3, true), fight('Boss C', 4, true)]
+    expect(toDifficultyProgress(fights).map(d => d.difficulty)).toEqual(['Normal', 'Heroic', 'Mythic'])
+  })
+
+  it('returns an empty list for no fights', () => {
+    expect(toDifficultyProgress([])).toEqual([])
   })
 })
 

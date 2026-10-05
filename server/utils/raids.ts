@@ -96,6 +96,39 @@ export interface RaidFight {
   bestPercent: number | null
 }
 
+export interface DifficultyProgress {
+  difficulty: string
+  bossesKilled: number
+  bossesPulled: number
+}
+
+/**
+ * Distinct bosses killed and pulled per difficulty, across every fight passed in (not
+ * just one night): a guild night logged in parts, or two different nights at the same
+ * difficulty, both count toward the same total. There is no fixed boss count for a
+ * tier to compare against, so "bossesPulled" doubles as the total: the most distinct
+ * bosses ever pulled at that difficulty is read as the full roster, which can read
+ * short in the first days of a tier before every boss has been attempted.
+ * Ordered Normal, Heroic, Mythic; every fight here already passed guildRaidFights(),
+ * so difficultyName() never returns null.
+ */
+export const toDifficultyProgress = (fights: WclFight[]): DifficultyProgress[] => {
+  const byDifficulty = new Map<number, WclFight[]>()
+  for (const fight of fights) {
+    const group = byDifficulty.get(fight.difficulty!)
+    if (group) group.push(fight)
+    else byDifficulty.set(fight.difficulty!, [fight])
+  }
+
+  return [...byDifficulty.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([difficulty, group]) => ({
+      difficulty: difficultyName(difficulty)!,
+      bossesKilled: new Set(group.filter(f => f.kill).map(f => f.name)).size,
+      bossesPulled: new Set(group.map(f => f.name)).size,
+    }))
+}
+
 /**
  * One row per boss and difficulty, in the order they were first pulled. A progression
  * night with twenty wipes on one boss is one row with twenty pulls, and a boss killed
