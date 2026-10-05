@@ -143,7 +143,6 @@ Warcraft Logs OAuth credentials are the first secrets in this repo, defined as s
     | `fg` / `fg-muted` / `fg-subtle` | primary text / body text / labels and meta |
     | `accent` / `accent-bright` / `accent-ink` | the only interactive colour: links, primary buttons, the active nav/tab state |
     | `success` / `warning` / `danger` / `info` | a kill / an in-progress pull / a wipe or error / "not configured" |
-    | `crest` | the guild crest's red (`public/lionhearts-crest.png`), decorative only: section dividers, rank headings. Never on anything clickable |
 
     Every text/accent pair above is checked against WCAG AA in `test/utils/contrast.spec.ts`; add a case there before adding a colour that text will sit on.
   - **Shared pieces, and when to reach for them, instead of writing new markup:**
@@ -151,7 +150,7 @@ Warcraft Logs OAuth credentials are the first secrets in this repo, defined as s
     | Need | Use |
     |---|---|
     | A bordered panel or list wrapper | `CARD` / `CARD_DIVIDED` (`app/utils/ui.ts`) |
-    | A page's top-level section divider | `SECTION` (neutral) or `SECTION_CREST` (crest red), `app/utils/ui.ts` |
+    | A page's top-level section divider | `SECTION` (`app/utils/ui.ts`) |
     | A list row, label left and meta right | `ROW` / `ROW_LINK` (`app/utils/ui.ts`) |
     | A small status or filter chip | `AppBadge.vue` for a display chip; the `PILL`/`PILL_ON`/`PILL_OFF` tokens for an interactive one (a tab, a toggle) |
     | A table of rows and columns | `DataTable.vue` |

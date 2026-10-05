@@ -17,7 +17,7 @@ const EXPLORE = [
   { to: '/rules', title: 'Rules', body: 'The guild and raid rules.' },
 ]
 
-const section = SECTION_CREST
+const section = SECTION
 // The landing page sets no title of its own, so the tab shows the guild name
 // alone rather than repeating it twice.
 usePageSeo({

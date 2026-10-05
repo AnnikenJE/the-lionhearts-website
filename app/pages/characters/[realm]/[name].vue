@@ -86,7 +86,7 @@ const nightPageCount = computed(() => Math.max(1, Math.ceil(nights.value.length 
 const pageNights = computed(() => nights.value.slice((nightPage.value - 1) * NIGHTS_PER_PAGE, nightPage.value * NIGHTS_PER_PAGE))
 watch(nights, () => (nightPage.value = 1))
 
-const section = SECTION_CREST
+const section = SECTION
 const pagerButton = 'cursor-pointer rounded-lg border border-line-strong px-3 py-1.5 text-sm font-medium text-fg transition hover:bg-surface-hover disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent'
 
 usePageSeo(() => ({

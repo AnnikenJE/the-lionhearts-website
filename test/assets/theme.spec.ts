@@ -20,7 +20,6 @@ describe('main.css theme tokens', () => {
     ['--color-warning', '#d99642'],
     ['--color-danger', '#cf6354'],
     ['--color-info', '#74a0c0'],
-    ['--color-crest', '#7a2a23'],
   ])('%s is %s', (token, value) => {
     expect(css).toContain(`${token}: ${value};`)
   })

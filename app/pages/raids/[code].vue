@@ -43,7 +43,7 @@ const subgroups = computed(() => {
   ].filter(group => group.members.length > 0)
 })
 
-const section = SECTION_CREST
+const section = SECTION
 // A getter rather than a plain object, so the tags follow the fetched raid
 // instead of being read once while it is still empty.
 usePageSeo(() => ({

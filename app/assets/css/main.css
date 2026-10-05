@@ -12,9 +12,7 @@
    entries: `--color-accent` gives `text-accent`/`bg-accent`, and so on. Radii,
    widths and breakpoints deliberately use Tailwind's own scales instead.
 
-   A neutral ramp with one warm accent, the guild's gold, and a second, rarer
-   accent, the guild crest's own red, used only for structure (section
-   dividers, rank headings), never anything clickable. Keep both accents
+   A neutral ramp with one warm accent, the guild's gold. Keep the accent
    rare: everything else structural is neutral. */
 @theme {
   /* Warm near-black rather than a true grey. */
@@ -40,11 +38,6 @@
   --color-warning: #d99642;
   --color-danger: #cf6354;
   --color-info: #74a0c0;
-
-  /* The guild crest's own red (see public/lionhearts-crest.png). Decorative
-     only: section dividers, rank headings. Never required to meet a
-     contrast ratio, since nothing it marks is text or a UI boundary. */
-  --color-crest: #7a2a23;
 
   --font-sans: "Nunito Sans Variable", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
 
