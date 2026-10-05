@@ -1,0 +1,23 @@
+# /api/raids caches the current tier for an hour (server/utils/raidNights.ts). Without
+# this, the cache only refreshes when a real visitor's request happens to miss it, and
+# that one visitor pays the full Warcraft Logs fetch. Pinging the route on a schedule
+# means the cron pays that latency instead.
+#
+# Every 15 minutes rather than every ~50: readThrough (server/utils/cache.ts) only
+# re-fetches from Warcraft Logs when the stored entry is actually older than the
+# 1-hour maxAge, so a ping that lands on a still-fresh cache is just a cheap cached
+# read. Pinging more often costs nothing extra upstream and keeps the cache from ever
+# sitting stale for more than 15 minutes.
+name: Warm raids cache
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /api/raids
+        run: curl --fail --silent --show-error https://thelionhearts.eu/api/raids --output /dev/null
