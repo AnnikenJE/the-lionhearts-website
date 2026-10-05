@@ -59,16 +59,6 @@ usePageSeo({
       </div>
     </header>
 
-    <section v-if="currentProgress" :class="section">
-      <SectionHeading class="mb-6">Raids</SectionHeading>
-
-      <p class="text-sm tabular-nums text-fg-subtle">
-        {{ currentProgress.bossesKilled }}/{{ currentProgress.bossesPulled }} {{ currentProgress.difficulty }}, {{ currentProgress.tierName }}
-      </p>
-
-      <AppButton to="/raids" variant="secondary" class="mt-5">View raid logs</AppButton>
-    </section>
-
     <!-- Rendered even while news is off, so there is always a way through to
          the section from the landing page. -->
     <section :class="section">
@@ -98,6 +88,16 @@ usePageSeo({
           </li>
         </ul>
       </template>
+    </section>
+
+    <section v-if="currentProgress" :class="section">
+      <SectionHeading class="mb-6">Raids</SectionHeading>
+
+      <p class="text-sm tabular-nums text-fg-subtle">
+        {{ currentProgress.bossesKilled }}/{{ currentProgress.bossesPulled }} {{ currentProgress.difficulty.toLowerCase() }}, {{ currentProgress.tierName }}
+      </p>
+
+      <AppButton to="/raids" variant="secondary" class="mt-5">View raid logs</AppButton>
     </section>
   </main>
 </template>
