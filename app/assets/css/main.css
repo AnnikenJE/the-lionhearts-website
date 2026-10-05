@@ -12,27 +12,39 @@
    entries: `--color-accent` gives `text-accent`/`bg-accent`, and so on. Radii,
    widths and breakpoints deliberately use Tailwind's own scales instead.
 
-   A neutral ramp with one warm accent, the guild's gold. Keep the accent rare:
-   links, primary buttons, the active nav item. Everything structural is
-   neutral. */
+   A neutral ramp with one warm accent, the guild's gold, and a second, rarer
+   accent, the guild crest's own red, used only for structure (section
+   dividers, rank headings), never anything clickable. Keep both accents
+   rare: everything else structural is neutral. */
 @theme {
   /* Warm near-black rather than a true grey. */
-  --color-bg: #0f0f0f;
-  --color-surface: #151412;
-  --color-surface-hover: #1b1915;
+  --color-bg: #0a0a0a;
+  --color-surface: #121110;
+  --color-surface-hover: #1c1a17;
 
-  --color-line: #262320;
-  --color-line-strong: #35302a;
+  --color-line: #2e2a24;
+  --color-line-strong: #6b6153;
 
   /* Parchment text, in three steps: primary, body, and labels/meta. */
-  --color-fg: #e8e0d0;
-  --color-fg-muted: #b8b0a0;
-  --color-fg-subtle: #8a8474;
+  --color-fg: #f0e8d8;
+  --color-fg-muted: #c2b9a8;
+  --color-fg-subtle: #938c7c;
 
   /* Heraldic gold, used as an accent rather than as the theme. */
-  --color-accent: #c8a96e;
-  --color-accent-bright: #e6c98d;
-  --color-accent-ink: #191510;
+  --color-accent: #d4b67a;
+  --color-accent-bright: #f0ce98;
+  --color-accent-ink: #15110b;
+
+  /* Status colours: a kill, an in-progress pull, a wipe, "not configured". */
+  --color-success: #8bb97e;
+  --color-warning: #d99642;
+  --color-danger: #cf6354;
+  --color-info: #74a0c0;
+
+  /* The guild crest's own red (see public/lionhearts-crest.png). Decorative
+     only: section dividers, rank headings. Never required to meet a
+     contrast ratio, since nothing it marks is text or a UI boundary. */
+  --color-crest: #7a2a23;
 
   --font-sans: "Nunito Sans Variable", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
 
@@ -69,7 +81,7 @@
   }
 
   ::selection {
-    background: rgb(200 169 110 / 0.25);
+    background: rgb(212 182 122 / 0.25);
     color: var(--color-fg);
   }
 
