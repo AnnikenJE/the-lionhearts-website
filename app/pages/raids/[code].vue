@@ -43,7 +43,7 @@ const subgroups = computed(() => {
   ].filter(group => group.members.length > 0)
 })
 
-const section = SECTION
+const section = SECTION_CREST
 // A getter rather than a plain object, so the tags follow the fetched raid
 // instead of being read once while it is still empty.
 usePageSeo(() => ({
@@ -88,7 +88,7 @@ usePageSeo(() => ({
           <template #end>{{ killedCount }} killed of {{ totalCount }}</template>
         </SectionHeading>
 
-        <p v-if="!raid.fights.length" class="text-fg-muted">No boss pulls in this log.</p>
+        <EmptyState v-if="!raid.fights.length" message="No boss pulls in this log." />
         <ul v-else :class="CARD_DIVIDED">
           <li
             v-for="fight in raid.fights"
@@ -99,7 +99,7 @@ usePageSeo(() => ({
               <span class="text-fg">{{ fight.name }}</span>
               <AppBadge v-if="fight.difficulty" tone="neutral">{{ fight.difficulty }}</AppBadge>
             </span>
-            <span class="text-sm text-fg-subtle">{{ fightStatus(fight) }}</span>
+            <span class="text-sm" :class="fight.kill ? 'text-success' : 'text-danger'">{{ fightStatus(fight) }}</span>
           </li>
         </ul>
       </section>
