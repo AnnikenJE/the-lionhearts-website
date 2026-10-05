@@ -10,8 +10,14 @@ export interface WclFight {
   name: string
   kill: boolean | null
   difficulty: number | null
-  /** Health left on a wipe, percent. Only the raid detail query asks for it. */
-  fightPercentage?: number | null
+  /**
+   * Health left on a wipe, percent, the same figure Warcraft Logs' own report page
+   * shows for a pull. Only the raid detail query asks for it. Not `fightPercentage`:
+   * that one is adjusted for ranking purposes (phase skips, intermissions) and can
+   * read quite differently on a multi-phase fight, which once showed a guild's best
+   * pull as several points lower than what their own Warcraft Logs report displayed.
+   */
+  bossPercentage?: number | null
   /** Actor ids of the players in the fight. */
   friendlyPlayers?: number[] | null
 }
@@ -148,10 +154,10 @@ export const collapseFights = (fights: WclFight[]): RaidFight[] => {
     const first = pulls[0]!
     const kill = pulls.some(pull => pull.kill === true)
 
-    // Lower fightPercentage means closer to a kill, so the best pull is the minimum.
+    // Lower bossPercentage means closer to a kill, so the best pull is the minimum.
     // A kill has nothing left to report, so it is null regardless of what pulls logged.
     const percentages = pulls
-      .map(pull => pull.fightPercentage)
+      .map(pull => pull.bossPercentage)
       .filter((percent): percent is number => percent != null)
     const bestPercent = kill || percentages.length === 0 ? null : Math.min(...percentages)
 

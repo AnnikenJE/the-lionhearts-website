@@ -73,7 +73,7 @@ const QUERY = `
         startTime
         endTime
         zone { name }
-        fights(killType: Encounters) { id name kill difficulty fightPercentage friendlyPlayers }
+        fights(killType: Encounters) { id name kill difficulty bossPercentage friendlyPlayers }
         playerDetails(startTime: 0, endTime: 100000000, includeCombatantInfo: false)
       }
     }

@@ -62,8 +62,8 @@ describe('countMembers', () => {
 })
 
 describe('collapseFights', () => {
-  const pull = (id: number, name: string, difficulty: number, kill = false, fightPercentage: number | null = 50) =>
-    ({ id, name, difficulty, kill, fightPercentage })
+  const pull = (id: number, name: string, difficulty: number, kill = false, bossPercentage: number | null = 50) =>
+    ({ id, name, difficulty, kill, bossPercentage })
 
   it('collapses wipes on one boss into a single row with the pull count and best pull', () => {
     const rows = collapseFights([pull(1, 'Sszorak', 4, false, 40), pull(2, 'Sszorak', 4, false, 12.5), pull(3, 'Sszorak', 4, false, 30)])
