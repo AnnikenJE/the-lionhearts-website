@@ -126,7 +126,7 @@ Warcraft Logs OAuth credentials are the first secrets in this repo, defined as s
 
 ### Conventions
 
-- **Styles:** everything is Tailwind v4 utility classes. There are no `<style>` blocks anywhere in `app/`. Tailwind is wired up through the `@tailwindcss/vite` plugin in `nuxt.config.ts`.
+- **Styles:** Tailwind v4 utility classes by default, wired up through the `@tailwindcss/vite` plugin in `nuxt.config.ts`. Tailwind is the default because it keeps styling quick, not a hard rule: a component may use a `<style>` block or any other CSS when that is the better tool for the job (e.g. something Tailwind utilities can't express cleanly).
   - **Palette:** warm near-black surfaces, parchment text, and the guild's gold as the accent. It lives in the `@theme` block in `main.css`, so each token is also a Tailwind scale entry: `--color-accent` gives `text-accent`/`bg-accent`, `--color-surface` gives `bg-surface`, `--color-fg-muted` gives `text-fg-muted`. Text has three steps: `fg` (primary), `fg-muted` (body), `fg-subtle` (labels and meta). Add a colour by adding a token, not by writing a hex value into a component.
   - **Keep the accent rare.** Links, primary buttons, the active nav item, the odd badge. Everything structural (borders, cards, headings, body copy) is parchment on the dark surfaces. A page that turns gold has lost the plot.
   - **Use Tailwind's own scales for everything else.** Radii are `rounded-lg`/`rounded-xl`/`rounded-2xl`, widths are `max-w-5xl` (site) and `max-w-3xl` (reading), breakpoints are plain `sm:`/`md:`, mobile-first. Only the palette and `--text-display` (the page-title size, which carries its own weight, leading and tracking) are project-specific.
