@@ -6,7 +6,7 @@ interface Column {
   align?: 'right'
 }
 
-const { columns, rows, minWidth, rowKey } = defineProps<{
+const { columns, rows, minWidth = undefined, rowKey = undefined } = defineProps<{
   columns: Column[]
   rows: Row[]
   /** e.g. "40rem", so columns don't crush on a narrow viewport inside the scroll container. */
