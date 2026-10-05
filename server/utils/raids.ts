@@ -12,12 +12,20 @@ export interface WclFight {
   difficulty: number | null
   /**
    * Health left on a wipe, percent, the same figure Warcraft Logs' own report page
-   * shows for a pull. Only the raid detail query asks for it. Not `fightPercentage`:
-   * that one is adjusted for ranking purposes (phase skips, intermissions) and can
-   * read quite differently on a multi-phase fight, which once showed a guild's best
-   * pull as several points lower than what their own Warcraft Logs report displayed.
+   * shows for a pull. Only the raid detail query asks for it. Reset at the start of
+   * each phase on a multi-phase fight, so it is not comparable across pulls that
+   * ended in different phases: a wipe seconds into phase 2 can read lower than one
+   * that reached phase 3, despite the phase-3 pull being the further one. Shown for
+   * whichever pull `fightPercentage` picks as best, never used to pick it.
    */
   bossPercentage?: number | null
+  /**
+   * Like `bossPercentage`, but adjusted so it keeps falling across a multi-phase
+   * fight's phases (and past intermissions) instead of resetting each phase, the
+   * number Warcraft Logs' own rankings use. The field to rank pulls by; `bossPercentage`
+   * is still what gets shown, since that is the number on Warcraft Logs' report page.
+   */
+  fightPercentage?: number | null
   /** Actor ids of the players in the fight. */
   friendlyPlayers?: number[] | null
 }
@@ -154,12 +162,15 @@ export const collapseFights = (fights: WclFight[]): RaidFight[] => {
     const first = pulls[0]!
     const kill = pulls.some(pull => pull.kill === true)
 
-    // Lower bossPercentage means closer to a kill, so the best pull is the minimum.
-    // A kill has nothing left to report, so it is null regardless of what pulls logged.
-    const percentages = pulls
-      .map(pull => pull.bossPercentage)
-      .filter((percent): percent is number => percent != null)
-    const bestPercent = kill || percentages.length === 0 ? null : Math.min(...percentages)
+    // Ranked by fightPercentage, which keeps falling across a multi-phase fight's
+    // phases, not bossPercentage, which resets each phase: a pull that died early in
+    // phase 2 can show a lower bossPercentage than one that reached phase 3, despite
+    // being the less far pull. The winning pull's bossPercentage is still what gets
+    // shown, since that is the number on Warcraft Logs' own report page. A kill has
+    // nothing left to report, so it is null regardless of what pulls logged.
+    const ranked = pulls.filter((pull): pull is WclFight & { fightPercentage: number } => pull.fightPercentage != null)
+    const best = ranked.length === 0 ? null : ranked.reduce((a, b) => (b.fightPercentage < a.fightPercentage ? b : a))
+    const bestPercent = kill || !best ? null : (best.bossPercentage ?? best.fightPercentage)
 
     return {
       id: first.id,

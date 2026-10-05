@@ -62,12 +62,31 @@ describe('countMembers', () => {
 })
 
 describe('collapseFights', () => {
-  const pull = (id: number, name: string, difficulty: number, kill = false, bossPercentage: number | null = 50) =>
-    ({ id, name, difficulty, kill, bossPercentage })
+  // bossPercentage and fightPercentage default to the same value: most of these tests
+  // are single-phase, where the two fields agree, so only the multi-phase test below
+  // needs to set them apart.
+  const pull = (id: number, name: string, difficulty: number, kill = false, bossPercentage: number | null = 50, fightPercentage = bossPercentage) =>
+    ({ id, name, difficulty, kill, bossPercentage, fightPercentage })
 
   it('collapses wipes on one boss into a single row with the pull count and best pull', () => {
     const rows = collapseFights([pull(1, 'Sszorak', 4, false, 40), pull(2, 'Sszorak', 4, false, 12.5), pull(3, 'Sszorak', 4, false, 30)])
     expect(rows).toEqual([{ id: 1, name: 'Sszorak', kill: false, difficulty: 'Heroic', pulls: 3, bestPercent: 12.5 }])
+  })
+
+  it('picks the pull that reached the furthest phase, not the lowest raw boss percent', () => {
+    // The Coiled Altar, a real guild wipe night: pull 4 died early in phase 2 at a
+    // boss percent of 1.48 (phase bars reset each phase), pull 5 reached phase 3 and
+    // died at 11.63, a further pull despite the higher raw number. fightPercentage
+    // already accounts for phase progress (4.94 for pull 5 against 50.44 for pull 4)
+    // and is what ranking must use; bossPercentage is still what gets shown.
+    const rows = collapseFights([
+      pull(26, 'The Coiled Altar', 4, false, 48.45, 64.53),
+      pull(27, 'The Coiled Altar', 4, false, 77.84, 33.08),
+      pull(28, 'The Coiled Altar', 4, false, 94.96, 78.48),
+      pull(29, 'The Coiled Altar', 4, false, 1.48, 50.44),
+      pull(30, 'The Coiled Altar', 4, false, 11.63, 4.94),
+    ])
+    expect(rows).toEqual([{ id: 26, name: 'The Coiled Altar', kill: false, difficulty: 'Heroic', pulls: 5, bestPercent: 11.63 }])
   })
 
   it('splits a boss killed on Normal and then on Heroic into two rows', () => {
