@@ -21,6 +21,10 @@ export const CARD_DIVIDED = `${CARD} divide-y divide-line`
 
 /** The divider between a page's top-level sections. */
 export const SECTION = 'mt-16 border-t border-line pt-16'
+/** SECTION with the crest's red instead of the neutral line, for a page's
+ *  own top-level structure (not every divider, just the ones that mark the
+ *  page's own sections, as decided in docs/superpowers/specs/2026-10-05-design-system-design.md). */
+export const SECTION_CREST = 'mt-16 border-t border-crest/40 pt-16'
 
 /** A list row: label on the left, meta on the right. */
 export const ROW = 'flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-4'
