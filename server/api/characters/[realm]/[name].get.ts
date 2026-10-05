@@ -110,7 +110,7 @@ const fetchAttendance = async (realm: string, name: string, soft: Soft) => {
 // the gear simply shows without tracks.
 const fetchUpgradeTracks = defineCache(
   async () => toUpgradeTracks(await $fetch('https://www.raidbots.com/static/data/live/bonuses.json', { timeout: UPSTREAM_TIMEOUT_MS })),
-  { name: 'upgrade-tracks', getKey: () => 'live', maxAge: 24 * 60 * 60 },
+  { name: 'upgrade-tracks', getKey: () => 'live', dependsOn: [toUpgradeTracks], maxAge: 24 * 60 * 60 },
 )
 
 const fetchCharacter = defineCache(
@@ -183,6 +183,9 @@ const fetchCharacter = defineCache(
   {
     name: 'character',
     getKey: (realm: string, name: string, zone: number) => `${realm}:${name.toLowerCase()}:${zone}`,
+    // A fix to the query string or any of these transforms shapes the stored profile,
+    // so it must bust old entries the same way a change to the loader's own body would.
+    dependsOn: [WCL_QUERY, fetchAttendance, fetchLogs, findRaidNights, toGear, toMythicPlusRuns, toRaidProgression, toDifficultyRankings, rankingMetric],
     // Refreshed once an hour, like the raid pages.
     maxAge: 60 * 60,
     validate: keepIfComplete,
