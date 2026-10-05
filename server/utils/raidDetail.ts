@@ -73,7 +73,7 @@ const QUERY = `
         startTime
         endTime
         zone { name }
-        fights(killType: Encounters) { id name kill difficulty fightPercentage friendlyPlayers }
+        fights(killType: Encounters) { id name kill difficulty bossPercentage friendlyPlayers }
         playerDetails(startTime: 0, endTime: 100000000, includeCombatantInfo: false)
       }
     }
@@ -127,6 +127,9 @@ export const fetchRaid = defineCache(
   {
     name: 'raid',
     getKey: (code: string) => code,
+    // A fix to the query string or any of these shapes the stored RaidDetail, so it
+    // must bust old entries the same way a change to the loader's own body would.
+    dependsOn: [QUERY, collapseFights, toPlayer, guildRaidFights, bossPlayerIds],
     maxAge: 7 * 24 * 60 * 60,
     validate: entry =>
       entry.value !== undefined

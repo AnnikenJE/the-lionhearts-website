@@ -1,6 +1,6 @@
 import { createStorage } from 'unstorage'
 import { describe, expect, it, vi } from 'vitest'
-import { codeVersion, readThrough } from '../../server/utils/cache'
+import { cacheVersion, codeVersion, readThrough } from '../../server/utils/cache'
 
 const HOUR = 60 * 60 * 1000
 
@@ -73,5 +73,32 @@ describe('codeVersion', () => {
   it('changes when the code changes', () => {
     expect(codeVersion('a => a + 1')).toBe(codeVersion('a => a + 1'))
     expect(codeVersion('a => a + 1')).not.toBe(codeVersion('a => a + 2'))
+  })
+})
+
+describe('cacheVersion', () => {
+  // A loader rarely does its own work: it mostly calls named helpers (a transform, a
+  // GraphQL query string) that live elsewhere, so load.toString() alone never changes
+  // when one of them does. This is exactly the gap that let #106 ship: collapseFights()
+  // changed, fetchRaid's own source did not, and the cache kept serving the old shape.
+  const load = async () => {}
+
+  it('changes when a dependency function\'s source changes, even though load itself did not', () => {
+    const helperA = () => 1
+    const helperB = () => 2
+    expect(cacheVersion(load, [helperA])).not.toBe(cacheVersion(load, [helperB]))
+  })
+
+  it('changes when a dependency string (e.g. a GraphQL query) changes', () => {
+    expect(cacheVersion(load, ['query { a }'])).not.toBe(cacheVersion(load, ['query { b }']))
+  })
+
+  it('is stable for the same load and the same dependencies', () => {
+    const helper = () => 1
+    expect(cacheVersion(load, [helper])).toBe(cacheVersion(load, [helper]))
+  })
+
+  it('defaults to load-only, matching codeVersion(load.toString()), when no dependencies are given', () => {
+    expect(cacheVersion(load)).toBe(codeVersion(load.toString()))
   })
 })

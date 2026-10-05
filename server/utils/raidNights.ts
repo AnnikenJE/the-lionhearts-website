@@ -194,6 +194,19 @@ const cachedTier = (name: string, maxAge: number) =>
   defineCache(loadRaidNights, {
     name,
     maxAge,
+    // A fix to a query string or any of these shapes the stored nights/progress, so it
+    // must bust old entries the same way a change to loadRaidNights' own body would.
+    dependsOn: [
+      REPORTS_QUERY,
+      LOGGER_REPORTS_QUERY,
+      groupRaidNights,
+      toRaidSummary,
+      toDifficultyProgress,
+      countMembers,
+      guildRaidFights,
+      bossPlayerIds,
+      rosterKey,
+    ],
     validate: keepIfComplete,
     getKey: (zone: number) => `lionhearts:${zone}`,
   })

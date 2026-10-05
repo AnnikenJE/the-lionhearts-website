@@ -16,7 +16,7 @@ export interface CacheEntry<T> {
   value: T
   /** When it was stored, epoch milliseconds. */
   mtime: number
-  /** The code that produced it; see codeVersion. */
+  /** The code that produced it; see cacheVersion. */
   version: string
 }
 
@@ -74,15 +74,28 @@ export const readThrough = async <T>(
 }
 
 /**
+ * The version a cached function's entries are stored and checked under. `load` rarely
+ * does its own work: it mostly calls named helpers (a transform, a GraphQL query
+ * string) defined elsewhere, and load.toString() only captures load's own source, not
+ * theirs. A fix to one of those helpers changes nothing `codeVersion` can see, so the
+ * cache keeps serving entries built by the old, buggy code, this is exactly how a fix
+ * to collapseFights() shipped without busting the `raid` cache that depends on it.
+ * `dependsOn` closes that gap: list anything load's result shape or content actually
+ * depends on, every function and query string stringifies to its own source.
+ */
+export const cacheVersion = (load: (...args: never[]) => unknown, dependsOn: unknown[] = []) =>
+  codeVersion([load.toString(), ...dependsOn.map(String)].join('\n'))
+
+/**
  * A cached function, stored under the "cache" mount as
  * nitro:functions:<name>:<key>.json, the same keys Nitro used (the KV driver picks what
  * to share by name).
  */
 export const defineCache = <Args extends unknown[], T>(
   load: (...args: Args) => Promise<T>,
-  options: CacheOptions<T> & { name: string, getKey: (...args: Args) => string },
+  options: CacheOptions<T> & { name: string, getKey: (...args: Args) => string, dependsOn?: unknown[] },
 ) => {
-  const version = codeVersion(load.toString())
+  const version = cacheVersion(load, options.dependsOn)
   return (...args: Args) =>
     readThrough(
       useStorage('cache'),
