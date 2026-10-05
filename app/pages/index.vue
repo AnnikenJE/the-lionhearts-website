@@ -86,7 +86,7 @@ usePageSeo({
 
     <section v-if="latestNights.length" :class="section">
       <SectionHeading class="mb-6">
-        Latest raid logs
+        Latest raids
         <template #end>
           <NuxtLink to="/raids" class="-my-1 inline-block py-1 font-medium text-accent hover:text-accent-bright">
             All raids <span aria-hidden="true">→</span>
