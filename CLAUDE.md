@@ -126,7 +126,7 @@ Warcraft Logs OAuth credentials are the first secrets in this repo, defined as s
 
 ### Conventions
 
-- **Styles:** everything is Tailwind v4 utility classes. There are no `<style>` blocks anywhere in `app/`. Tailwind is wired up through the `@tailwindcss/vite` plugin in `nuxt.config.ts`.
+- **Styles:** Tailwind v4 utility classes by default, wired up through the `@tailwindcss/vite` plugin in `nuxt.config.ts`. Tailwind is the default because it keeps styling quick, not a hard rule: a component may use a `<style>` block or any other CSS when that is the better tool for the job (e.g. something Tailwind utilities can't express cleanly).
   - **Palette:** warm near-black surfaces, parchment text, and the guild's gold as the accent. It lives in the `@theme` block in `main.css`, so each token is also a Tailwind scale entry: `--color-accent` gives `text-accent`/`bg-accent`, `--color-surface` gives `bg-surface`, `--color-fg-muted` gives `text-fg-muted`. Text has three steps: `fg` (primary), `fg-muted` (body), `fg-subtle` (labels and meta). Add a colour by adding a token, not by writing a hex value into a component.
   - **Keep the accent rare.** Links, primary buttons, the active nav item, the odd badge. Everything structural (borders, cards, headings, body copy) is parchment on the dark surfaces. A page that turns gold has lost the plot.
   - **Use Tailwind's own scales for everything else.** Radii are `rounded-lg`/`rounded-xl`/`rounded-2xl`, widths are `max-w-5xl` (site) and `max-w-3xl` (reading), breakpoints are plain `sm:`/`md:`, mobile-first. Only the palette and `--text-display` (the page-title size, which carries its own weight, leading and tracking) are project-specific.
@@ -134,6 +134,28 @@ Warcraft Logs OAuth credentials are the first secrets in this repo, defined as s
   - When a utility string is repeated across several elements in one file, hoist it to a `const` in `<script setup>` (see `roster.vue`'s `fieldSearch` or `rules.vue`'s `marker`) rather than copy-pasting it. When it's repeated across files, make it a component.
   - **Type:** Nunito Sans throughout, headings included, self-hosted as a variable font from `@fontsource-variable/nunito-sans` (imported at the top of `main.css`), never from Google Fonts, so no visitor's browser is sent to Google. Preflight strips heading sizes and weights, so every heading sets its own with utilities.
   - Markdown from @nuxt/content has no classes of its own, so `news/[slug].vue` styles it with `@tailwindcss/typography` (`prose prose-invert`) plus `prose-*` variants that pull it onto the site palette.
+  - **Colour tokens (`@theme` in `main.css`):**
+
+    | Token | Use |
+    |---|---|
+    | `bg` / `surface` / `surface-hover` | page background, cards, hovered rows |
+    | `line` / `line-strong` | thin dividers / input and button borders. `line-strong` also appears as a hover background (the roster Clear button) |
+    | `fg` / `fg-muted` / `fg-subtle` | primary text / body text / labels and meta |
+    | `accent` / `accent-bright` / `accent-ink` | the only interactive colour: links, primary buttons, the active nav/tab state |
+    | `success` / `warning` / `danger` / `info` | a kill / an in-progress pull / a wipe or error / "not configured" |
+
+    Every text/accent pair above is checked against WCAG AA in `test/utils/contrast.spec.ts`; add a case there before adding a colour that text will sit on.
+  - **Shared pieces, and when to reach for them, instead of writing new markup:**
+
+    | Need | Use |
+    |---|---|
+    | A bordered panel or list wrapper | `CARD` / `CARD_DIVIDED` (`app/utils/ui.ts`) |
+    | A page's top-level section divider | `SECTION` (`app/utils/ui.ts`) |
+    | A list row, label left and meta right | `ROW` / `ROW_LINK` (`app/utils/ui.ts`) |
+    | A small status or filter chip | `AppBadge.vue` for a display chip; the `PILL`/`PILL_ON`/`PILL_OFF` tokens for an interactive one (a tab, a toggle) |
+    | A table of rows and columns | `DataTable.vue` |
+    | A "nothing here yet" message | `EmptyState.vue` |
+    | A failed fetch, with or without retry | `FetchError.vue` |
 - **Page shell:** every page uses the same root container so headings never shift position between pages: `<main class="mx-auto max-w-5xl px-4 py-16 sm:px-6">`, with a left-aligned `<h1 class="text-display text-fg">` and a lede `<p class="mt-5 text-lg text-fg-muted">`. Nothing at page level is centred. Where a narrower measure helps readability (rules articles, a news post body, About prose), constrain that block with an inner `max-w-3xl`, never the page container.
 - **Copy:** never use an em dash. Not in page text, not in comments, not in commit messages. Use a colon, a comma, parentheses, or a full stop. En dashes in numeric ranges (`19:00-22:00` uses a true en dash) are fine.
 - **Types:** co-locate types with the code that owns them and export when shared. `RosterMember` is declared in `server/utils/roster.ts` and re-exported from `roster.get.ts`, so a page still imports the response type from the route that returns it. Only promote a type to a shared file once it's used across several unrelated modules.

@@ -109,7 +109,10 @@ export interface CharacterGearItem {
   track: string | null
 }
 
-export interface CharacterMythicRun {
+// A type alias, not an interface: DataTable's generic `Row extends Record<string, unknown>`
+// constraint only accepts object types vue-tsc can see satisfy an index signature, which an
+// interface (open to declaration merging) never structurally does, even with identical fields.
+export type CharacterMythicRun = {
   dungeon: string
   level: number
   /** Keystone upgrades: 0 is a depleted key, 1 to 3 is timed. */
@@ -129,7 +132,9 @@ export interface CharacterRaidProgress {
   mythic: number
 }
 
-export interface CharacterBossRanking {
+// A type alias for the same reason as CharacterMythicRun above: DataTable's generic
+// constraint needs it, not an interface.
+export type CharacterBossRanking = {
   boss: string
   /** Best parse this tier, 0-100. Null when the boss has not been killed. */
   bestPercent: number | null

@@ -148,9 +148,7 @@ usePageSeo({
         </span>
       </p>
 
-      <p v-if="!groups.length" class="mt-6 text-fg-muted">
-        No members match those filters.
-      </p>
+      <EmptyState v-if="!groups.length" class="mt-6" message="No members match those filters." />
 
       <section v-for="group in groups" :key="group.rank" class="mt-8">
         <h2 class="border-b border-line pb-2">

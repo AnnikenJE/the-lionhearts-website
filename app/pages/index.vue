@@ -89,9 +89,7 @@ usePageSeo({
         </template>
       </SectionHeading>
 
-      <p v-if="!latest?.length" class="text-fg-muted">
-        No posts yet, check back soon.
-      </p>
+      <EmptyState v-if="!latest?.length" message="No posts yet, check back soon." />
       <ul v-else :class="CARD_DIVIDED">
         <li v-for="post in latest" :key="post.path">
           <NuxtLink
