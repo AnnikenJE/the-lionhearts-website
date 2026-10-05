@@ -17,7 +17,7 @@ const EXPLORE = [
   { to: '/rules', title: 'Rules', body: 'The guild and raid rules.' },
 ]
 
-const section = SECTION
+const section = SECTION_CREST
 // The landing page sets no title of its own, so the tab shows the guild name
 // alone rather than repeating it twice.
 usePageSeo({
@@ -89,9 +89,7 @@ usePageSeo({
         </template>
       </SectionHeading>
 
-      <p v-if="!latest?.length" class="text-fg-muted">
-        No posts yet, check back soon.
-      </p>
+      <EmptyState v-if="!latest?.length" message="No posts yet, check back soon." />
       <ul v-else :class="CARD_DIVIDED">
         <li v-for="post in latest" :key="post.path">
           <NuxtLink
