@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { NEWS_ENABLED } from '~/data/news'
+import { DISCORD_URL } from '~/data/links'
 import type { RaidNightsResponse } from '~~/server/api/raids.get'
 
 // Nothing is queried while news is off, so no draft titles reach the payload.
@@ -13,7 +14,13 @@ const { data: latest } = await useAsyncData('news-latest', () =>
 // history. Hidden quietly (not an error) while pending, not configured, or empty, the
 // same way the news block stays out of the way with nothing to show.
 const { data: raidData } = await useLazyServerFetch<RaidNightsResponse>('/api/raids')
-const progress = computed(() => raidData.value?.progress ?? [])
+// The hardest difficulty with any pulls: progress is ordered Normal, Heroic, Mythic,
+// so the last entry is whichever one the guild is currently working on.
+const currentProgress = computed(() => {
+  const data = raidData.value
+  const current = data?.progress.at(-1)
+  return current ? { ...current, tierName: data!.tier.name } : null
+})
 
 const section = SECTION
 // The landing page sets no title of its own, so the tab shows the guild name
@@ -40,6 +47,11 @@ usePageSeo({
         <p class="mt-5 text-lg text-fg-muted">
           Social guild with a focus on Heroic raiding and Mythic+.
         </p>
+
+        <div class="mt-9 flex flex-wrap items-center gap-3">
+          <AppButton :href="DISCORD_URL">Join our Discord</AppButton>
+          <AppButton to="/about" variant="secondary">Read about the guild</AppButton>
+        </div>
       </div>
 
       <div class="w-28 shrink-0 sm:w-56">
@@ -47,13 +59,11 @@ usePageSeo({
       </div>
     </header>
 
-    <section v-if="progress.length" :class="section">
+    <section v-if="currentProgress" :class="section">
       <SectionHeading class="mb-6">Raids</SectionHeading>
 
       <p class="text-sm tabular-nums text-fg-subtle">
-        <template v-for="(d, index) in progress" :key="d.difficulty">
-          <span v-if="index > 0" aria-hidden="true"> · </span>{{ d.bossesKilled }}/{{ d.bossesPulled }} {{ d.difficulty }}
-        </template>
+        {{ currentProgress.bossesKilled }}/{{ currentProgress.bossesPulled }} {{ currentProgress.difficulty }}, {{ currentProgress.tierName }}
       </p>
 
       <AppButton to="/raids" variant="secondary" class="mt-5">View raid logs</AppButton>
