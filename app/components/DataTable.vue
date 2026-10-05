@@ -32,6 +32,7 @@ const cellValue = (row: Row, key: string) => {
           <th
             v-for="col in columns"
             :key="col.key"
+            scope="col"
             :class="[TH, col.align === 'right' ? 'text-right' : '']"
           >
             {{ col.label }}

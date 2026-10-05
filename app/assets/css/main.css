@@ -74,7 +74,7 @@
   }
 
   ::selection {
-    background: rgb(212 182 122 / 0.25);
+    background: --alpha(var(--color-accent) / 25%);
     color: var(--color-fg);
   }
 

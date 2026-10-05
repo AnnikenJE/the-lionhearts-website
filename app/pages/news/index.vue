@@ -46,9 +46,7 @@ usePageSeo({
       <AppButton to="/" variant="secondary" class="mt-7">Back to the home page</AppButton>
     </div>
 
-    <p v-else-if="!posts?.length" class="mt-12 text-fg-muted">
-      No posts yet, check back soon.
-    </p>
+    <EmptyState v-else-if="!posts?.length" class="mt-12" message="No posts yet, check back soon." />
 
     <template v-else>
       <NuxtLink v-if="lead" :to="lead.path" :class="[card, 'mt-12 block rounded-2xl p-6 sm:p-8']">
