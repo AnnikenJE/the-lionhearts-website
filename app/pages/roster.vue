@@ -148,12 +148,10 @@ usePageSeo({
         </span>
       </p>
 
-      <p v-if="!groups.length" class="mt-6 text-fg-muted">
-        No members match those filters.
-      </p>
+      <EmptyState v-if="!groups.length" class="mt-6" message="No members match those filters." />
 
       <section v-for="group in groups" :key="group.rank" class="mt-8">
-        <h2 class="border-b border-line pb-2">
+        <h2 class="border-b border-crest pb-2">
           <button
             class="flex w-full cursor-pointer items-center gap-2 rounded-md py-1 text-left text-lg font-semibold text-fg transition hover:text-accent"
             :aria-expanded="isOpen(group.rank)"
