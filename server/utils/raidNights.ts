@@ -181,6 +181,7 @@ const loadRaidNights = async (zone: number) => {
 
   return {
     nights: groupRaidNights(withBosses).map(toRaidSummary),
+    progress: toDifficultyProgress(withBosses.flatMap(report => report.fights)),
     complete: logger.complete && members !== null,
   }
 }
@@ -200,9 +201,18 @@ const cachedTier = (name: string, maxAge: number) =>
 const fetchCurrentTier = cachedTier('raids', 60 * 60)
 const fetchPastTier = cachedTier('raids-past', 7 * 24 * 60 * 60)
 
-/** The guild's raid nights in one tier, newest first. An unknown tier id means the current tier. */
-export const fetchRaidNights = async (tierId: number) => {
+const resolveTier = async (tierId: number) => {
   const { id } = raidTier(tierId)
-  const { nights } = id === RAID_TIERS[0].id ? await fetchCurrentTier(id) : await fetchPastTier(id)
-  return nights
+  return id === RAID_TIERS[0].id ? fetchCurrentTier(id) : fetchPastTier(id)
+}
+
+/** The guild's raid nights in one tier, newest first. An unknown tier id means the current tier. */
+export const fetchRaidNights = async (tierId: number) => (await resolveTier(tierId)).nights
+
+/** Nights and per-difficulty progress for one tier, from a single fetch. Use this
+ *  instead of fetchRaidNights when both are needed in the same request: a cache miss
+ *  loads once, not twice (concurrent misses on the same key both load, see cache.ts). */
+export const fetchRaidTier = async (tierId: number) => {
+  const { nights, progress } = await resolveTier(tierId)
+  return { nights, progress }
 }
