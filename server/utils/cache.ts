@@ -16,7 +16,7 @@ export interface CacheEntry<T> {
   value: T
   /** When it was stored, epoch milliseconds. */
   mtime: number
-  /** The code that produced it; see codeVersion. */
+  /** The code that produced it; see cacheVersion. */
   version: string
 }
 
