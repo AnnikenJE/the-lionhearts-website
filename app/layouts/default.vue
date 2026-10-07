@@ -5,10 +5,10 @@ import { GUILD_LINKS } from '~/data/links'
 // place rather than being repeated on every <NuxtLink>.
 const NAV = [
   { to: '/', label: 'Home' },
-  { to: '/about', label: 'About' },
   { to: '/news', label: 'News' },
   { to: '/raids', label: 'Raids' },
   { to: '/roster', label: 'Roster' },
+  { to: '/about', label: 'About' },
 ]
 
 // A pill that fills in on hover, and stays filled on the current page. A little tighter
