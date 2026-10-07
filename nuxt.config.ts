@@ -24,6 +24,9 @@ export default defineNuxtConfig({
   // effect almost at once for someone who has the page open.
   routeRules: {
     '/api/**': { headers: { 'cache-control': 'public, max-age=60, stale-while-revalidate=600' } },
+    // Rules moved into /about as regular sections; this keeps old links and
+    // bookmarks working, landing on the first rules section (id="rules").
+    '/rules': { redirect: { to: '/about#rules', statusCode: 301 } },
   },
   app: {
     head: {

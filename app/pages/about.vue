@@ -15,12 +15,42 @@ const WHAT_WE_DO = [
     body: 'A mixed crowd, from people clearing their first raid to Mythic veterans. New players are genuinely welcome: ask questions, learn the fights, and take the time you need.',
   },
 ]
+
+// Adapted from the Discord server rules.
+const RULE_SETS = [
+  {
+    title: 'Guild rules',
+    rules: [
+      'Use common sense.',
+      'Do not be rude, mean or creepy towards others. If any member makes you feel uncomfortable, please contact a GM or Royal Advisor.',
+      'No spam.',
+      'No inappropriate images or videos. We have a NSFW channel, but please use your brain.',
+      'Use text and voice channels for their intended purpose.',
+      'No politics or controversial topics.',
+    ],
+  },
+  {
+    title: 'Raid rules',
+    rules: [
+      'Sign-up for raids is always in the calendar. Please sign up as tentative if you are uncertain.',
+      'If you join the raid on a character that is locked to other raids, you will not be allowed to raid on that character.',
+      'If you are uncertain about tactics, speak up. We would much rather go over tactics than wipe on bosses.',
+      'You must be in voice chat if you are joining a raid. You may be muted if you do not want to speak.',
+      'You are not allowed to stream the raid without speaking to a GM or Royal Advisor first.',
+      'You are not allowed to raid while drunk or affected by any drugs.',
+    ],
+  },
+]
+
+// Numbered as markup rather than a CSS counter, so the chip can be styled.
+const marker = 'flex size-7 shrink-0 items-center justify-center rounded-lg bg-surface-hover text-sm font-semibold text-fg-muted'
+
 usePageSeo({
   title: 'About the guild',
   description:
     'The Lionhearts are a social raiding guild on Darkmoon Faire (EU) that also runs '
     + 'Mythic+. Beginner-friendly, with a mixed community, from first-time raiders to '
-    + 'Mythic veterans.',
+    + 'Mythic veterans, plus the guild and raid rules.',
 })
 </script>
 
@@ -60,6 +90,43 @@ usePageSeo({
       </p>
       <AppButton :href="DISCORD_URL" class="mt-5">Join our Discord</AppButton>
     </section>
+
+    <section
+      v-for="(set, index) in RULE_SETS"
+      :id="index === 0 ? 'rules' : undefined"
+      :key="set.title"
+      class="mt-14 scroll-mt-20"
+    >
+      <!-- id="rules" (first section only) is the /rules redirect's landing
+           spot, see nuxt.config.ts. -->
+      <SectionHeading class="mb-5">{{ set.title }}</SectionHeading>
+      <ol class="space-y-3">
+        <li
+          v-for="(rule, i) in set.rules"
+          :key="rule"
+          class="flex gap-4 rounded-xl border border-line bg-surface p-4 text-fg-muted"
+        >
+          <span :class="marker" aria-hidden="true">{{ i + 1 }}</span>
+          <span>{{ rule }}</span>
+        </li>
+      </ol>
+    </section>
+
+    <aside
+      class="mt-14 rounded-xl border border-accent/30 bg-accent/5 p-5"
+      aria-labelledby="enforcement"
+    >
+      <h2 id="enforcement" class="font-semibold text-accent">Enforcement</h2>
+      <p class="mt-2 text-fg-muted">
+        Breaking the rules too many times will get you banned from the Discord
+        and the guild. Breaking the raid rules will ban you from raiding.
+      </p>
+    </aside>
+
+    <p class="mt-8 max-w-3xl text-fg-subtle">
+      Got a question about the rules, or a suggestion for improving the Discord
+      or the guild? Please tell us.
+    </p>
 
     <section class="mt-14">
       <SectionHeading class="mb-5">About this site</SectionHeading>
