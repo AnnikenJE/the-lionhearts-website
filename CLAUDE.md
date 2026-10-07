@@ -78,9 +78,9 @@ Early-stage Nuxt 4 + TypeScript project (Vue 3 + Vite under the hood). Uses the 
 
 - `nuxt.config.ts`: Nuxt config; global CSS registered here
 - `app/app.vue`: root layout, renders `<NuxtPage />`, plus `<NuxtLoadingIndicator>` in the accent so every navigation shows progress (pages land at once and show their skeleton, so the bar is brief)
-- `app/layouts/default.vue` holds the shared shell: header nav (Home, About, News, Raids, Roster, Rules) plus the footer links
+- `app/layouts/default.vue` holds the shared shell: header nav (Home, About, News, Raids, Roster) plus the footer links
 - `app/pages/index.vue`: home page / landing hero (file-based routing)
-- `app/pages/about.vue`: who the guild is, what it plays, and who to contact (GM / Royal Advisors)
+- `app/pages/about.vue`: who the guild is, what it plays, and who to contact (GM / Royal Advisors), plus the guild and raid rules as a `?tab=rules` sub-tab (`/rules` redirects here, see `nuxt.config.ts`)
 - `app/pages/roster.vue`: guild roster page; groups members by rank, each rank collapsible
 - `app/pages/privacy.vue`: what the site shows about a character, which external source each field comes from, and how to be taken off. Blizzard's Developer API Terms of Use require both the policy and immediate removal on request
 - `app/pages/news/index.vue`, `app/pages/news/[slug].vue`: markdown-backed news list + post
@@ -131,7 +131,7 @@ Warcraft Logs OAuth credentials are the first secrets in this repo, defined as s
   - **Keep the accent rare.** Links, primary buttons, the active nav item, the odd badge. Everything structural (borders, cards, headings, body copy) is parchment on the dark surfaces. A page that turns gold has lost the plot.
   - **Use Tailwind's own scales for everything else.** Radii are `rounded-lg`/`rounded-xl`/`rounded-2xl`, widths are `max-w-5xl` (site) and `max-w-3xl` (reading), breakpoints are plain `sm:`/`md:`, mobile-first. Only the palette and `--text-display` (the page-title size, which carries its own weight, leading and tracking) are project-specific.
   - `main.css` also carries Preflight and the few genuinely global rules: `body`, `::selection`, the focus ring, the shared heading tracking, and the reduced-motion override (deliberately unlayered so it outranks every animation utility). Nothing page-specific belongs there.
-  - When a utility string is repeated across several elements in one file, hoist it to a `const` in `<script setup>` (see `roster.vue`'s `fieldSearch` or `rules.vue`'s `marker`) rather than copy-pasting it. When it's repeated across files, make it a component.
+  - When a utility string is repeated across several elements in one file, hoist it to a `const` in `<script setup>` (see `roster.vue`'s `fieldSearch` or `about.vue`'s `marker`) rather than copy-pasting it. When it's repeated across files, make it a component.
   - **Type:** Nunito Sans throughout, headings included, self-hosted as a variable font from `@fontsource-variable/nunito-sans` (imported at the top of `main.css`), never from Google Fonts, so no visitor's browser is sent to Google. Preflight strips heading sizes and weights, so every heading sets its own with utilities.
   - Markdown from @nuxt/content has no classes of its own, so `news/[slug].vue` styles it with `@tailwindcss/typography` (`prose prose-invert`) plus `prose-*` variants that pull it onto the site palette.
   - **Colour tokens (`@theme` in `main.css`):**

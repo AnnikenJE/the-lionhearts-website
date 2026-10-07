@@ -9,7 +9,6 @@ const NAV = [
   { to: '/news', label: 'News' },
   { to: '/raids', label: 'Raids' },
   { to: '/roster', label: 'Roster' },
-  { to: '/rules', label: 'Rules' },
 ]
 
 // A pill that fills in on hover, and stays filled on the current page. A little tighter
