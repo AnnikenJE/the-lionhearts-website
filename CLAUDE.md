@@ -80,7 +80,7 @@ Early-stage Nuxt 4 + TypeScript project (Vue 3 + Vite under the hood). Uses the 
 - `app/app.vue`: root layout, renders `<NuxtPage />`, plus `<NuxtLoadingIndicator>` in the accent so every navigation shows progress (pages land at once and show their skeleton, so the bar is brief)
 - `app/layouts/default.vue` holds the shared shell: header nav (Home, About, News, Raids, Roster) plus the footer links
 - `app/pages/index.vue`: home page / landing hero (file-based routing)
-- `app/pages/about.vue`: who the guild is, what it plays, and who to contact (GM / Royal Advisors), plus the guild and raid rules as a `?tab=rules` sub-tab (`/rules` redirects here, see `nuxt.config.ts`)
+- `app/pages/about.vue`: who the guild is, what it plays, and who to contact (GM / Royal Advisors), plus the guild and raid rules as regular sections further down the page (`/rules` redirects here, see `nuxt.config.ts`)
 - `app/pages/roster.vue`: guild roster page; groups members by rank, each rank collapsible
 - `app/pages/privacy.vue`: what the site shows about a character, which external source each field comes from, and how to be taken off. Blizzard's Developer API Terms of Use require both the policy and immediate removal on request
 - `app/pages/news/index.vue`, `app/pages/news/[slug].vue`: markdown-backed news list + post
