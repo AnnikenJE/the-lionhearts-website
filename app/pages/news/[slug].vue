@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NEWS_ENABLED } from '~/data/news'
+import { AUTHOR_AVATARS, NEWS_ENABLED } from '~/data/news'
 
 const route = useRoute()
 const notFound = () =>
@@ -46,9 +46,13 @@ const prose = [
 
     <!-- The body is constrained, not the page, so the h1 keeps its position. -->
     <div class="max-w-3xl">
-      <p class="mt-4 border-b border-line pb-8 text-sm text-fg-subtle">
+      <p class="mt-4 flex items-center gap-1.5 border-b border-line pb-8 text-sm text-fg-subtle">
         {{ formatDate(post.date) }}
-        <span v-if="post.author"><span aria-hidden="true">·</span> {{ post.author }}</span>
+        <template v-if="post.author">
+          <span aria-hidden="true">·</span>
+          <img v-if="AUTHOR_AVATARS[post.author]" :src="AUTHOR_AVATARS[post.author]" alt="" class="size-5 rounded-full">
+          {{ post.author }}
+        </template>
       </p>
 
       <article :class="[prose, 'mt-8']">
