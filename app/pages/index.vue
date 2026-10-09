@@ -2,13 +2,15 @@
 import { AUTHOR_AVATARS, NEWS_ENABLED } from '~/data/news'
 import { DISCORD_URL } from '~/data/links'
 import type { RaidNightsResponse } from '~~/server/api/raids.get'
+import type { NewsCollectionItem } from '~~/server/api/news.get'
 
 // Nothing is queried while news is off, so no draft titles reach the payload.
-const { data: latest } = await useAsyncData('news-latest', () =>
-  NEWS_ENABLED
-    ? queryCollection('news').order('date', 'DESC').limit(1).all()
-    : Promise.resolve([]),
-)
+const { data: newsList } = await useFetch<NewsCollectionItem[]>('/api/news', {
+  key: 'news-latest',
+  immediate: NEWS_ENABLED,
+  default: () => [],
+})
+const latest = computed(() => newsList.value.slice(0, 1))
 
 // Current tier only, no ?tier= selector: the landing page shows what's current, not
 // history. Hidden quietly (not an error) while pending, not configured, or empty, the

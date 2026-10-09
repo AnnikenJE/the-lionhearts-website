@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { AUTHOR_AVATARS, NEWS_ENABLED } from '~/data/news'
+import type { NewsCollectionItem } from '~~/server/api/news.get'
 
 const route = useRoute()
 const notFound = () =>
@@ -8,10 +9,15 @@ const notFound = () =>
 // While news is off the posts are still drafts, so no slug is reachable.
 if (!NEWS_ENABLED) throw notFound()
 
-const { data: post } = await useAsyncData(`news-${route.path}`, () =>
-  queryCollection('news').path(route.path).first(),
-)
+const { data: post, error } = await useFetch<NewsCollectionItem>(`/api/news/${route.params.slug}`, {
+  key: `news-${route.path}`,
+})
 
+// The route 404s for an unknown slug, which error captures rather than throwing, same
+// as raids/[code].vue. Anything else (the D1 query timed out and nothing was cached
+// yet) is a real failure, not "no such post", so it must not be mistaken for a 404.
+useNotFound(error, 'Post not found')
+if (error.value) throw createError({ statusCode: 503, statusMessage: 'Could not load this post', fatal: true })
 if (!post.value) throw notFound()
 
 // A getter rather than a plain object, so the tags follow the fetched post

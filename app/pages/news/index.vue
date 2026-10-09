@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { AUTHOR_AVATARS, NEWS_ENABLED } from '~/data/news'
+import type { NewsCollectionItem } from '~~/server/api/news.get'
 
 // Nothing is queried while news is off, so no draft titles reach the payload.
-const { data: posts } = await useAsyncData('news-list', () =>
-  NEWS_ENABLED
-    ? queryCollection('news').order('date', 'DESC').all()
-    : Promise.resolve([]),
-)
+const { data: posts } = await useFetch<NewsCollectionItem[]>('/api/news', {
+  key: 'news-list',
+  immediate: NEWS_ENABLED,
+  default: () => [],
+})
 
 const lead = computed(() => posts.value?.[0])
 const rest = computed(() => posts.value?.slice(1) ?? [])
