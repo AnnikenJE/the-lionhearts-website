@@ -9,7 +9,7 @@ author: Chinde (Anniken)
 
 Hello Lionhearts!
 
-I'm currently making this webpage for our guild. It is not
+I'm currently making this website for our guild. It is not
 done yet and will change.
-Please give me tips on what you would like to see on this webpage! And
+Please give me tips on what you would like to see on this website! And
 please be nice <3
