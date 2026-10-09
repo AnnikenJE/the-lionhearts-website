@@ -2,6 +2,11 @@
    the components and pages themselves. There are no <style> blocks in app/. */
 
 @import "tailwindcss";
+/* Tailwind's automatic source detection does not reach markdown content:
+   @nuxt/content loads it through its own build pipeline, not Vite's module
+   graph. A news post's own classes (e.g. a floated inline image) need this
+   to actually generate, instead of silently doing nothing in production. */
+@source "../../../content/**/*.md";
 /* Nunito Sans, served from the site itself rather than Google Fonts, so no
    visitor's browser is sent to Google. Upright weight axis only: the site has
    no italics. */

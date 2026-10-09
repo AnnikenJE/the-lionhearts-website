@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NEWS_ENABLED } from '~/data/news'
+import { AUTHOR_AVATARS, NEWS_ENABLED } from '~/data/news'
 
 // Nothing is queried while news is off, so no draft titles reach the payload.
 const { data: posts } = await useAsyncData('news-list', () =>
@@ -55,7 +55,13 @@ usePageSeo({
             Latest
           </span>
           <time :datetime="lead.date">{{ formatDate(lead.date) }}</time>
-          <span v-if="lead.author"><span aria-hidden="true">·</span> {{ lead.author }}</span>
+          <span v-if="lead.author" class="inline-flex items-center gap-1.5">
+            <span aria-hidden="true">·</span>
+            <span v-if="AUTHOR_AVATARS[lead.author]" class="inline-block size-9 shrink-0 overflow-hidden rounded-full border border-line">
+              <img :src="AUTHOR_AVATARS[lead.author]" alt="" class="size-full scale-125 object-cover">
+            </span>
+            {{ lead.author }}
+          </span>
         </p>
         <h2 class="mt-4 text-3xl font-bold text-fg">{{ lead.title }}</h2>
         <p v-if="summaryOf(lead)" class="mt-3 max-w-2xl text-lg text-fg-muted">
@@ -73,7 +79,13 @@ usePageSeo({
             <NuxtLink :to="post.path" :class="[card, 'block h-full p-5']">
               <p :class="meta">
                 <time :datetime="post.date">{{ formatDate(post.date) }}</time>
-                <span v-if="post.author"><span aria-hidden="true">·</span> {{ post.author }}</span>
+                <span v-if="post.author" class="inline-flex items-center gap-1.5">
+                  <span aria-hidden="true">·</span>
+                  <span v-if="AUTHOR_AVATARS[post.author]" class="inline-block size-9 shrink-0 overflow-hidden rounded-full border border-line">
+                    <img :src="AUTHOR_AVATARS[post.author]" alt="" class="size-full scale-125 object-cover">
+                  </span>
+                  {{ post.author }}
+                </span>
               </p>
               <h3 class="mt-2 text-lg font-semibold text-fg">{{ post.title }}</h3>
               <p v-if="summaryOf(post)" class="mt-2 text-sm text-fg-muted">{{ summaryOf(post) }}</p>
