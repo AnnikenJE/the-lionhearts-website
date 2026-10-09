@@ -82,7 +82,7 @@ usePageSeo({
               {{ latest[0]!.author }}
             </template>
           </p>
-          <NuxtLink :to="latest[0]!.path" class="mt-3 block text-2xl font-bold text-fg transition hover:text-accent-bright">
+          <NuxtLink :to="latest[0]!.path" class="mt-3 inline-block text-2xl font-bold text-fg transition hover:text-accent-bright">
             {{ latest[0]!.title }}
           </NuxtLink>
           <div :class="[PROSE, 'mt-5 flow-root']">
