@@ -57,7 +57,9 @@ usePageSeo({
           <time :datetime="lead.date">{{ formatDate(lead.date) }}</time>
           <span v-if="lead.author" class="inline-flex items-center gap-1.5">
             <span aria-hidden="true">·</span>
-            <img v-if="AUTHOR_AVATARS[lead.author]" :src="AUTHOR_AVATARS[lead.author]" alt="" class="size-5 rounded-full">
+            <span v-if="AUTHOR_AVATARS[lead.author]" class="inline-block size-9 shrink-0 overflow-hidden rounded-full border border-line">
+              <img :src="AUTHOR_AVATARS[lead.author]" alt="" class="size-full scale-125 object-cover">
+            </span>
             {{ lead.author }}
           </span>
         </p>
@@ -79,7 +81,9 @@ usePageSeo({
                 <time :datetime="post.date">{{ formatDate(post.date) }}</time>
                 <span v-if="post.author" class="inline-flex items-center gap-1.5">
                   <span aria-hidden="true">·</span>
-                  <img v-if="AUTHOR_AVATARS[post.author]" :src="AUTHOR_AVATARS[post.author]" alt="" class="size-5 rounded-full">
+                  <span v-if="AUTHOR_AVATARS[post.author]" class="inline-block size-9 shrink-0 overflow-hidden rounded-full border border-line">
+                    <img :src="AUTHOR_AVATARS[post.author]" alt="" class="size-full scale-125 object-cover">
+                  </span>
                   {{ post.author }}
                 </span>
               </p>

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { NEWS_ENABLED } from '~/data/news'
+import { AUTHOR_AVATARS, NEWS_ENABLED } from '~/data/news'
 import { DISCORD_URL } from '~/data/links'
 import type { RaidNightsResponse } from '~~/server/api/raids.get'
 
 // Nothing is queried while news is off, so no draft titles reach the payload.
 const { data: latest } = await useAsyncData('news-latest', () =>
   NEWS_ENABLED
-    ? queryCollection('news').order('date', 'DESC').limit(3).all()
+    ? queryCollection('news').order('date', 'DESC').limit(1).all()
     : Promise.resolve([]),
 )
 
@@ -53,9 +53,10 @@ usePageSeo({
       </div>
     </header>
 
-    <!-- Rendered even while news is off, so there is always a way through to
-         the section from the landing page. -->
-    <section :class="section">
+    <!-- Tighter top margin than SECTION's usual mt-16: the crest already pushes
+         the header taller than its text column, so the full shared gap stacked
+         on top left "Latest news" reading as too far down the page. -->
+    <section class="mt-8 border-t border-line pt-10">
       <SectionHeading class="mb-6">
         Latest news
         <template #end>
@@ -67,20 +68,27 @@ usePageSeo({
 
       <EmptyState v-if="!latest?.length" message="No posts yet, check back soon." />
       <template v-else>
-        <NuxtLink :to="latest[0]!.path" :class="[CARD, ROW_LINK]">
-          <span class="font-medium text-fg">{{ latest[0]!.title }}</span>
-          <time class="text-sm text-fg-subtle">{{ formatDate(latest[0]!.date) }}</time>
-        </NuxtLink>
-
-        <!-- Heading only: these two are a way back to a post you already know about,
-             not a second chance to sell it. -->
-        <ul v-if="latest.length > 1" class="mt-3 space-y-1">
-          <li v-for="post in latest.slice(1)" :key="post.path">
-            <NuxtLink :to="post.path" class="-my-1 inline-block py-1 text-sm text-fg-muted transition hover:text-fg hover:underline">
-              {{ post.title }}
-            </NuxtLink>
-          </li>
-        </ul>
+        <!-- The full latest post, not a teaser: the title links to its own page (a
+             permalink), everything else renders inline so a visitor never has to
+             click through just to read what was posted. -->
+        <article :class="[CARD, 'p-6 sm:p-8']">
+          <p class="flex flex-wrap items-center gap-1.5 text-sm text-fg-subtle">
+            <time :datetime="latest[0]!.date">{{ formatDate(latest[0]!.date) }}</time>
+            <template v-if="latest[0]!.author">
+              <span aria-hidden="true">·</span>
+              <span v-if="AUTHOR_AVATARS[latest[0]!.author]" class="inline-block size-9 shrink-0 overflow-hidden rounded-full border border-line">
+                <img :src="AUTHOR_AVATARS[latest[0]!.author]" alt="" class="size-full scale-125 object-cover">
+              </span>
+              {{ latest[0]!.author }}
+            </template>
+          </p>
+          <NuxtLink :to="latest[0]!.path" class="mt-3 block text-2xl font-bold text-fg transition hover:text-accent-bright">
+            {{ latest[0]!.title }}
+          </NuxtLink>
+          <div :class="[PROSE, 'mt-5 flow-root']">
+            <ContentRenderer :value="latest[0]!" />
+          </div>
+        </article>
       </template>
     </section>
 

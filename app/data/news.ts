@@ -4,7 +4,7 @@
  * 404s, and the landing page drops its news block. Nothing is fetched either,
  * so no draft titles leak into the page payload. Flip to true to launch.
  */
-export const NEWS_ENABLED: boolean = false
+export const NEWS_ENABLED: boolean = true
 
 /**
  * The avatar shown next to a post's byline, keyed by the frontmatter `author`
@@ -12,5 +12,5 @@ export const NEWS_ENABLED: boolean = false
  * simply gets no avatar, rather than a placeholder.
  */
 export const AUTHOR_AVATARS: Record<string, string> = {
-  Chinde: '/chinde-avatar.jpg',
+  'Chinde (Anniken)': '/chinde-avatar.png',
 }

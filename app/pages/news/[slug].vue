@@ -23,17 +23,6 @@ usePageSeo(() => ({
   description: post.value?.summary || post.value?.description || 'A post from The Lionhearts.',
   type: 'article',
 }))
-// Markdown renders to plain HTML with no classes of its own, so typography
-// supplies the rhythm and these variants pull it onto the site palette.
-const prose = [
-  'prose prose-invert prose-lg max-w-none',
-  'prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-fg',
-  'prose-p:text-fg-muted prose-li:text-fg-muted prose-li:marker:text-fg-subtle',
-  'prose-strong:text-fg prose-code:text-fg',
-  'prose-a:font-medium prose-a:text-accent prose-a:underline-offset-4',
-  'prose-blockquote:border-line-strong prose-blockquote:font-normal prose-blockquote:not-italic prose-blockquote:text-fg-subtle',
-  'prose-hr:border-line prose-th:text-fg prose-thead:border-line-strong prose-tr:border-line',
-].join(' ')
 </script>
 
 <template>
@@ -50,12 +39,14 @@ const prose = [
         {{ formatDate(post.date) }}
         <template v-if="post.author">
           <span aria-hidden="true">·</span>
-          <img v-if="AUTHOR_AVATARS[post.author]" :src="AUTHOR_AVATARS[post.author]" alt="" class="size-5 rounded-full">
+          <span v-if="AUTHOR_AVATARS[post.author]" class="inline-block size-9 shrink-0 overflow-hidden rounded-full border border-line">
+            <img :src="AUTHOR_AVATARS[post.author]" alt="" class="size-full scale-125 object-cover">
+          </span>
           {{ post.author }}
         </template>
       </p>
 
-      <article :class="[prose, 'mt-8']">
+      <article :class="[PROSE, 'mt-8 flow-root']">
         <ContentRenderer :value="post" />
       </article>
     </div>

@@ -31,3 +31,22 @@ export const ROW_LINK = `${ROW} transition hover:bg-surface-hover`
 export const BUTTON_BASE = 'inline-block rounded-lg px-4 py-2.5 text-sm font-semibold transition'
 export const BUTTON_PRIMARY = 'bg-accent text-accent-ink hover:bg-accent-bright'
 export const BUTTON_SECONDARY = 'border border-line-strong text-fg hover:bg-surface-hover'
+
+/** Markdown from @nuxt/content renders to plain HTML with no classes of its own, so
+ *  typography supplies the rhythm and these variants pull it onto the site palette.
+ *  Shared by the news post page and the landing page's full-post preview. */
+export const PROSE = [
+  'prose prose-invert prose-lg max-w-none',
+  'prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-fg',
+  'prose-p:text-fg-muted prose-li:text-fg-muted prose-li:marker:text-fg-subtle',
+  'prose-strong:text-fg prose-code:text-fg',
+  'prose-a:font-medium prose-a:text-accent prose-a:underline-offset-4',
+  'prose-blockquote:border-line-strong prose-blockquote:font-normal prose-blockquote:not-italic prose-blockquote:text-fg-subtle',
+  'prose-hr:border-line prose-th:text-fg prose-thead:border-line-strong prose-tr:border-line',
+  // Typography only zeroes the margin on the true first child. A post that opens
+  // with an image (its first child) leaves the first paragraph's own top margin
+  // in place, stacking on top of the container's own spacing to the title.
+  // ContentRenderer wraps a post's markdown in its own div, so the prose
+  // container's children aren't the p/img tags themselves but that one wrapper.
+  '[&>div>p:first-of-type]:mt-0',
+].join(' ')
