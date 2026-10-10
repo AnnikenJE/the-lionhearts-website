@@ -16,6 +16,6 @@ export interface RaidNightsResponse {
 // ?tier=<zone id>; a missing or unknown tier falls back to the current one.
 export default defineEventHandler(async (event): Promise<RaidNightsResponse> => {
   const tier = raidTier(getQuery(event).tier)
-  const { nights, progress } = await fetchRaidTier(tier.id)
+  const { nights, progress } = await fetchRaidTier(event, tier.id)
   return { tier, tiers: RAID_TIERS, nights, progress }
 })

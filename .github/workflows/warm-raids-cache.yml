@@ -8,6 +8,9 @@
 # 1-hour maxAge, so a ping that lands on a still-fresh cache is just a cheap cached
 # read. Pinging more often costs nothing extra upstream and keeps the cache from ever
 # sitting stale for more than 15 minutes.
+#
+# The www host, with -L: the bare domain is a registrar redirect that never reaches
+# the Worker, and curl --fail counts a 301 as success, so pinging it warmed nothing.
 name: Warm raids cache
 
 on:
@@ -20,4 +23,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping /api/raids
-        run: curl --fail --silent --show-error https://thelionhearts.eu/api/raids --output /dev/null
+        run: curl --fail --silent --show-error --location https://www.thelionhearts.eu/api/raids --output /dev/null

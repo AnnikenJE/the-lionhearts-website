@@ -23,14 +23,18 @@ const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> =>
     )
   })
 
+// The list is shared through KV (see SHARED_CACHES), which outlives a deploy, while the
+// posts themselves only change with one. So it is keyed by the build: a deploy (or a
+// preview build) starts its own list rather than serving the last deploy's, and within
+// one build it can be kept a day, which keeps KV writes to a handful.
 export const fetchNewsList = defineCache(
   (event: H3Event) =>
     withTimeout(queryCollection(event, 'news').order('date', 'DESC').all(), CONTENT_TIMEOUT_MS),
-  { name: 'news-list', getKey: () => 'all', maxAge: 300 },
+  { name: 'news-list', getKey: () => useRuntimeConfig().app.buildId, maxAge: 24 * 60 * 60 },
 )
 
 export const fetchNewsPost = defineCache(
   (event: H3Event, path: string) =>
     withTimeout(queryCollection(event, 'news').path(path).first(), CONTENT_TIMEOUT_MS),
-  { name: 'news-post', getKey: (_event: H3Event, path: string) => path, maxAge: 300 },
+  { name: 'news-post', getKey: (path: string) => path, maxAge: 300 },
 )
