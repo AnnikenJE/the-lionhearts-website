@@ -73,6 +73,11 @@ describe('isShared', () => {
     expect(isShared('nitro:functions:upgrade-tracks:live.json')).toBe(false)
   })
 
+  it('shares the news list, but not single posts, whose key any made-up slug can set', () => {
+    expect(isShared('nitro:functions:news-list:all.json')).toBe(true)
+    expect(isShared('nitro:functions:news-post:news:made-up-slug.json')).toBe(false)
+  })
+
   it('never writes a Raider.IO entry to KV', async () => {
     const kv = fakeKv()
     withBinding(kv)
