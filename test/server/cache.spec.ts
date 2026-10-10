@@ -1,6 +1,7 @@
 import { createStorage } from 'unstorage'
-import { describe, expect, it, vi } from 'vitest'
-import { cacheVersion, codeVersion, readThrough } from '../../server/utils/cache'
+import type { H3Event } from 'h3'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cacheVersion, codeVersion, defineCache, readThrough } from '../../server/utils/cache'
 
 const HOUR = 60 * 60 * 1000
 
@@ -80,27 +81,27 @@ describe('readThrough in the background', () => {
     const { tasks, background } = collect()
     let n = 0
     const load = async () => `v${++n}`
-    await readThrough(storage, 'k', load, { maxAge: 3600 }, 'v1', now, background)
+    await readThrough(storage, 'bg1', load, { maxAge: 3600 }, 'v1', now, background)
     advance(HOUR)
-    expect(await readThrough(storage, 'k', load, { maxAge: 3600 }, 'v1', now, background)).toBe('v1')
+    expect(await readThrough(storage, 'bg1', load, { maxAge: 3600 }, 'v1', now, background)).toBe('v1')
     await Promise.all(tasks)
-    expect(await readThrough(storage, 'k', load, { maxAge: 3600 }, 'v1', now, background)).toBe('v2')
+    expect(await readThrough(storage, 'bg1', load, { maxAge: 3600 }, 'v1', now, background)).toBe('v2')
   })
 
   it('still loads inside the request when nothing is stored', async () => {
     const { storage, now } = setup()
     const { tasks, background } = collect()
-    expect(await readThrough(storage, 'k', async () => 'first', { maxAge: 3600 }, 'v1', now, background)).toBe('first')
+    expect(await readThrough(storage, 'bg2', async () => 'first', { maxAge: 3600 }, 'v1', now, background)).toBe('first')
     expect(tasks).toHaveLength(0)
   })
 
   it('refreshes a key once at a time, however many requests find it stale', async () => {
     const { storage, now, advance } = setup()
     const { tasks, background } = collect()
-    await readThrough(storage, 'k', async () => 'old', { maxAge: 3600 }, 'v1', now)
+    await readThrough(storage, 'bg3', async () => 'old', { maxAge: 3600 }, 'v1', now)
     advance(HOUR)
     const load = vi.fn(async () => 'new')
-    await Promise.all([1, 2, 3].map(() => readThrough(storage, 'k', load, { maxAge: 3600 }, 'v1', now, background)))
+    await Promise.all([1, 2, 3].map(() => readThrough(storage, 'bg3', load, { maxAge: 3600 }, 'v1', now, background)))
     await Promise.all(tasks)
     expect(load).toHaveBeenCalledTimes(1)
   })
@@ -108,32 +109,104 @@ describe('readThrough in the background', () => {
   it('refreshes again after a refresh that never settles has timed out', async () => {
     const { storage, now, advance } = setup()
     const { background } = collect()
-    await readThrough(storage, 'k', async () => 'old', { maxAge: 3600 }, 'v1', now)
+    await readThrough(storage, 'bg4', async () => 'old', { maxAge: 3600 }, 'v1', now)
     advance(HOUR)
     // Dropped by the platform: never settles, so it never clears its own mark.
-    await readThrough(storage, 'k', () => new Promise<string>(() => {}), { maxAge: 3600 }, 'v1', now, background)
+    await readThrough(storage, 'bg4', () => new Promise<string>(() => {}), { maxAge: 3600 }, 'v1', now, background)
     const load = vi.fn(async () => 'new')
-    await readThrough(storage, 'k', load, { maxAge: 3600 }, 'v1', now, background)
+    await readThrough(storage, 'bg4', load, { maxAge: 3600 }, 'v1', now, background)
     expect(load).not.toHaveBeenCalled()
     advance(3 * 60 * 1000)
-    await readThrough(storage, 'k', load, { maxAge: 3600 }, 'v1', now, background)
+    await readThrough(storage, 'bg4', load, { maxAge: 3600 }, 'v1', now, background)
     expect(load).toHaveBeenCalledTimes(1)
   })
 
   it('keeps the stale value when the refresh fails', async () => {
     const { storage, now, advance } = setup()
     const { tasks, background } = collect()
-    await readThrough(storage, 'k', async () => 'old', { maxAge: 3600 }, 'v1', now)
+    await readThrough(storage, 'bg5', async () => 'old', { maxAge: 3600 }, 'v1', now)
     advance(HOUR)
     const failing = async (): Promise<string> => {
       throw new Error('Warcraft Logs down')
     }
     const error = vi.spyOn(console, 'error').mockImplementation(() => {})
-    expect(await readThrough(storage, 'k', failing, { maxAge: 3600 }, 'v1', now, background)).toBe('old')
+    expect(await readThrough(storage, 'bg5', failing, { maxAge: 3600 }, 'v1', now, background)).toBe('old')
     await Promise.all(tasks)
     expect(error).toHaveBeenCalled()
     error.mockRestore()
-    expect(await readThrough(storage, 'k', async () => 'later', { maxAge: 3600 }, 'v1', now)).toBe('later')
+    expect(await readThrough(storage, 'bg5', async () => 'later', { maxAge: 3600 }, 'v1', now)).toBe('later')
+  })
+})
+
+describe('readThrough in the background, edge cases', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('loads inline, not in the background, an entry that fails validate', async () => {
+    const { storage, now, advance } = setup()
+    const tasks: Promise<unknown>[] = []
+    const validate = (entry: { value: { complete: boolean }, mtime: number }) =>
+      entry.value.complete || now() - entry.mtime < 10 * 60 * 1000
+    await readThrough(storage, 'edge1', async () => ({ complete: false }), { maxAge: 3600, validate }, 'v1', now)
+    advance(11 * 60 * 1000)
+    const fresh = await readThrough(storage, 'edge1', async () => ({ complete: true }), { maxAge: 3600, validate }, 'v1', now, task => void tasks.push(task))
+    expect(fresh).toEqual({ complete: true })
+    expect(tasks).toHaveLength(0)
+  })
+
+  it('loads inline next time when a background refresh outlives the platform limit', async () => {
+    vi.useFakeTimers()
+    const { storage, now, advance } = setup()
+    const tasks: Promise<unknown>[] = []
+    const background = (task: Promise<unknown>) => void tasks.push(task)
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    await readThrough(storage, 'edge2', async () => 'old', { maxAge: 3600 }, 'v1', now)
+    advance(HOUR)
+    // A refresh too slow for waitUntil: still running after the 25 second limit.
+    expect(await readThrough(storage, 'edge2', () => new Promise<string>(() => {}), { maxAge: 3600 }, 'v1', now, background)).toBe('old')
+    await vi.advanceTimersByTimeAsync(26 * 1000)
+    await Promise.all(tasks)
+    error.mockRestore()
+    const tasksBefore = tasks.length
+    expect(await readThrough(storage, 'edge2', async () => 'new', { maxAge: 3600 }, 'v1', now, background)).toBe('new')
+    expect(tasks).toHaveLength(tasksBefore)
+  })
+})
+
+describe('defineCache', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('serves stale only at the outermost call: a cached function inside a load loads inline', async () => {
+    const storage = createStorage()
+    vi.stubGlobal('useStorage', () => storage)
+    const tasks: Promise<unknown>[] = []
+    const event = { waitUntil: (task: Promise<unknown>) => void tasks.push(task) } as unknown as H3Event
+    let roster = 'roster v1'
+    const fetchRoster = defineCache(async () => roster, { name: 'test-roster', getKey: () => 'k', maxAge: 60 })
+    const fetchNights = defineCache(
+      async (inner: H3Event) => `nights with ${await fetchRoster(inner)}`,
+      { name: 'test-nights', getKey: () => 'k', maxAge: 60 },
+    )
+
+    expect(await fetchNights(event)).toBe('nights with roster v1')
+    // Both entries go stale, and the roster changes upstream.
+    const stale = Date.now() - 2 * 60 * 1000
+    for (const key of ['nitro:functions:test-roster:k.json', 'nitro:functions:test-nights:k.json']) {
+      const entry = await storage.getItem<{ mtime: number }>(key)
+      await storage.setItem(key, { ...entry!, mtime: stale })
+    }
+    roster = 'roster v2'
+
+    // The outer call serves its stale value at once...
+    expect(await fetchNights(event)).toBe('nights with roster v1')
+    expect(tasks).toHaveLength(1)
+    await Promise.all(tasks)
+    // ...and its refresh was built from a freshly loaded roster, not the stale one.
+    expect(tasks).toHaveLength(1)
+    expect(await fetchNights(event)).toBe('nights with roster v2')
   })
 })
 

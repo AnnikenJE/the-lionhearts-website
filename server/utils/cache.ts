@@ -44,17 +44,41 @@ export type Background = (task: Promise<unknown>) => void
 
 // Keys this instance is refreshing, and since when. One refresh per key at a time, so a
 // burst of visitors to a stale page costs one upstream load, not one each. Nothing ever
-// waits on it, and a refresh that never settles (dropped by the platform) stops
-// counting after REFRESH_TIMEOUT_MS, so the key is refreshed again after that.
+// waits on it, and a refresh the platform drops without a trace stops counting after
+// REFRESH_TIMEOUT_MS, so the key is refreshed again after that.
 const refreshing = new Map<string, number>()
-const REFRESH_TIMEOUT_MS = 2 * 60 * 1000
+const REFRESH_TIMEOUT_MS = 60 * 1000
+
+// Cloudflare lets work handed to waitUntil run about 30 seconds past the response, then
+// cancels it. A background refresh that has not finished by BACKGROUND_LIMIT_MS is
+// given up on, and the next request for that key loads it inline instead, where it has
+// the time it needs. Without that, a slow load would be cut off every time and the
+// entry would stay stale for good while still spending upstream calls.
+const BACKGROUND_LIMIT_MS = 25 * 1000
+const loadInlineNext = new Set<string>()
+
+const withinLimit = <T>(promise: Promise<T>, ms: number): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`still running after ${ms} ms`)), ms)
+    promise.then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (error) => {
+        clearTimeout(timer)
+        reject(error)
+      },
+    )
+  })
 
 /**
  * Returns the stored value for `key` while it is fresh, otherwise loads, stores and
- * returns a new one. With `background`, a stale value is returned at once instead and
- * the load runs in the background. If loading fails and an older value is stored, that
- * is served instead: a slightly old page beats an error. Storage errors never fail the
- * request.
+ * returns a new one. With `background`, an entry that is only past its maxAge is
+ * returned at once instead and the load runs in the background; one that fails
+ * `validate` (an incomplete result) is still loaded inline, as is a missing one. If
+ * loading fails and an older value is stored, that is served instead: a slightly old
+ * page beats an error. Storage errors never fail the request.
  */
 export const readThrough = async <T>(
   storage: Storage,
@@ -67,8 +91,9 @@ export const readThrough = async <T>(
 ): Promise<T> => {
   const stored = await storage.getItem<CacheEntry<T>>(key).catch(() => null)
   const usable = stored && stored.version === version ? stored : null
+  const valid = usable !== null && (validate?.(usable) ?? true)
 
-  if (usable && now() - usable.mtime < maxAge * 1000 && (validate?.(usable) ?? true)) {
+  if (usable && valid && now() - usable.mtime < maxAge * 1000) {
     return usable.value
   }
 
@@ -81,19 +106,23 @@ export const readThrough = async <T>(
     return value
   }
 
-  if (usable && background) {
+  if (usable && valid && background && !loadInlineNext.has(key)) {
     const started = refreshing.get(key)
     if (started === undefined || now() - started > REFRESH_TIMEOUT_MS) {
       refreshing.set(key, now())
       background(
-        refresh()
-          .catch(error => console.error('[cache] refresh failed', key, error))
+        withinLimit(refresh(), BACKGROUND_LIMIT_MS)
+          .catch((error) => {
+            if (String(error).includes('still running after')) loadInlineNext.add(key)
+            console.error('[cache] refresh failed', key, error)
+          })
           .finally(() => refreshing.delete(key)),
       )
     }
     return usable.value
   }
 
+  loadInlineNext.delete(key)
   try {
     return await refresh()
   }
@@ -122,20 +151,32 @@ export const cacheVersion = (load: (...args: never[]) => unknown, dependsOn: unk
  * to share by name). It takes the request's event first, so a stale entry can be
  * refreshed after the response, and passes it on to `load` for any cached function
  * that one calls in turn; `getKey` sees only the other arguments.
+ *
+ * Only the outermost call serves stale. A cached function called while `load` runs
+ * (the roster inside the raid nights, the raid nights inside a character) loads a
+ * stale entry inline, since whatever it returns is about to be stored as fresh: a
+ * stale part there would make the whole entry an hour older than it claims to be.
  */
+const insideLoad = new WeakSet<H3Event>()
+
 export const defineCache = <Args extends unknown[], T>(
   load: (event: H3Event, ...args: Args) => Promise<T>,
   options: CacheOptions<T> & { name: string, getKey: (...args: Args) => string, dependsOn?: unknown[] },
 ) => {
   const version = cacheVersion(load, options.dependsOn)
-  return (event: H3Event, ...args: Args) =>
-    readThrough(
+  return (event: H3Event, ...args: Args) => {
+    // `load` gets a stand-in for the event: everything reads through to the real one,
+    // but cached functions can tell they are being called from inside a load.
+    const inner = Object.create(event) as H3Event
+    insideLoad.add(inner)
+    return readThrough(
       useStorage('cache'),
       `nitro:functions:${options.name}:${options.getKey(...args)}.json`,
-      () => load(event, ...args),
+      () => load(inner, ...args),
       options,
       version,
       Date.now,
-      task => (event.waitUntil ? event.waitUntil(task) : void task),
+      insideLoad.has(event) ? undefined : task => (event.waitUntil ? event.waitUntil(task) : void task),
     )
+  }
 }
