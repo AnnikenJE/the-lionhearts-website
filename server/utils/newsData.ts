@@ -32,5 +32,5 @@ export const fetchNewsList = defineCache(
 export const fetchNewsPost = defineCache(
   (event: H3Event, path: string) =>
     withTimeout(queryCollection(event, 'news').path(path).first(), CONTENT_TIMEOUT_MS),
-  { name: 'news-post', getKey: (_event: H3Event, path: string) => path, maxAge: 300 },
+  { name: 'news-post', getKey: (path: string) => path, maxAge: 300 },
 )

@@ -13,7 +13,7 @@ export default defineEventHandler(async (event): Promise<RaidDetail> => {
     throw createError({ statusCode: 404, statusMessage: 'Raid not found' })
   }
 
-  const [raid, members] = await Promise.all([fetchRaid(code, 'high'), fetchMemberIndex().catch(() => null)])
+  const [raid, members] = await Promise.all([fetchRaid(event, code, 'high'), fetchMemberIndex(event).catch(() => null)])
 
   // Only guild members get a character page, so the page needs to know who is one, and
   // their realm's real slug to link to it. Without the roster nobody is marked, and the

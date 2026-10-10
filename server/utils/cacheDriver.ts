@@ -24,9 +24,11 @@ const KV_TTL_SECONDS = 8 * 24 * 60 * 60
  * The caches worth sharing: the ones filled from Warcraft Logs, whose hourly budget is
  * what the shared cache protects. KV's free tier allows 1000 writes a day, and Raider.IO
  * data (the roster, character profiles, upgrade tracks) costs nothing to fetch again, so
- * it stays in memory and leaves the writes to these.
+ * it stays in memory and leaves the writes to these. The news caches are shared too: in
+ * memory alone every new instance asks D1, which has been slow enough to hold up the
+ * landing page, and a post list refreshes at most every five minutes.
  */
-const SHARED_CACHES = new Set(['raids', 'raids-past', 'raid', 'character'])
+const SHARED_CACHES = new Set(['raids', 'raids-past', 'raid', 'character', 'news-list', 'news-post'])
 
 /** Nitro's cache keys read "nitro:functions:<cache name>:<key>.json". */
 export const isShared = (key: string) => SHARED_CACHES.has(key.split(':')[2] ?? '')

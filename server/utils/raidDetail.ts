@@ -1,6 +1,7 @@
 // One raid night in detail. Kept in server/utils so both the raid route and the
 // character pages (which list the nights a character attended) can use it.
 import { spaceWords } from '../../app/utils/wow'
+import type { H3Event } from 'h3'
 import type { RaidFight, WclFight } from './raids'
 
 // A report code is an opaque alphanumeric id copied from a Warcraft Logs URL, never
@@ -95,7 +96,7 @@ const DAY_MS = 24 * 60 * 60 * 1000
 // may still be live-logging and is fetched again after an hour. `priority` is not
 // part of the key: the character pages ask at low priority for the same reports.
 export const fetchRaid = defineCache(
-  async (code: string, priority: QueryPriority): Promise<RaidDetail> => {
+  async (_event: H3Event, code: string, priority: QueryPriority): Promise<RaidDetail> => {
     const report = (await wclQuery<WclResponse>(QUERY, { code }, priority)).reportData.report
 
     if (!report) {

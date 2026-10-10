@@ -1,6 +1,7 @@
 // The guild's raid nights in one raid tier. A cached function rather than a cached
 // route, so the character pages can reuse it to find the nights a character attended.
 // wclQuery, GUILD and the helpers from raids.ts are Nitro auto-imports.
+import type { H3Event } from 'h3'
 import type { WclActor, WclFight } from './raids'
 
 interface WclReport {
@@ -145,11 +146,11 @@ const fetchLoggerReports = async (zone: number) => {
   return { reports: perLogger.flat(), complete }
 }
 
-const loadRaidNights = async (zone: number) => {
+const loadRaidNights = async (event: H3Event, zone: number) => {
   const [guildReports, logger, members] = await Promise.all([
     fetchGuildReports(zone),
     fetchLoggerReports(zone),
-    fetchMemberIndex().catch(() => null),
+    fetchMemberIndex(event).catch(() => null),
   ])
 
   // Without the roster there is no telling a guild night from a pug: guild-tagged logs
@@ -214,18 +215,18 @@ const cachedTier = (name: string, maxAge: number) =>
 const fetchCurrentTier = cachedTier('raids', 60 * 60)
 const fetchPastTier = cachedTier('raids-past', 7 * 24 * 60 * 60)
 
-const resolveTier = async (tierId: number) => {
+const resolveTier = async (event: H3Event, tierId: number) => {
   const { id } = raidTier(tierId)
-  return id === RAID_TIERS[0].id ? fetchCurrentTier(id) : fetchPastTier(id)
+  return id === RAID_TIERS[0].id ? fetchCurrentTier(event, id) : fetchPastTier(event, id)
 }
 
 /** The guild's raid nights in one tier, newest first. An unknown tier id means the current tier. */
-export const fetchRaidNights = async (tierId: number) => (await resolveTier(tierId)).nights
+export const fetchRaidNights = async (event: H3Event, tierId: number) => (await resolveTier(event, tierId)).nights
 
 /** Nights and per-difficulty progress for one tier, from a single fetch. Use this
  *  instead of fetchRaidNights when both are needed in the same request: a cache miss
  *  loads once, not twice (concurrent misses on the same key both load, see cache.ts). */
-export const fetchRaidTier = async (tierId: number) => {
-  const { nights, progress } = await resolveTier(tierId)
+export const fetchRaidTier = async (event: H3Event, tierId: number) => {
+  const { nights, progress } = await resolveTier(event, tierId)
   return { nights, progress }
 }

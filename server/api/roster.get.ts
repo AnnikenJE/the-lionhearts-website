@@ -6,4 +6,4 @@
 // that returns it, while the transform stays testable in server/utils.
 export type { RosterMember } from '../utils/roster'
 
-export default defineEventHandler(() => fetchRoster())
+export default defineEventHandler(event => fetchRoster(event))

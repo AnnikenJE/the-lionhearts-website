@@ -69,6 +69,74 @@ describe('readThrough', () => {
   })
 })
 
+describe('readThrough in the background', () => {
+  const collect = () => {
+    const tasks: Promise<unknown>[] = []
+    return { tasks, background: (task: Promise<unknown>) => void tasks.push(task) }
+  }
+
+  it('serves a stale value at once and stores the refreshed one for the next request', async () => {
+    const { storage, now, advance } = setup()
+    const { tasks, background } = collect()
+    let n = 0
+    const load = async () => `v${++n}`
+    await readThrough(storage, 'k', load, { maxAge: 3600 }, 'v1', now, background)
+    advance(HOUR)
+    expect(await readThrough(storage, 'k', load, { maxAge: 3600 }, 'v1', now, background)).toBe('v1')
+    await Promise.all(tasks)
+    expect(await readThrough(storage, 'k', load, { maxAge: 3600 }, 'v1', now, background)).toBe('v2')
+  })
+
+  it('still loads inside the request when nothing is stored', async () => {
+    const { storage, now } = setup()
+    const { tasks, background } = collect()
+    expect(await readThrough(storage, 'k', async () => 'first', { maxAge: 3600 }, 'v1', now, background)).toBe('first')
+    expect(tasks).toHaveLength(0)
+  })
+
+  it('refreshes a key once at a time, however many requests find it stale', async () => {
+    const { storage, now, advance } = setup()
+    const { tasks, background } = collect()
+    await readThrough(storage, 'k', async () => 'old', { maxAge: 3600 }, 'v1', now)
+    advance(HOUR)
+    const load = vi.fn(async () => 'new')
+    await Promise.all([1, 2, 3].map(() => readThrough(storage, 'k', load, { maxAge: 3600 }, 'v1', now, background)))
+    await Promise.all(tasks)
+    expect(load).toHaveBeenCalledTimes(1)
+  })
+
+  it('refreshes again after a refresh that never settles has timed out', async () => {
+    const { storage, now, advance } = setup()
+    const { background } = collect()
+    await readThrough(storage, 'k', async () => 'old', { maxAge: 3600 }, 'v1', now)
+    advance(HOUR)
+    // Dropped by the platform: never settles, so it never clears its own mark.
+    await readThrough(storage, 'k', () => new Promise<string>(() => {}), { maxAge: 3600 }, 'v1', now, background)
+    const load = vi.fn(async () => 'new')
+    await readThrough(storage, 'k', load, { maxAge: 3600 }, 'v1', now, background)
+    expect(load).not.toHaveBeenCalled()
+    advance(3 * 60 * 1000)
+    await readThrough(storage, 'k', load, { maxAge: 3600 }, 'v1', now, background)
+    expect(load).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the stale value when the refresh fails', async () => {
+    const { storage, now, advance } = setup()
+    const { tasks, background } = collect()
+    await readThrough(storage, 'k', async () => 'old', { maxAge: 3600 }, 'v1', now)
+    advance(HOUR)
+    const failing = async (): Promise<string> => {
+      throw new Error('Warcraft Logs down')
+    }
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    expect(await readThrough(storage, 'k', failing, { maxAge: 3600 }, 'v1', now, background)).toBe('old')
+    await Promise.all(tasks)
+    expect(error).toHaveBeenCalled()
+    error.mockRestore()
+    expect(await readThrough(storage, 'k', async () => 'later', { maxAge: 3600 }, 'v1', now)).toBe('later')
+  })
+})
+
 describe('codeVersion', () => {
   it('changes when the code changes', () => {
     expect(codeVersion('a => a + 1')).toBe(codeVersion('a => a + 1'))

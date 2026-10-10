@@ -1,6 +1,7 @@
 // The guild roster from Raider.IO. The raw member list is cached once, an hour, and
 // both the roster page and the membership checks (character pages, raid nights) are
 // built from it.
+import type { H3Event } from 'h3'
 import type { RaiderIoMember } from './roster'
 
 const fetchGuildMembers = defineCache(
@@ -24,7 +25,7 @@ const fetchGuildMembers = defineCache(
 )
 
 /** The roster as the roster page shows it: ranked members, sorted, opt-outs removed. */
-export const fetchRoster = async () => toRosterMembers(await fetchGuildMembers())
+export const fetchRoster = async (event: H3Event) => toRosterMembers(await fetchGuildMembers(event))
 
 /** Every guild member, rank 99 included, as rosterKey to realm slug. */
-export const fetchMemberIndex = async () => toMemberIndex(await fetchGuildMembers())
+export const fetchMemberIndex = async (event: H3Event) => toMemberIndex(await fetchGuildMembers(event))
