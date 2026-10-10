@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { isShared, memoryOverKv } from '../../server/utils/cacheDriver'
+import { isShared, KV_RECHECK_MS, memoryOverKv } from '../../server/utils/cacheDriver'
 
 // A stand-in for a Workers KV binding: what Cloudflare hands over as globalThis.__env__.CACHE.
 const fakeKv = () => {
@@ -44,6 +44,32 @@ describe('memoryOverKv', () => {
     expect(await driver.getItem('nitro:functions:raid:abc.json', {})).toBe('detail')
     await driver.getItem('nitro:functions:raid:abc.json', {})
     expect(kv.get).toHaveBeenCalledTimes(1)
+  })
+
+  it('looks at KV again after a minute and takes its copy when it is newer', async () => {
+    const kv = fakeKv()
+    withBinding(kv)
+    let time = 1_000_000
+    const driver = memoryOverKv({ writes: false, now: () => time })
+    const key = 'nitro:functions:raids:lionhearts:53.json'
+    await driver.setItem!(key, JSON.stringify({ value: 'old', mtime: 1 }), {})
+    // Another instance stores a newer entry.
+    kv.data.set(key, JSON.stringify({ value: 'new', mtime: 2 }))
+    expect(JSON.parse(await driver.getItem(key, {}) as string).value).toBe('old')
+    time += KV_RECHECK_MS
+    expect(JSON.parse(await driver.getItem(key, {}) as string).value).toBe('new')
+  })
+
+  it('keeps its own copy when KV only has an older one', async () => {
+    const kv = fakeKv()
+    withBinding(kv)
+    let time = 1_000_000
+    const driver = memoryOverKv({ writes: false, now: () => time })
+    const key = 'nitro:functions:raids:lionhearts:53.json'
+    kv.data.set(key, JSON.stringify({ value: 'older', mtime: 1 }))
+    await driver.setItem!(key, JSON.stringify({ value: 'mine', mtime: 2 }), {})
+    time += KV_RECHECK_MS
+    expect(JSON.parse(await driver.getItem(key, {}) as string).value).toBe('mine')
   })
 
   it('keeps working from memory when KV fails', async () => {
