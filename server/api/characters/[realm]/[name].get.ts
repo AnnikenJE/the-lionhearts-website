@@ -187,8 +187,11 @@ const fetchCharacter = defineCache(
     // A fix to the query string or any of these transforms shapes the stored profile,
     // so it must bust old entries the same way a change to the loader's own body would.
     dependsOn: [WCL_QUERY, fetchAttendance, fetchLogs, findRaidNights, toGear, toMythicPlusRuns, toRaidProgression, toDifficultyRankings, rankingMetric],
-    // Refreshed once an hour, like the raid pages.
-    maxAge: 60 * 60,
+    // Refreshed every 5 hours: this is the cache with the most distinct keys (every
+    // roster member times every raid tier), so it drives most of the Workers KV write
+    // volume. An hourly refresh pushed the account over 50% of the daily free-tier
+    // write limit; 5 hours cuts that roughly fivefold.
+    maxAge: 5 * 60 * 60,
     validate: keepIfComplete,
   },
 )
