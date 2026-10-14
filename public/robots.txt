@@ -29,13 +29,16 @@ User-agent: meta-externalagent
 User-agent: PerplexityBot
 Disallow: /
 
-# Everyone else: open, except the API (server routes, not pages) and the
-# tier query variants, already noindex per page (see useTierFetch.ts).
-# Character pages are cached separately for every tier, so a crawler walking
-# every character in every tier fetches mostly uncached pages from Warcraft
-# Logs. That uses up the shared API budget and leaves real visitors with
-# incomplete parses.
+# Everyone else: open, except the API (server routes, not pages), the tier
+# query variants (already noindex per page, see useTierFetch.ts), and
+# individual character/raid pages. A crawler walking every character in
+# every tier, and every historical raid log, was confirmed driving the
+# Workers KV write budget (shared with the Warcraft Logs cache) well past
+# its daily free-tier limit. The roster and raids list stay crawlable;
+# only the per-character and per-raid detail pages are blocked.
 User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /*?tier=
+Disallow: /characters/
+Disallow: /raids/
