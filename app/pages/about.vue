@@ -81,14 +81,11 @@ usePageSeo({
     </section>
 
     <section class="mt-14">
-      <SectionHeading class="mb-5">Who to ask</SectionHeading>
+      <SectionHeading class="mb-5">Get in touch</SectionHeading>
       <p class="max-w-3xl text-fg-muted">
-        Questions about joining, raiding or anything else? Contact the King
-        Lionheart or one of the Royal Advisors on Discord. Both ranks are marked
-        on the
-        <NuxtLink to="/roster" class="font-medium text-accent hover:text-accent-bright">roster</NuxtLink>.
-        For the website, or to reach us from outside the guild, see the
-        <NuxtLink to="/contact" class="font-medium text-accent hover:text-accent-bright">contact page</NuxtLink>.
+        Questions about joining, raiding or anything else? See the
+        <NuxtLink to="/contact" class="font-medium text-accent hover:text-accent-bright">contact page</NuxtLink>
+        for how to reach us.
       </p>
       <AppButton :href="DISCORD_URL" class="mt-5">Join our Discord</AppButton>
     </section>
@@ -127,7 +124,8 @@ usePageSeo({
 
     <p class="mt-8 max-w-3xl text-fg-subtle">
       Got a question about the rules, or a suggestion for improving the Discord
-      or the guild? Please tell us.
+      or the guild? Please let us know through the
+      <NuxtLink to="/contact" class="font-medium text-accent hover:text-accent-bright">contact page</NuxtLink>.
     </p>
 
     <section class="mt-14">
