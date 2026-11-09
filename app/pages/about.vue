@@ -87,6 +87,8 @@ usePageSeo({
         Lionheart or one of the Royal Advisors on Discord. Both ranks are marked
         on the
         <NuxtLink to="/roster" class="font-medium text-accent hover:text-accent-bright">roster</NuxtLink>.
+        For the website, or to reach us from outside the guild, see the
+        <NuxtLink to="/contact" class="font-medium text-accent hover:text-accent-bright">contact page</NuxtLink>.
       </p>
       <AppButton :href="DISCORD_URL" class="mt-5">Join our Discord</AppButton>
     </section>

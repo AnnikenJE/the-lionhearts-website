@@ -82,12 +82,13 @@ Early-stage Nuxt 4 + TypeScript project (Vue 3 + Vite under the hood). Uses the 
 - `app/pages/index.vue`: home page / landing hero (file-based routing)
 - `app/pages/about.vue`: who the guild is, what it plays, and who to contact (GM / Royal Advisors), plus the guild and raid rules as regular sections further down the page (`/rules` redirects here, see `nuxt.config.ts`)
 - `app/pages/roster.vue`: guild roster page; groups members by rank, each rank collapsible
+- `app/pages/contact.vue`: who to ask about what, and the site's email address (`CONTACT_EMAIL` in `app/data/links.ts`, the one place `/contact`, `/privacy` and About read it from). Linked from the footer next to Privacy. No contact form: it would need a backend and bring in new personal data
 - `app/pages/privacy.vue`: what the site shows about a character, which external source each field comes from, and how to be taken off. Blizzard's Developer API Terms of Use require both the policy and immediate removal on request
 - `app/pages/news/index.vue`, `app/pages/news/[slug].vue`: markdown-backed news list + post
 - `app/pages/raids/index.vue`, `app/pages/raids/[code].vue`: raid nights from Warcraft Logs; the list shows one raid tier at a time (`?tier=<zone id>`, picked with `TierNav`, current tier by default) with bosses down and headcount, the detail page shows the boss list (pulls collapsed to one row per boss) and who was there, grouped tank / healer / dps
 - `content/news/*.md`: news posts (authored as markdown, rendered by @nuxt/content)
 - `content.config.ts`: @nuxt/content collection schema for news
-- `app/data/schedule.ts`, `app/data/links.ts`: typed static data (raid schedule, links)
+- `app/data/schedule.ts`, `app/data/links.ts`: typed static data (raid schedule, links, the contact email)
 - `app/data/news.ts`: `NEWS_ENABLED` flag. While it's false the news section is hidden everywhere at once (list page shows coming soon, post routes 404, landing page drops its news block) and nothing is queried, so draft titles never reach the payload. Flipping it to true is the whole launch.
 - `app/components/RaidSchedule.vue` renders the raid schedule; the guild links are rendered straight into the footer
 - `app/composables/useTierFetch.ts`: the fetch behind the raids page and the character pages. Reads `?tier=`, keeps the previous tier on screen while the next loads and through a failed fetch, and reports which tier is selected. Also returns `refresh` for an error's retry. Fetches lazily and awaits only on the server, so a client navigation lands at once on the skeleton

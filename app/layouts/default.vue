@@ -62,6 +62,7 @@ const footerLink = '-my-1.5 inline-block py-1.5 text-sm text-fg-muted transition
               rel="noopener"
               :class="footerLink"
             >{{ link.label }}</a>
+            <NuxtLink to="/contact" :class="footerLink">Contact</NuxtLink>
             <NuxtLink to="/privacy" :class="footerLink">Privacy</NuxtLink>
           </div>
         </div>
