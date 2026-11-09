@@ -1,7 +1,8 @@
 export const DISCORD_URL = 'https://discord.gg/xP488F7yrr'
 
-// Discord username of the person who runs the website, for questions about the site itself.
-export const SITE_MAINTAINER_DISCORD = 'chinde'
+// The site's contact address: removal requests, questions about the site, and anyone
+// outside the guild (Blizzard, Warcraft Logs, Raider.IO) who does not use Discord.
+export const CONTACT_EMAIL = 'thelionheartseu@gmail.com'
 
 export interface GuildLink {
   label: string
