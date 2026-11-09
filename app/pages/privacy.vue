@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DISCORD_URL, SITE_MAINTAINER_DISCORD } from '~/data/links'
+import { CONTACT_EMAIL, DISCORD_URL } from '~/data/links'
 
 // Every external source a page pulls character data from. Named one by one, so
 // the policy says who holds the data rather than "third parties".
@@ -23,7 +23,7 @@ const SOURCES = [
 
 const link = 'text-accent underline underline-offset-4 transition hover:no-underline'
 
-const LAST_UPDATED = '29 September 2026'
+const LAST_UPDATED = '9 November 2026'
 
 usePageSeo({
   title: 'Privacy',
@@ -113,9 +113,10 @@ usePageSeo({
     <section class="mt-14 max-w-3xl">
       <SectionHeading class="mb-5">Taking your character off the site</SectionHeading>
       <p class="text-fg-muted">
-        You can ask at any time, and you do not have to give a reason. Message
-        Lionheart or one of the Royal Advisors on
-        <a :href="DISCORD_URL" target="_blank" rel="noopener" :class="link">our Discord</a>
+        You can ask at any time, and you do not have to give a reason. Email
+        <a :href="`mailto:${CONTACT_EMAIL}`" :class="link">{{ CONTACT_EMAIL }}</a>,
+        or message Lionheart or one of the Royal Advisors on
+        <a :href="DISCORD_URL" target="_blank" rel="noopener" :class="link">our Discord</a>,
         and say which character you mean. We add the name to the site's opt-out
         list and it disappears from the roster, from every raid page, and its
         character page stops existing.
@@ -140,10 +141,9 @@ usePageSeo({
     </section>
 
     <p class="mt-14 max-w-3xl text-fg-subtle">
-      Last updated {{ LAST_UPDATED }}. The site is run by
-      <span class="text-fg-muted">{{ SITE_MAINTAINER_DISCORD }}</span> on Discord.
-      If any of this is unclear, something looks wrong, or you think something
-      on the site should not be here, send a message there.
+      Last updated {{ LAST_UPDATED }}. If any of this is unclear, something
+      looks wrong, or you think something on the site should not be here, email
+      <a :href="`mailto:${CONTACT_EMAIL}`" :class="link">{{ CONTACT_EMAIL }}</a>.
     </p>
   </main>
 </template>
