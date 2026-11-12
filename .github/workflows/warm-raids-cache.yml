@@ -1,13 +1,18 @@
 # /api/raids caches the current tier for an hour (server/utils/raidNights.ts). Without
-# this, the cache only refreshes when a real visitor's request happens to miss it, and
-# that one visitor pays the full Warcraft Logs fetch. Pinging the route on a schedule
-# means the cron pays that latency instead.
+# this, the cache only refreshes when a real visitor's request happens to find it
+# stale. Pinging the route on a schedule lets the cron trigger that refresh instead.
 #
-# Every 15 minutes rather than every ~50: readThrough (server/utils/cache.ts) only
-# re-fetches from Warcraft Logs when the stored entry is actually older than the
-# 1-hour maxAge, so a ping that lands on a still-fresh cache is just a cheap cached
-# read. Pinging more often costs nothing extra upstream and keeps the cache from ever
-# sitting stale for more than 15 minutes.
+# The plan was a ping every 15 minutes, so the current tier would never sit stale for
+# more than a quarter of an hour. A ping that lands on a still-fresh entry is a cheap
+# cached read, so pinging often costs nothing extra upstream. In practice GitHub does
+# not keep to the schedule: scheduled runs on a quiet repository are delayed or dropped,
+# and this one runs roughly every six to seven hours. It still helps, and that is good
+# enough for now. Cloudflare Cron Triggers would run on time if it ever matters.
+#
+# Only the current tier's list is warmed. Past tiers, single raid nights and character
+# pages still refresh when a visitor asks for them. defineCache (server/utils/cache.ts)
+# serves a stale entry at once and refreshes it in the background, so only a key with
+# nothing stored at all makes a visitor wait for Warcraft Logs.
 #
 # The www host, with -L: the bare domain is a registrar redirect that never reaches
 # the Worker, and curl --fail counts a 301 as success, so pinging it warmed nothing.
