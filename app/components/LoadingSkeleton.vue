@@ -39,7 +39,7 @@ const section = SECTION
 
       <!-- raids/index.vue: the tier pills, then one row per raid night -->
       <template v-else-if="shape === 'raids'">
-        <div class="mt-10 flex flex-wrap gap-2">
+        <div class="flex flex-wrap gap-2">
           <span v-for="pill in 4" :key="pill" :class="[bone, 'h-7 w-32 rounded-full']" />
         </div>
         <ul :class="[card, 'mt-6']">
