@@ -8,6 +8,7 @@
   },
   "scripts": {
     "postinstall": "nuxt prepare",
+    "prepare": "node scripts/install-hooks.ts",
     "dev": "nuxt dev --open",
     "build": "nuxt build",
     "preview": "nuxt preview",
