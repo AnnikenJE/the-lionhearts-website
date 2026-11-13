@@ -76,6 +76,8 @@ server/
   utils/                   # the fetchers, the pure transforms (kept testable), the cache
   plugins/cacheStorage.ts  # mounts the KV-backed cache in production
 test/                      # Vitest specs
+scripts/                   # repo tooling run by Node directly: the env file check, the hook installer
+.githooks/pre-commit       # local secret guard, installed by npm install
 public/                    # static assets
 nuxt.config.ts             # Nuxt config
 ```
@@ -89,6 +91,8 @@ nuxt.config.ts             # Nuxt config
 **News.** `NEWS_ENABLED` in `app/data/news.ts` gates the whole section. While it is false the list page shows a coming-soon notice, post routes return 404, and nothing is queried, so unpublished drafts never reach the page payload. Flipping it to true is the whole launch.
 
 **Raid data.** Fetched server-side from the Warcraft Logs v2 GraphQL API. The current tier's raid list and each log are cached and refreshed once an hour (a finished tier once a week), so Warcraft Logs is asked at most once an hour per page however many people visit. A night being logged live therefore shows up to an hour behind. Two logs of the same night (two raiders logging) are shown as one, and logs with no boss pulls are left out.
+
+**Secret guard.** This repository is public, so a committed secret is a leaked one. `npm install` sets up a pre-commit hook (`.githooks/pre-commit`) that refuses a commit when git tracks a `.env` or `.env.*` file other than `.env.example`, and scans the staged changes with [gitleaks](https://github.com/gitleaks/gitleaks) if it is installed. CI runs both checks again on every pull request, gitleaks over the whole history. If a secret ever does get pushed, removing it is not enough: rotate it.
 
 **Crawlers.** `public/robots.txt` keeps the site open to ordinary search engines but blocks the API, the `?tier=` variants and the individual character and raid pages (crawling them used up the Workers KV write budget), plus aggressive scrapers and AI training crawlers.
 

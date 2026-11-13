@@ -1,0 +1,19 @@
+#!/bin/sh
+# Runs before every commit, so a secret is stopped on this machine instead of after
+# it has been pushed: a pushed branch is public the moment it lands, long before CI
+# says anything. Installed by `npm install` (scripts/install-hooks.ts sets
+# core.hooksPath to this folder). CI runs the same checks, so skipping the hook with
+# `git commit --no-verify` only moves the failure to the pull request.
+
+# A tracked .env or .env.* file (anything but .env.example).
+node scripts/check-env-files.ts || exit 1
+
+# A secret pasted into any staged file. Optional locally, because gitleaks is a
+# separate binary (https://github.com/gitleaks/gitleaks); CI always runs it.
+if command -v gitleaks >/dev/null 2>&1; then
+  # --verbose names the file, line and rule, without it gitleaks only says how
+  # many leaks it found.
+  gitleaks git --pre-commit --staged --redact --verbose --no-banner || exit 1
+else
+  echo "pre-commit: gitleaks is not installed, so only the env file check ran (CI runs both)." >&2
+fi

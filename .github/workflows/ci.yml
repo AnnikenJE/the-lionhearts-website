@@ -39,3 +39,43 @@ jobs:
       # No Warcraft Logs credentials are needed: the routes return a clean 503
       # when they are missing, so the build never depends on them.
       - run: npm run build
+
+  # The repository is public, so a committed secret is a leaked one. GitHub's push
+  # protection only knows the formats of well-known providers, and a Warcraft Logs
+  # client secret is not one of them. This job runs the same checks as the local
+  # pre-commit hook (.githooks/pre-commit), for anything that got past it.
+  secrets:
+    name: no env files or secrets
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Every commit, not only the tip: a secret added in one commit and
+          # removed in the next is still in the history, and still leaked.
+          fetch-depth: 0
+
+      # No npm ci: the check is plain TypeScript that Node runs as is.
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - run: node scripts/check-env-files.ts
+
+      # Pinned to a version and verified against its checksum, so a replaced
+      # release asset cannot run here. The checksum is the one GitHub publishes
+      # for the asset. To upgrade, change both values together.
+      - name: Install gitleaks
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          cd "$RUNNER_TEMP"
+          curl -sSfL -o gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum --check --strict
+          tar -xzf gitleaks.tar.gz gitleaks
+
+      # Scans the whole history. --redact keeps a found secret out of the public
+      # log; the file, line and commit are enough to find it.
+      - run: '"$RUNNER_TEMP/gitleaks" git --redact --verbose --no-banner'
