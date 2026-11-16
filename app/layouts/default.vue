@@ -20,6 +20,10 @@ const navLink
 
 // Padded to a comfortable touch target, with the padding taken back out of the layout.
 const footerLink = '-my-1.5 inline-block py-1.5 text-sm text-fg-muted transition hover:text-fg'
+
+// The data sources named in the attribution line, each linked: Raider.IO's API terms ask
+// for a link back, and Blizzard's for the source to be named clearly.
+const sourceLink = 'underline underline-offset-2 transition hover:text-fg'
 </script>
 
 <template>
@@ -73,7 +77,11 @@ const footerLink = '-my-1.5 inline-block py-1.5 text-sm text-fg-muted transition
           A fan site run by the guild for its own members, not affiliated with or
           endorsed by Blizzard Entertainment. World of Warcraft and Blizzard
           Entertainment are trademarks of Blizzard Entertainment, Inc. Character
-          and raid data comes from Raider.IO and Warcraft Logs.
+          and raid data comes from the
+          <a href="https://develop.battle.net/" target="_blank" rel="noopener" :class="sourceLink">Blizzard API</a>,
+          <a href="https://raider.io" target="_blank" rel="noopener" :class="sourceLink">Raider.IO</a>
+          and
+          <a href="https://www.warcraftlogs.com" target="_blank" rel="noopener" :class="sourceLink">Warcraft Logs</a>.
         </p>
       </div>
     </footer>

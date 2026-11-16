@@ -6,6 +6,8 @@ import {
   toGear,
   toMythicPlusRuns,
   toRaidProgression,
+  toRenderUrl,
+  isRenderPath,
   type WclZoneRankings,
 } from '../../server/utils/character'
 
@@ -57,6 +59,42 @@ describe('rankingMetric', () => {
     expect(rankingMetric('DPS')).toBe('dps')
     expect(rankingMetric('TANK')).toBe('dps')
     expect(rankingMetric(null)).toBe('dps')
+  })
+})
+
+describe('toRenderUrl', () => {
+  const render = 'https://render.worldofwarcraft.com/eu/character/darkmoon-faire/92/160107356-main-raw.png'
+
+  it('points the full-body render at the site\'s own render route', () => {
+    expect(toRenderUrl({
+      assets: [
+        { key: 'avatar', value: 'https://render.worldofwarcraft.com/eu/character/darkmoon-faire/92/160107356-avatar.jpg' },
+        { key: 'main-raw', value: render },
+      ],
+    })).toBe('/api/render/darkmoon-faire/92/160107356-main-raw.png')
+  })
+
+  it('returns null when there is no render or no media at all', () => {
+    expect(toRenderUrl({ assets: [{ key: 'avatar', value: 'a.jpg' }] })).toBeNull()
+    expect(toRenderUrl({})).toBeNull()
+    expect(toRenderUrl(null)).toBeNull()
+  })
+
+  it('returns null for a render anywhere but Blizzard\'s image server', () => {
+    expect(toRenderUrl({ assets: [{ key: 'main-raw', value: 'https://example.com/eu/character/x/1/2-main-raw.png' }] })).toBeNull()
+  })
+})
+
+describe('isRenderPath', () => {
+  it('accepts a character render path', () => {
+    expect(isRenderPath('darkmoon-faire/92/160107356-main-raw.png')).toBe(true)
+  })
+
+  it('refuses anything else, so the render route cannot fetch arbitrary files', () => {
+    expect(isRenderPath('../../etc/passwd')).toBe(false)
+    expect(isRenderPath('darkmoon-faire/92/160107356-avatar.jpg')).toBe(false)
+    expect(isRenderPath('darkmoon-faire/92/160107356-main-raw.png?x=1')).toBe(false)
+    expect(isRenderPath('https://evil.example/x/1/2-main-raw.png')).toBe(false)
   })
 })
 

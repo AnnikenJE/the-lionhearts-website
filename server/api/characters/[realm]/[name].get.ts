@@ -1,7 +1,9 @@
-// One character: Raider.IO's profile (gear, Mythic+, raid progression) and Warcraft
-// Logs' rankings for one raid tier, plus the guild raid nights the character was in.
-// Runs server-side so both APIs stay off the browser and the result can be cached.
+// One character: Raider.IO's profile (gear, Mythic+, raid progression), Warcraft Logs'
+// rankings for one raid tier, the guild raid nights the character was in, and the
+// full-body render from Blizzard. Runs server-side so the APIs stay off the browser
+// and the result can be cached.
 import type {
+  BlizzardCharacterMedia,
   CharacterDifficultyRankings,
   CharacterGearItem,
   CharacterMythicRun,
@@ -22,6 +24,8 @@ export interface CharacterProfile {
   spec: string | null
   race: string | null
   thumbnailUrl: string | null
+  /** The full-body render, a transparent PNG; null without one or without Blizzard. */
+  renderUrl: string | null
   guildName: string | null
   achievementPoints: number | null
   itemLevel: number | null
@@ -91,6 +95,17 @@ const fetchRaiderIo = defineCache(
   { name: 'raiderio-character', getKey: (realm: string, name: string) => `${realm}:${name.toLowerCase()}`, maxAge: 60 * 60 },
 )
 
+// Blizzard's render of the character, cached per character on its own like Raider.IO's
+// half. A 404 (a character Blizzard does not show) is null, not a failure.
+const fetchMedia = defineCache(
+  (_event: H3Event, realm: string, name: string) =>
+    blizzardGet<BlizzardCharacterMedia>(
+      `/profile/wow/character/${realm}/${encodeURIComponent(name.toLowerCase())}/character-media`,
+      'profile-eu',
+    ),
+  { name: 'blizzard-character-media', getKey: (realm: string, name: string) => `${realm}:${name.toLowerCase()}`, maxAge: 60 * 60 },
+)
+
 const fetchLogs = async (realm: string, name: string, zone: number, metric: 'dps' | 'hps') =>
   (await wclQuery<WclCharacterResponse>(WCL_QUERY, { name, realm, region: GUILD.serverRegion, zone, metric }, 'low'))
     .characterData.character
@@ -123,20 +138,23 @@ const fetchCharacter = defineCache(
     let complete = true
     const soft: Soft = (promise, fallback) =>
       promise.catch((error) => {
-        if (!isNotConfigured(error)) complete = false
+        if (!isNotConfigured(error) && !isBlizzardNotConfigured(error)) complete = false
         return fallback
       })
 
-    // Nights and tracks do not depend on Raider.IO, so they start alongside it; the
-    // logs wait for it only because the ranking metric follows the character's role.
+    // Nights, tracks and the render do not depend on Raider.IO, so they start alongside
+    // it; the logs wait for it only because the ranking metric follows the character's
+    // role.
     const nightsPromise = fetchAttendance(event, realm, name, soft)
     const tracksPromise = soft(fetchUpgradeTracks(event), {})
+    const mediaPromise = soft(fetchMedia(event, realm, name), null)
     const raiderIo = await fetchRaiderIo(event, realm, name)
     const metric = rankingMetric(raiderIo?.active_spec_role)
-    const [wcl, raidNights, tracks] = await Promise.all([
+    const [wcl, raidNights, tracks, media] = await Promise.all([
       soft(fetchLogs(realm, name, zone, metric), null),
       nightsPromise,
       tracksPromise,
+      mediaPromise,
     ])
 
     if (!raiderIo && !wcl) return { profile: null, complete }
@@ -152,6 +170,7 @@ const fetchCharacter = defineCache(
       spec: raiderIo?.active_spec_name ?? raidNights[0]?.spec ?? null,
       race: raiderIo?.race ?? null,
       thumbnailUrl: raiderIo?.thumbnail_url ?? null,
+      renderUrl: toRenderUrl(media),
       guildName: raiderIo?.guild?.name ?? null,
       achievementPoints: raiderIo?.achievement_points ?? null,
       itemLevel: raiderIo?.gear?.item_level_equipped ?? null,
@@ -186,7 +205,7 @@ const fetchCharacter = defineCache(
     getKey: (realm: string, name: string, zone: number) => `${realm}:${name.toLowerCase()}:${zone}`,
     // A fix to the query string or any of these transforms shapes the stored profile,
     // so it must bust old entries the same way a change to the loader's own body would.
-    dependsOn: [WCL_QUERY, fetchAttendance, fetchLogs, findRaidNights, toGear, toMythicPlusRuns, toRaidProgression, toDifficultyRankings, rankingMetric],
+    dependsOn: [WCL_QUERY, fetchAttendance, fetchLogs, findRaidNights, toGear, toMythicPlusRuns, toRaidProgression, toDifficultyRankings, rankingMetric, toRenderUrl],
     // Refreshed every 5 hours: this is the cache with the most distinct keys (every
     // roster member times every raid tier), so it drives most of the Workers KV write
     // volume. An hourly refresh pushed the account over 50% of the daily free-tier
