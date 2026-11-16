@@ -86,6 +86,17 @@ const nightPageCount = computed(() => Math.max(1, Math.ceil(nights.value.length 
 const pageNights = computed(() => nights.value.slice((nightPage.value - 1) * NIGHTS_PER_PAGE, nightPage.value * NIGHTS_PER_PAGE))
 watch(nights, () => (nightPage.value = 1))
 
+// A render that fails to load (Blizzard's image server down, the image gone) hides
+// its card rather than showing a broken image. An image that failed before hydration
+// fired its error event too early to be heard, so that case is checked on mount.
+const renderFailed = ref(false)
+const renderImage = useTemplateRef<HTMLImageElement>('renderImage')
+watch(() => character.value?.renderUrl, () => (renderFailed.value = false))
+onMounted(() => {
+  const image = renderImage.value
+  if (image?.complete && image.naturalWidth === 0) renderFailed.value = true
+})
+
 const section = SECTION
 const pagerButton = 'cursor-pointer rounded-lg border border-line-strong px-3 py-1.5 text-sm font-medium text-fg transition hover:bg-surface-hover disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent'
 
@@ -145,7 +156,7 @@ usePageSeo(() => ({
              to the figure, feet near the bottom edge. A soft glow in the class colour
              sits behind it, and a shadow under the feet grounds it. -->
         <div
-          v-if="character.renderUrl"
+          v-if="character.renderUrl && !renderFailed"
           class="relative mt-10 h-96 overflow-hidden rounded-2xl border border-line bg-surface md:mt-6 md:w-80 md:shrink-0"
         >
           <div
@@ -155,11 +166,13 @@ usePageSeo(() => ({
           />
           <div class="absolute bottom-6 left-1/2 h-6 w-40 -translate-x-1/2 rounded-[100%] bg-black/50 blur-md" aria-hidden="true" />
           <img
+            ref="renderImage"
             :src="character.renderUrl"
             :alt="`${character.name} in their current gear`"
             class="absolute -top-[32%] left-1/2 h-[150%] w-auto max-w-none -translate-x-1/2"
             width="1600"
             height="1200"
+            @error="renderFailed = true"
           >
         </div>
       </div>

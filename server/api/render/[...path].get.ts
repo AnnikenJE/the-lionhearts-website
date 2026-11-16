@@ -8,16 +8,17 @@ export default defineEventHandler(async (event) => {
   const path = getRouterParam(event, 'path') ?? ''
   if (!isRenderPath(path)) throw createError({ statusCode: 404, statusMessage: 'Render not found' })
 
-  const image = await $fetch<ArrayBuffer>(renderSource(path), {
-    responseType: 'arrayBuffer',
-    timeout: UPSTREAM_TIMEOUT_MS,
-  }).catch((error) => {
+  const response = await fetch(renderSource(path), { signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS) })
+    .catch(() => null)
+  if (!response?.ok || !response.body) {
     throw createError({
-      statusCode: (error as { statusCode?: number }).statusCode === 404 ? 404 : 502,
+      statusCode: response?.status === 404 ? 404 : 502,
       statusMessage: 'Could not fetch the render',
     })
-  })
+  }
 
+  // Streamed through rather than read into memory first, so a Worker spends next to no
+  // CPU time on an image this size.
   setResponseHeader(event, 'content-type', 'image/png')
-  return new Uint8Array(image)
+  return response.body
 })
