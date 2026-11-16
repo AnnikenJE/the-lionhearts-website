@@ -52,6 +52,28 @@ describe('readThrough', () => {
     await expect(readThrough(storage, 'other', failing, { maxAge: 3600 }, 'v1', now)).rejects.toThrow('down')
   })
 
+  it('never serves an entry older than 30 days, even when loading fails', async () => {
+    const { storage, now, advance } = setup()
+    await readThrough(storage, 'k', async () => 'old', { maxAge: 3600 }, 'v1', now)
+    const failing = async (): Promise<string> => {
+      throw new Error('Blizzard down')
+    }
+    advance(30 * 24 * HOUR - 1)
+    expect(await readThrough(storage, 'k', failing, { maxAge: 3600 }, 'v1', now)).toBe('old')
+    advance(1)
+    await expect(readThrough(storage, 'k', failing, { maxAge: 3600 }, 'v1', now)).rejects.toThrow('down')
+    expect(await storage.getItem('k')).toBeNull()
+  })
+
+  it('never serves an expired entry as stale in the background either', async () => {
+    const { storage, now, advance } = setup()
+    await readThrough(storage, 'k', async () => 'old', { maxAge: 3600 }, 'v1', now)
+    advance(30 * 24 * HOUR)
+    const background = vi.fn()
+    expect(await readThrough(storage, 'k', async () => 'new', { maxAge: 3600 }, 'v1', now, background)).toBe('new')
+    expect(background).not.toHaveBeenCalled()
+  })
+
   it('ignores an entry written by other code, so a new deploy never reads an old shape', async () => {
     const { storage, now } = setup()
     await readThrough<object>(storage, 'k', async () => ({ old: true }), { maxAge: 3600 }, 'old-code', now)

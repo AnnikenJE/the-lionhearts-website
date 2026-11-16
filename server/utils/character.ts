@@ -61,6 +61,13 @@ export interface RaiderIoProfile {
   raid_progression?: Record<string, RaiderIoRaidProgress>
 }
 
+// Blizzard -------------------------------------------------------------------------
+
+/** The slice of Blizzard's character-media response the page reads. */
+export interface BlizzardCharacterMedia {
+  assets?: { key: string, value: string }[]
+}
+
 // Warcraft Logs --------------------------------------------------------------------
 
 interface WclAllStars {
@@ -287,6 +294,33 @@ export const toDifficultyRankings = (
 /** Raider.IO calls a healer's role "HEALING"; everything else is ranked on damage. */
 export const rankingMetric = (role: string | null | undefined): 'dps' | 'hps' =>
   role?.toUpperCase() === 'HEALING' ? 'hps' : 'dps'
+
+const RENDER_ORIGIN = 'https://render.worldofwarcraft.com/eu/character/'
+
+/**
+ * A render's path on Blizzard's image server, "<realm>/<n>/<id>-main-raw.png". Anything
+ * else is refused, so /api/render can only ever fetch a character render, never an
+ * arbitrary URL.
+ */
+const RENDER_PATH = /^[a-z0-9-]+\/\d+\/\d+-main-raw\.png$/
+
+export const isRenderPath = (path: string) => RENDER_PATH.test(path)
+
+/** Where /api/render fetches a render path from. */
+export const renderSource = (path: string) => `${RENDER_ORIGIN}${path}`
+
+/**
+ * The full-body render of a character, a transparent PNG from Blizzard's image server,
+ * as the site's own /api/render URL: that route serves it with a cache header Blizzard's
+ * server does not send. Blizzard calls it "main-raw"; a character without one, or with
+ * one at an unexpected address, gets null and the page simply shows no render.
+ */
+export const toRenderUrl = (media: BlizzardCharacterMedia | null | undefined) => {
+  const url = media?.assets?.find(asset => asset.key === 'main-raw')?.value
+  if (!url?.startsWith(RENDER_ORIGIN)) return null
+  const path = url.slice(RENDER_ORIGIN.length)
+  return isRenderPath(path) ? `/api/render/${path}` : null
+}
 
 /**
  * The raid nights a character was in, from the raid details. Players are matched with

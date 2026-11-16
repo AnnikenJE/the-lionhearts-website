@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Website for **The Lionhearts**, a World of Warcraft guild on **Darkmoon Faire (EU)**.
 
 Relevant external services:
+- [Blizzard API](https://develop.battle.net/): the official game data everything else is built from (OAuth, used for character renders so far)
 - [Raider.IO](https://raider.io): guild progression and M+ rankings (has a public API)
 - [Warcraft Logs](https://www.warcraftlogs.com): raid log analysis (has a public GraphQL API)
 - [WoWProgress](https://www.wowprogress.com): progression tracking
@@ -64,7 +65,7 @@ npm run test      # run the Vitest suite once
 npm run test:watch # re-run tests on change
 ```
 
-Every pull request, and every push to `main`, runs `.github/workflows/ci.yml`: lint, typecheck, tests, then build, in that order in one job. The build needs no Warcraft Logs credentials, since the routes return a clean 503 when they are missing.
+Every pull request, and every push to `main`, runs `.github/workflows/ci.yml`: lint, typecheck, tests, then build, in that order in one job. The build needs no Warcraft Logs or Blizzard credentials, since the routes return a clean 503 (or skip the Blizzard part) when they are missing.
 
 A second CI job, `no env files or secrets`, guards against leaked credentials, since the repository is public and GitHub's push protection does not recognise a Warcraft Logs secret. It fails when git tracks a `.env` or `.env.*` file other than `.env.example` (`scripts/check-env-files.ts`), and runs gitleaks, pinned and checksum-verified, over the whole history. The same checks run locally as a pre-commit hook in `.githooks/pre-commit`; `npm install` points `core.hooksPath` there through the `prepare` script (`scripts/install-hooks.ts`). Locally gitleaks runs only if it is installed. Never bypass the hook with `--no-verify` to get a commit through: fix what it found.
 
@@ -76,94 +77,35 @@ Tests run on Vitest, configured in `vitest.config.ts` through `defineVitestConfi
 
 ## Architecture
 
-Early-stage Nuxt 4 + TypeScript project (Vue 3 + Vite under the hood). Uses the Nuxt 4 `app/` source directory convention (auto-detected: `app/` is the default `srcDir` in Nuxt 4).
+Nuxt 4 + TypeScript (Vue 3 + Vite under the hood), using the Nuxt 4 `app/` source directory. Each half has its own CLAUDE.md, which loads when you work in that folder:
 
-- `nuxt.config.ts`: Nuxt config; global CSS registered here
-- `app/app.vue`: root layout, renders `<NuxtPage />`, plus `<NuxtLoadingIndicator>` in the accent so every navigation shows progress (pages land at once and show their skeleton, so the bar is brief)
-- `app/layouts/default.vue` holds the shared shell: header nav (Home, News, Raids, Roster, About) plus the footer links
-- `app/pages/index.vue`: home page / landing hero (file-based routing)
-- `app/pages/about.vue`: who the guild is and what it plays, with a short section pointing to `/contact`, plus the guild and raid rules as regular sections further down the page (`/rules` redirects here, see `nuxt.config.ts`)
-- `app/pages/roster.vue`: guild roster page; groups members by rank, each rank collapsible
-- `app/pages/contact.vue`: how to get in touch about anything (email, Discord), and how to ask to be taken off the site. Shows the site's email address (`CONTACT_EMAIL` in `app/data/links.ts`, the one place `/contact`, `/privacy` and About read it from). Linked from the footer next to Privacy. No contact form: it would need a backend and bring in new personal data
-- `app/pages/privacy.vue`: what the site shows about a character, which external source each field comes from, and how to be taken off. Blizzard's Developer API Terms of Use require both the policy and immediate removal on request
-- `app/pages/news/index.vue`, `app/pages/news/[slug].vue`: markdown-backed news list + post
-- `app/pages/raids/index.vue`, `app/pages/raids/[code].vue`: raid nights from Warcraft Logs; the list page opens with the weekly raid schedule (`RaidSchedule`, shared with About), then shows one raid tier at a time (`?tier=<zone id>`, picked with `TierNav`, current tier by default) with bosses down and headcount, the detail page shows the boss list (pulls collapsed to one row per boss) and who was there, grouped tank / healer / dps
-- `content/news/*.md`: news posts (authored as markdown, rendered by @nuxt/content)
-- `content.config.ts`: @nuxt/content collection schema for news
-- `app/data/schedule.ts`, `app/data/links.ts`: typed static data (raid schedule, links, the contact email)
-- `app/data/news.ts`: `NEWS_ENABLED` flag. While it's false the news section is hidden everywhere at once (list page shows coming soon, post routes 404, landing page drops its news block) and nothing is queried, so draft titles never reach the payload. Flipping it to true is the whole launch.
-- `app/components/RaidSchedule.vue` renders the raid schedule, on About and the raids page; the guild links are rendered straight into the footer
-- `app/composables/useTierFetch.ts`: the fetch behind the raids page and the character pages. Reads `?tier=`, keeps the previous tier on screen while the next loads and through a failed fetch, and reports which tier is selected. Also returns `refresh` for an error's retry. Fetches lazily and awaits only on the server, so a client navigation lands at once on the skeleton
-- `app/composables/useNotFound.ts`: sends a page to the error page when its fetch 404s, at setup on the server and through a watcher after a client navigation
-- `app/utils/wow.ts`: `classColor()`, the official WoW class colours. Returns a CSS colour, so call sites bind it with `:style`, not `:class`. Normalises the key because Raider.IO says "Death Knight" and Warcraft Logs says "DeathKnight". Also `realmSlug()` (every API spells realms differently: "Defias Brotherhood", "DefiasBrotherhood"), `characterPath()`, which every character link goes through, `parseColor()` (the usual grey-to-gold parse brackets), `itemQualityColor()` and the Wowhead icon and item URLs
-- `app/error.vue`: the themed error page, wrapped in `<NuxtLayout>` so the header, footer and Blizzard attribution stay. Shows only the numeric status code and the copy from `errorCopy()` in `app/utils/errorCopy.ts` (404 has its own words, every other status shares one fallback), never the error's message or stack. The home button is a real `<button>` calling `clearError({ redirect: '/' })`, styled like `AppButton`'s primary variant. Noindex
-- `app/components/SectionHeading.vue` is the recurring section header: a heading with an optional muted note (a count, a link) pinned to the far end
-- `app/components/LoadingSkeleton.vue`: the one loading placeholder, `shape` = `roster` | `raids` | `raid` | `character`, each mirroring its page's margins and cards so nothing jumps when the data lands. `role="status"` with the `label` prop as its screen-reader text; the bones pulse only under `motion-safe:`
-- `app/components/FetchError.vue`: the in-page fetch error, worded by `fetchErrorMessage()` (`app/utils/loadState.ts`) so every page says it the same way, with a "Try again" button that calls the page's `refresh()`. Not configured (Warcraft Logs secrets unset) gets its own wording and no retry. Fatal errors and 404s are `app/error.vue`'s job
-- `app/assets/css/main.css` holds the whole theme: Tailwind import, `@theme` tokens, and the handful of base rules that cannot be utilities
-- `server/api/roster.get.ts`: thin route over `fetchRoster()` in `server/utils/rosterData.ts`, which fetches the guild roster from Raider.IO and caches it an hour. A cached function so the raid lists can use the roster to tell a guild night from a pug. The transform lives in `server/utils/roster.ts`
-- `server/utils/optOut.ts`: the opt-out list and the name matching around it. One list, applied wherever a character is named, so removing someone is a single edit and a deploy rather than a hunt through routes. Matching is case-insensitive and lives in `isNameIn()`, separate from the list, so it can be tested without a real person being in it. Applied in `toRosterMembers()` and, through `withoutOptedOut()`, on the raid detail route
-- `server/utils/roster.ts`: owns `RaiderIoMember`, `RosterMember` and `toRosterMembers()`, the pure filter-map-sort the route applies to Raider.IO's response. Separate from the route so it can be tested without a Nitro runtime, since a route module runs `defineCachedEventHandler` the moment it is imported
-- `server/utils/warcraftlogs.ts`: the Warcraft Logs v2 client. Holds the OAuth token in module scope, runs one GraphQL query per call, and throws a 503 when the credentials are missing so a page can say "not configured" instead of "down" (`isNotConfigured()` tells that apart from an outage). Every query also asks for `rateLimitData`, and the last reading of the client's hourly points (3600, account-wide) guards the next call: `wclQuery(query, vars, 'low')` is refused at 80% of the hour, the default `'high'` at 95%. Low is for extras (character parses, the loggers' scan); a refused or failed part makes a result incomplete, and incomplete results are kept only `INCOMPLETE_MAX_AGE_MS` (10 minutes). Every outbound call has a `UPSTREAM_TIMEOUT_MS` timeout. Also owns `GUILD`, the difficulty-integer map, `RAID_TIERS` (the guild's raid tiers as Warcraft Logs zone ids, newest first; the first is the default everywhere and adding a tier is one line) and `GUILD_LOGGERS`, the Warcraft Logs user ids of the people who log guild raids. Until late 2024 guild logs were uploaded as personal logs with no guild set, so every Dragonflight tier and Nerub-ar Palace only exist through them
-- `app/components/TierNav.vue`: the raid tier selector shared by the raids page and the character pages. Each tier is a link that sets `?tier=`, the current tier gets the bare URL. `busy` shows a spinner and "Loading <tier>…" in a live region beside the pills while the previous tier stays on screen
-- `server/utils/raidNights.ts`, `server/utils/raidDetail.ts`: `fetchRaidNights(tierId)` (every guild night in one tier: guild-tagged logs with at least 5 current roster members in their boss fights, plus the loggers' personal logs with at most 30 players and at least 8 roster members, which keeps pugs, solo runs and LFR out. Only Normal, Heroic and Mythic encounters count (`isGuildRaidDifficulty()`), so LFR and Mythic+ runs in a raid log are ignored; the current tier is cached an hour, a finished tier a week, since one costs about 130 API points) and `fetchRaid(code)`, the Warcraft Logs fetches behind the raid pages, as cached functions refreshed once an hour. In `server/utils` rather than in the routes so the character pages can reuse them. `server/utils/raids.ts` holds the pure `collapseFights()` (one row per boss and difficulty on a raid night page) and `groupRaidNights()`: logs that overlap (two raiders logging at once) or follow within three hours (a night uploaded in parts) are one night, counted across all its logs and linking to the most complete one
-- `server/api/raids.get.ts`, `server/api/raids/[code].get.ts`: the two raid routes, thin wrappers that call the fetchers and re-export their types; the detail route applies opt-outs after the cache
-- `app/pages/characters/[realm]/[name].vue`, `server/api/characters/[realm]/[name].get.ts`: a page for every character on the current guild roster, and only them: anyone else, a pug from a raid log say, gets the same 404 as an unknown name (`rosterKey()` in `server/utils/roster.ts` matches name and realm however an API spells them). On raid night pages, players off the roster (pugs and former members alike, the site cannot tell them apart) are plain text in a dimmed class colour, with no label. Combines Raider.IO (gear, Mythic+, raid progression, portrait) with Warcraft Logs rankings for one tier (`?tier=<zone id>`, all three difficulties in one aliased query, `hps` for healers) and the guild raid nights the character was in. Cached an hour per character and tier. An opted-out or unknown name is the same 404
-- `server/utils/character.ts`: the character page's pure transforms (`toDifficultyRankings()`, `toGear()`, `findRaidNights()` and friends), kept out of the route for testing
-- `server/utils/upgradeTracks.ts`: turns Raidbots' static bonus id table (`raidbots.com/static/data/live/bonuses.json`) into a bonus-id-to-track lookup, so each gear piece can show "Hero 4/6". Neither Raider.IO nor Warcraft Logs names the track. The character route fetches the table server-side and caches only the small lookup, for a day; if Raidbots is down the gear shows without tracks
+- `app/CLAUDE.md`: pages, components, composables, styles, the page shell
+- `server/CLAUDE.md`: API routes, the Blizzard, Raider.IO and Warcraft Logs clients, caching, environment variables
+
+The rest of the root:
+
+- `nuxt.config.ts`: Nuxt config, the server-only `runtimeConfig` secrets, global CSS, and `routeRules` (API cache headers, the `/rules` redirect)
+- `content/news/*.md`: news posts (authored as markdown, rendered by @nuxt/content); `content.config.ts` holds the collection schema
+- `test/`: Vitest specs, mirroring `app/` and `server/`
 - `public/`: static assets served as-is
 
 TypeScript config is generated by Nuxt into `.nuxt/tsconfig.json`; the root `tsconfig.json` just extends it.
 
-### Data flow
+## Conventions
 
-External APIs are called from **server routes** (`server/api/`), never directly from the browser. This avoids CORS issues and lets responses be cached server-side. The roster route uses `defineCachedEventHandler` with `maxAge` so Raider.IO is hit at most once per cache window no matter how many visitors load the page. Pages consume these routes with `useFetch`, and import the route's exported response type (e.g. `RosterMember`) for end-to-end typing.
-
-> Every cached function uses `defineCache` (`server/utils/cache.ts`), not Nitro's `defineCachedFunction`: Nitro's shares one in-flight promise per key across requests and refreshes stale entries in the background, and on Cloudflare a dropped background task or cancelled request left that promise unsettled, hanging every later request for the key (it took production down once KV made entries arrive stale). `defineCache` reads, returns an entry that is only past its `maxAge` at once and refreshes it after the response through `event.waitUntil` (one refresh per key per instance, never awaited by another request), loads inside the request when nothing is stored or the entry fails `validate`, serves the old value if a load fails, and versions entries by the loader's source so a new deploy never reads an old shape from KV. A background refresh still running after 25 seconds (Cloudflare cuts `waitUntil` off at about 30) is given up, and the next request for that key loads inline. Only the outermost call serves stale: `load` gets a stand-in event, and a cached function called with it loads inline, so a parent entry is never stored as fresh with a stale part. That is why every cached function takes the request's `event` first: pass the `event` a loader receives on to any cached function it calls.
->
-> In production the cache is mounted on `memoryOverKv` (`server/utils/cacheDriver.ts`, mounted by `server/plugins/cacheStorage.ts`): each instance's memory, backed by the Workers KV namespace bound to the Pages project as `CACHE`. KV is shared by every Cloudflare instance and survives deploys, which is what keeps the Warcraft Logs budget down; without the binding it is plain per-instance memory. An instance trusts its own memory copy of a shared entry for a minute (`KV_RECHECK_MS`), then looks at KV again and takes KV's copy if its `mtime` is newer, so a warm instance does not refresh from Warcraft Logs what another instance already has. A KV error is logged and never fails a request. Dev keeps Nuxt's file cache in `.nuxt/cache`. Only the Warcraft Logs caches (`raids`, `raids-past`, `raid`, `character`) and the news list (`news-list`, so a new instance does not ask D1 during the landing page's render, keyed by the build id so a deploy or preview never serves another build's list; not `news-post`, whose key comes from the URL, so any made-up slug would spend a write) go to KV, see `SHARED_CACHES`: its free tier allows 1000 writes a day, one per cache refresh, and Raider.IO data is cheap to fetch again, so it stays in memory. Only production builds write to KV (`runtimeConfig.cacheKvWrites`, set from `CF_PAGES_BRANCH === 'main'` at build time); previews and local builds read the shared cache but never write. On the free plan, going over the limit costs nothing: KV refuses writes for the rest of the day and the cache falls back to memory.
->
-> `.github/workflows/warm-raids-cache.yml` pings `/api/raids` so the current tier's list is refreshed by a cron rather than a visitor. It is scheduled every 15 minutes, but GitHub delays scheduled runs on a quiet repository and in practice it runs every six to seven hours. Nothing else is warmed.
-
-### Environment variables
-
-Warcraft Logs OAuth credentials are the first secrets in this repo, defined as server-only `runtimeConfig` in `nuxt.config.ts` (`wcl.clientId`, `wcl.clientSecret`), bound from the env vars `NUXT_WCL_CLIENT_ID` and `NUXT_WCL_CLIENT_SECRET`. They are never nested under `public`, so they stay out of the browser payload. Locally, copy `.env.example` to an untracked `.env` and fill in real values. Before pushing to `main`, the same two variables must also be set as secrets in the Cloudflare deploy, since a push to `main` deploys straight to production.
-
-### Conventions
-
-- **Styles:** Tailwind v4 utility classes by default, wired up through the `@tailwindcss/vite` plugin in `nuxt.config.ts`. Tailwind is the default because it keeps styling quick, not a hard rule: a component may use a `<style>` block or any other CSS when that is the better tool for the job (e.g. something Tailwind utilities can't express cleanly).
-  - **Palette:** warm near-black surfaces, parchment text, and the guild's gold as the accent. It lives in the `@theme` block in `main.css`, so each token is also a Tailwind scale entry: `--color-accent` gives `text-accent`/`bg-accent`, `--color-surface` gives `bg-surface`, `--color-fg-muted` gives `text-fg-muted`. Text has three steps: `fg` (primary), `fg-muted` (body), `fg-subtle` (labels and meta). Add a colour by adding a token, not by writing a hex value into a component.
-  - **Keep the accent rare.** Links, primary buttons, the active nav item, the odd badge. Everything structural (borders, cards, headings, body copy) is parchment on the dark surfaces. A page that turns gold has lost the plot.
-  - **Use Tailwind's own scales for everything else.** Radii are `rounded-lg`/`rounded-xl`/`rounded-2xl`, widths are `max-w-5xl` (site) and `max-w-3xl` (reading), breakpoints are plain `sm:`/`md:`, mobile-first. Only the palette and `--text-display` (the page-title size, which carries its own weight, leading and tracking) are project-specific.
-  - `main.css` also carries Preflight and the few genuinely global rules: `body`, `::selection`, the focus ring, the shared heading tracking, and the reduced-motion override (deliberately unlayered so it outranks every animation utility). Nothing page-specific belongs there.
-  - When a utility string is repeated across several elements in one file, hoist it to a `const` in `<script setup>` (see `roster.vue`'s `fieldSearch` or `about.vue`'s `marker`) rather than copy-pasting it. When it's repeated across files, make it a component.
-  - **Type:** Nunito Sans throughout, headings included, self-hosted as a variable font from `@fontsource-variable/nunito-sans` (imported at the top of `main.css`), never from Google Fonts, so no visitor's browser is sent to Google. Preflight strips heading sizes and weights, so every heading sets its own with utilities.
-  - Markdown from @nuxt/content has no classes of its own, so `news/[slug].vue` styles it with `@tailwindcss/typography` (`prose prose-invert`) plus `prose-*` variants that pull it onto the site palette.
-  - **Colour tokens (`@theme` in `main.css`):**
-
-    | Token | Use |
-    |---|---|
-    | `bg` / `surface` / `surface-hover` | page background, cards, hovered rows |
-    | `line` / `line-strong` | thin dividers / input and button borders. `line-strong` also appears as a hover background (the roster Clear button) |
-    | `fg` / `fg-muted` / `fg-subtle` | primary text / body text / labels and meta |
-    | `accent` / `accent-bright` / `accent-ink` | the only interactive colour: links, primary buttons, the active nav/tab state |
-    | `success` / `warning` / `danger` / `info` | a kill / an in-progress pull / a wipe or error / "not configured" |
-
-    Every text/accent pair above is checked against WCAG AA in `test/utils/contrast.spec.ts`; add a case there before adding a colour that text will sit on.
-  - **Shared pieces, and when to reach for them, instead of writing new markup:**
-
-    | Need | Use |
-    |---|---|
-    | A bordered panel or list wrapper | `CARD` / `CARD_DIVIDED` (`app/utils/ui.ts`) |
-    | A page's top-level section divider | `SECTION` (`app/utils/ui.ts`) |
-    | A list row, label left and meta right | `ROW` / `ROW_LINK` (`app/utils/ui.ts`) |
-    | A small status or filter chip | `AppBadge.vue` for a display chip; the `PILL`/`PILL_ON`/`PILL_OFF` tokens for an interactive one (a tab, a toggle) |
-    | A table of rows and columns | `DataTable.vue` |
-    | A "nothing here yet" message | `EmptyState.vue` |
-    | A failed fetch, with or without retry | `FetchError.vue` |
-- **Page shell:** every page uses the same root container so headings never shift position between pages: `<main class="mx-auto max-w-5xl px-4 py-16 sm:px-6">`, with a left-aligned `<h1 class="text-display text-fg">` and a lede `<p class="mt-5 text-lg text-fg-muted">`. Nothing at page level is centred. Where a narrower measure helps readability (rules articles, a news post body, About prose), constrain that block with an inner `max-w-3xl`, never the page container.
 - **Copy:** never use an em dash. Not in page text, not in comments, not in commit messages. Use a colon, a comma, parentheses, or a full stop. En dashes in numeric ranges (`19:00-22:00` uses a true en dash) are fine.
 - **Types:** co-locate types with the code that owns them and export when shared. `RosterMember` is declared in `server/utils/roster.ts` and re-exported from `roster.get.ts`, so a page still imports the response type from the route that returns it. Only promote a type to a shared file once it's used across several unrelated modules.
-- **WoW domain data:** Raider.IO exposes ranks as numeric indices only (0 = Guild Master); the human-readable rank names are mapped in `roster.vue` and must be kept in sync with the in-game ranks. Rank `99` is not a guild rank. It is Raider.IO's sentinel for a character it could not match to one, and those members are filtered out in `toRosterMembers()` (`server/utils/roster.ts`) so they never reach the page or the member count. Class colours live in `app/utils/wow.ts` and follow the official WoW palette. Warcraft Logs reports difficulty as an integer, mapped in `server/utils/warcraftlogs.ts`; an unmapped value returns null and the UI simply drops the badge rather than inventing a name.
-- **Blizzard API terms:** the footer carries the attribution and the "not affiliated with Blizzard" line, and both are required, so do not quietly drop them when reworking the layout. The same terms rule out charging for anything, ads, donation walls and passing the data to third parties, and cap us at 36,000 calls an hour (the cached server routes are nowhere near it). Cached data must be refreshed at least every 30 days, which only becomes a real constraint if the site ever stores a roster instead of caching one.
-- **Local content vs external APIs:** news (markdown via @nuxt/content), the raid schedule, and the links hub are local content edited in the repo, with no server route. Only external APIs (e.g. Raider.IO for the roster) go through `server/api/`.
+- **Local content vs external APIs:** news (markdown via @nuxt/content), the raid schedule, and the links hub are local content edited in the repo, with no server route. Only external APIs go through `server/api/`.
+- **WoW domain data:** class colours live in `app/utils/wow.ts` and follow the official WoW palette. Every API spells realms and classes differently; `realmSlug()`, `classColor()` and `rosterKey()` absorb that, so compare and look up through them.
+
+## Blizzard API terms
+
+The Blizzard Developer API Terms of Use apply to everything the site shows, since Raider.IO and Warcraft Logs build their data from Blizzard's too. The ones that bear on this repository:
+
+- **Attribution:** the footer names and links the Blizzard API, Raider.IO and Warcraft Logs as sources and says the site is not affiliated with or endorsed by Blizzard. Keep both when reworking the layout. No Blizzard trademark in the site's name or URL.
+- **30 days at most:** `RETENTION_LIMIT_MS` in `server/utils/cache.ts` enforces it for every cache. Anything that stores data outside `defineCache` must enforce it too.
+- **Removal on request, at once:** every route that names a character applies `server/utils/optOut.ts`. The terms also want every copy deleted, and a deploy only empties each instance's memory, so after deploying an opt-out the keys in the `CACHE` KV namespace are deleted by hand in the Cloudflare dashboard. They refill on the next visits. The same goes for all cached data if Blizzard ends access or the site stops using the API.
+- **Credentials and leaks:** the keys never leave the server, `.env` and Cloudflare. A leaked key gets a new secret and Blizzard is told; leaked data is reported to Blizzard within 24 hours.
+- **Privacy policy:** `/privacy` says what comes from where, that it is shown as is, and how long it is kept. Update it when a page shows something new.
+- **No money, no ads, no reselling**, and no passing the data to third parties.
+- **Rate limits:** 36,000 calls an hour and 100 a second, made by our own server with our own key. Using other services to make extra calls for us is not allowed.

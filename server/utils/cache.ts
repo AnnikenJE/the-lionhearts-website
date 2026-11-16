@@ -39,6 +39,14 @@ export const codeVersion = (source: string) => {
   return (hash >>> 0).toString(36)
 }
 
+/**
+ * The oldest an entry may ever be. The Blizzard Developer API Terms of Use allow data
+ * from their API to be kept 30 days at most, and everything cached here (Blizzard's own
+ * API, and Raider.IO and Warcraft Logs, which are built from it) is held to that: past
+ * it an entry is deleted, never served, not even as a fallback when a load fails.
+ */
+export const RETENTION_LIMIT_MS = 30 * 24 * 60 * 60 * 1000
+
 /** Hands a promise to the platform to finish after the response, as event.waitUntil does. */
 export type Background = (task: Promise<unknown>) => void
 
@@ -90,7 +98,9 @@ export const readThrough = async <T>(
   background?: Background,
 ): Promise<T> => {
   const stored = await storage.getItem<CacheEntry<T>>(key).catch(() => null)
-  const usable = stored && stored.version === version ? stored : null
+  const expired = stored !== null && now() - stored.mtime >= RETENTION_LIMIT_MS
+  if (expired) await storage.removeItem(key).catch(error => console.error('[cache] remove failed', key, error))
+  const usable = stored && !expired && stored.version === version ? stored : null
   const valid = usable !== null && (validate?.(usable) ?? true)
 
   if (usable && valid && now() - usable.mtime < maxAge * 1000) {

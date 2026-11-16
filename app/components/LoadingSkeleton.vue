@@ -66,15 +66,21 @@ const section = SECTION
         </div>
       </template>
 
-      <!-- characters/[realm]/[name].vue: portrait and name, spec line, links, stats, parses -->
+      <!-- characters/[realm]/[name].vue: portrait and name, spec line, links beside the
+           render card, then stats, parses -->
       <template v-else>
-        <div class="mt-6 flex items-center gap-5">
-          <span :class="[bone, 'size-16 shrink-0 rounded-xl sm:size-20']" />
-          <span :class="[bone, 'rounded-md h-[1.05em] w-64 max-w-full text-display']" />
-        </div>
-        <span :class="[bone, 'rounded-md mt-5 h-6 w-80 max-w-full']" />
-        <div class="mt-6 flex flex-wrap gap-3">
-          <span v-for="link in 3" :key="link" :class="[bone, 'h-10 w-32 rounded-lg']" />
+        <div class="md:flex md:items-center md:justify-between md:gap-8">
+          <div class="min-w-0 flex-1">
+            <div class="mt-6 flex items-center gap-5">
+              <span :class="[bone, 'size-16 shrink-0 rounded-xl sm:size-20']" />
+              <span :class="[bone, 'rounded-md h-[1.05em] w-64 max-w-full text-display']" />
+            </div>
+            <span :class="[bone, 'rounded-md mt-5 h-6 w-80 max-w-full']" />
+            <div class="mt-6 flex flex-wrap gap-3">
+              <span v-for="link in 3" :key="link" :class="[bone, 'h-10 w-32 rounded-lg']" />
+            </div>
+          </div>
+          <div class="mt-10 h-96 rounded-2xl border border-line bg-surface md:mt-6 md:w-80 md:shrink-0" />
         </div>
         <div class="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
           <div v-for="stat in 5" :key="stat" class="rounded-xl border border-line bg-surface px-5 py-4">

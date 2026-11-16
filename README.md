@@ -30,10 +30,24 @@ This site is an experiment in agentic development: most of the code is written b
 - **Landing page.** Hero, raid nights, links into the other pages, and the latest news.
 - **About.** What the guild runs, the raid schedule, who to contact, and the guild and raid rules (`/rules` redirects here).
 - **Roster.** Pulled live from the Raider.IO API and grouped by in-game rank, with collapsible sections, search across name, class and spec, class and role filters, and official WoW class colours. Every member links to their character page.
-- **Characters.** A page for every character on the current guild roster: Warcraft Logs parses per boss for any of the guild's raid tiers (best and median percentile, best DPS or HPS, kills, fastest kill, realm rank, All Stars), the guild raid nights they were in, Mythic+ score and best runs, equipped gear and raid progression from Raider.IO.
+- **Characters.** A page for every character on the current guild roster: Warcraft Logs parses per boss for any of the guild's raid tiers (best and median percentile, best DPS or HPS, kills, fastest kill, realm rank, All Stars), the guild raid nights they were in, Mythic+ score and best runs, equipped gear and raid progression from Raider.IO, and a full-body picture of the character in their current gear from the Blizzard API.
 - **Raids.** Raid nights from the Warcraft Logs API, one raid tier at a time with a selector for every tier the guild has raided (Dragonflight and Nerub-ar Palace included, back to Castle Nathria): bosses down and headcount per night, and a detail page per log with the boss list and who attended. Needs API credentials, see below.
 - **Privacy.** What the site shows about a character, where each field comes from, and how to be taken off.
 - **News.** Markdown posts from `content/news/`, currently switched off behind a flag (see below).
+
+## Data sources
+
+Everything external is fetched by the site's server and cached, never by the visitor's browser, except the images noted below.
+
+- **[Blizzard API](https://develop.battle.net/):** the full-body picture of each character on their page. The image itself comes from Blizzard's image server, passed on through the site's server.
+- **[Raider.IO](https://raider.io):** the roster (members, rank, class, spec, role, realm), and on a character page the equipped gear and item level, Mythic+ score and best runs, raid progression, race, achievement points and the portrait.
+- **[Warcraft Logs](https://www.warcraftlogs.com):** the raid nights and who attended them, and on a character page the parses per boss.
+- **[Raidbots](https://www.raidbots.com):** the table that tells which upgrade track a gear piece is on ("Hero 4/6").
+- **[Wowhead](https://www.wowhead.com):** item icons and item links on a character page. The icons are loaded by the browser.
+- **Blizzard's image server:** the small character portrait, at the address Raider.IO gives. Loaded by the browser.
+- **This repository:** news posts, the raid schedule, the guild links and the rules.
+
+Raider.IO and Warcraft Logs build their data from Blizzard's game data. `/privacy` says the same per field, for the people on the site.
 
 ## Scripts
 

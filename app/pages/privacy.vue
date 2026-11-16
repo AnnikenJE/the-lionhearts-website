@@ -7,7 +7,7 @@ const SOURCES = [
   {
     name: 'Blizzard Entertainment',
     url: 'https://develop.battle.net/',
-    body: 'The official game data behind a character: name, class, specialisation, realm and guild rank. This is the same information the in-game guild roster and the Armory already show.',
+    body: 'The official game data behind a character: name, class, specialisation, realm and guild rank, the same information the in-game guild roster and the Armory already show. A character page also shows the full-body picture of the character in their current gear, which the site fetches from Blizzard\'s API directly.',
   },
   {
     name: 'Raider.IO',
@@ -23,7 +23,7 @@ const SOURCES = [
 
 const link = 'text-accent underline underline-offset-4 transition hover:no-underline'
 
-const LAST_UPDATED = '9 November 2026'
+const LAST_UPDATED = '16 November 2026'
 
 usePageSeo({
   title: 'Privacy',
@@ -69,7 +69,8 @@ usePageSeo({
       <p class="text-fg-muted">
         The site holds no database of its own. Every character detail is fetched
         from one of three places when a page is loaded, cached for a short while
-        so we are not hammering anyone, and then discarded.
+        so we are not hammering anyone, and then discarded. Most of it is fetched
+        again within hours, and nothing is kept longer than 30 days.
       </p>
       <dl class="mt-6 space-y-4">
         <div
@@ -85,8 +86,9 @@ usePageSeo({
       </dl>
       <p class="mt-6 text-fg-muted">
         Those calls are made by our server, not by your browser, so loading a
-        page does not hand your IP address to Raider.IO or Warcraft Logs. The
-        images on character pages are the exception, see below.
+        page does not hand your IP address to Blizzard's API, Raider.IO or
+        Warcraft Logs. The images on character pages are the exception, see
+        below.
       </p>
     </section>
 
@@ -105,7 +107,9 @@ usePageSeo({
       <p class="mt-4 text-fg-muted">
         Two things on character pages are loaded from outside, which means your
         browser requests them directly: the character portrait from Blizzard's
-        image server and the item icons from Wowhead's. The site itself does not
+        image server and the item icons from Wowhead's. The full-body picture of
+        the character comes from Blizzard too, but through our server, which
+        fetches it and passes it on. The site itself does not
         pass anything to them.
       </p>
     </section>
@@ -136,7 +140,12 @@ usePageSeo({
         World of Warcraft and Blizzard Entertainment are trademarks or registered
         trademarks of Blizzard Entertainment, Inc. in the U.S. and other
         countries. The character data shown here is Blizzard's public game
-        data, as collected by Raider.IO and Warcraft Logs.
+        data, fetched from Blizzard's API or as collected by Raider.IO and
+        Warcraft Logs.
+      </p>
+      <p class="mt-4 text-fg-muted">
+        All of it is shown as is. Neither we nor Blizzard promise that it is
+        complete, accurate or up to date, or that it will always be available.
       </p>
     </section>
 

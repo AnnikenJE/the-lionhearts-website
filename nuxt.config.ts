@@ -8,9 +8,13 @@ export default defineNuxtConfig({
   // Empty-string defaults let a server route detect "not configured" and return a
   // clean 503 instead of crashing. Bound from env as NUXT_WCL_CLIENT_ID and
   // NUXT_WCL_CLIENT_SECRET (Nuxt's uppercase-and-underscore mapping of wcl.clientId
-  // and wcl.clientSecret).
+  // and wcl.clientSecret), and NUXT_BLIZZARD_CLIENT_ID and NUXT_BLIZZARD_CLIENT_SECRET.
   runtimeConfig: {
     wcl: {
+      clientId: '',
+      clientSecret: '',
+    },
+    blizzard: {
       clientId: '',
       clientSecret: '',
     },
@@ -24,6 +28,10 @@ export default defineNuxtConfig({
   // effect almost at once for someone who has the page open.
   routeRules: {
     '/api/**': { headers: { 'cache-control': 'public, max-age=60, stale-while-revalidate=600' } },
+    // Character renders are 500 KB PNGs that change only when the character changes gear,
+    // and Blizzard's image server sends no cache header of its own, so the browser keeps
+    // them a day. Well within the 30 days Blizzard's terms allow.
+    '/api/render/**': { headers: { 'cache-control': 'public, max-age=86400' } },
     // Rules moved into /about as regular sections; this keeps old links and
     // bookmarks working, landing on the first rules section (id="rules").
     '/rules': { redirect: { to: '/about#rules', statusCode: 301 } },

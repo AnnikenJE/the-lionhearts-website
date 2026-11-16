@@ -112,29 +112,56 @@ usePageSeo(() => ({
     />
 
     <template v-else-if="character">
-      <div class="mt-6 flex items-center gap-5">
-        <img
-          v-if="character.thumbnailUrl"
-          :src="character.thumbnailUrl"
-          :alt="`${character.name}'s portrait`"
-          class="size-16 shrink-0 rounded-xl border border-line sm:size-20"
-          width="80"
-          height="80"
-        >
+      <div class="md:flex md:items-center md:justify-between md:gap-8">
         <div class="min-w-0">
-          <h1 class="text-display" :style="{ color: classColor(character.className) }">{{ character.name }}</h1>
+          <div class="mt-6 flex items-center gap-5">
+            <img
+              v-if="character.thumbnailUrl"
+              :src="character.thumbnailUrl"
+              :alt="`${character.name}'s portrait`"
+              class="size-16 shrink-0 rounded-xl border border-line sm:size-20"
+              width="80"
+              height="80"
+            >
+            <div class="min-w-0">
+              <h1 class="text-display" :style="{ color: classColor(character.className) }">{{ character.name }}</h1>
+            </div>
+          </div>
+
+          <p class="mt-5 text-lg text-fg-muted">
+            {{ specLine }}<template v-if="character.race">, {{ character.race }}</template>
+            on {{ character.realm }}<template v-if="character.guildName">, &lt;{{ character.guildName }}&gt;</template>
+          </p>
+
+          <div class="mt-6 flex flex-wrap gap-3">
+            <AppButton :href="character.links.warcraftLogs" variant="secondary">Warcraft Logs</AppButton>
+            <AppButton v-if="character.links.raiderIo" :href="character.links.raiderIo" variant="secondary">Raider.IO</AppButton>
+            <AppButton :href="character.links.armory" variant="secondary">Armory</AppButton>
+          </div>
         </div>
-      </div>
 
-      <p class="mt-5 text-lg text-fg-muted">
-        {{ specLine }}<template v-if="character.race">, {{ character.race }}</template>
-        on {{ character.realm }}<template v-if="character.guildName">, &lt;{{ character.guildName }}&gt;</template>
-      </p>
-
-      <div class="mt-6 flex flex-wrap gap-3">
-        <AppButton :href="character.links.warcraftLogs" variant="secondary">Warcraft Logs</AppButton>
-        <AppButton v-if="character.links.raiderIo" :href="character.links.raiderIo" variant="secondary">Raider.IO</AppButton>
-        <AppButton :href="character.links.armory" variant="secondary">Armory</AppButton>
+        <!-- Blizzard's render is 1600 by 1200 with the character small in the middle, so
+             it is drawn larger than its frame (w-auto keeps its proportions) and cropped
+             to the figure, feet near the bottom edge. A soft glow in the class colour
+             sits behind it, and a shadow under the feet grounds it. -->
+        <div
+          v-if="character.renderUrl"
+          class="relative mt-10 h-96 overflow-hidden rounded-2xl border border-line bg-surface md:mt-6 md:w-80 md:shrink-0"
+        >
+          <div
+            class="absolute inset-0"
+            :style="{ background: `radial-gradient(ellipse 60% 50% at 50% 45%, color-mix(in srgb, ${classColor(character.className)} 22%, transparent), transparent)` }"
+            aria-hidden="true"
+          />
+          <div class="absolute bottom-6 left-1/2 h-6 w-40 -translate-x-1/2 rounded-[100%] bg-black/50 blur-md" aria-hidden="true" />
+          <img
+            :src="character.renderUrl"
+            :alt="`${character.name} in their current gear`"
+            class="absolute -top-[32%] left-1/2 h-[150%] w-auto max-w-none -translate-x-1/2"
+            width="1600"
+            height="1200"
+          >
+        </div>
       </div>
 
       <dl v-if="stats.length" class="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
