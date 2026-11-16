@@ -1,8 +1,17 @@
 // The Blizzard Game Data and Profile APIs. Every request carries a bearer token from the
-// OAuth client_credentials flow, the same shape as the Warcraft Logs client. Runs
-// server-side so the credentials never reach the browser and responses can be cached.
+// OAuth client credentials flow. Runs server-side so the credentials never reach the
+// browser and responses can be cached.
+//
+// The token exchange goes through oauth4webapi rather than a hand-written request:
+// Blizzard strongly recommends a stable OAuth library over implementing the flow. It is
+// built on fetch and Web Crypto only, so it runs on Cloudflare Workers.
+import * as oauth from 'oauth4webapi'
 
-const TOKEN_URL = 'https://oauth.battle.net/token'
+/** Blizzard's OAuth server for the US, EU and APAC regions. */
+const AUTHORIZATION_SERVER: oauth.AuthorizationServer = {
+  issuer: 'https://oauth.battle.net',
+  token_endpoint: 'https://oauth.battle.net/token',
+}
 
 /** The guild is on an EU realm, so every call goes to the EU host, in British English. */
 const API_URL = 'https://eu.api.blizzard.com'
@@ -24,10 +33,6 @@ export const BLIZZARD_NOT_CONFIGURED = 'Blizzard API is not configured'
 export const isBlizzardNotConfigured = (error: unknown) =>
   (error as { statusMessage?: string } | null | undefined)?.statusMessage === BLIZZARD_NOT_CONFIGURED
 
-interface TokenResponse {
-  access_token: string
-  expires_in: number
-}
 
 // Module scope, so a warm instance reuses the token instead of paying for an exchange
 // per request. A cold start just fetches a new one, which is cheap and harmless.
@@ -55,19 +60,20 @@ const getAccessToken = async () => {
 
   const { clientId, clientSecret } = readCredentials()
 
-  const data = await $fetch<TokenResponse>(TOKEN_URL, {
-    method: 'POST',
-    timeout: UPSTREAM_TIMEOUT_MS,
-    headers: {
-      // btoa rather than Buffer, so this keeps working on a Workers runtime.
-      Authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-    },
-    body: new URLSearchParams({ grant_type: 'client_credentials' }),
-  })
+  const client: oauth.Client = { client_id: clientId }
+  const response = await oauth.clientCredentialsGrantRequest(
+    AUTHORIZATION_SERVER,
+    client,
+    oauth.ClientSecretBasic(clientSecret),
+    new URLSearchParams(),
+    { signal: () => AbortSignal.timeout(UPSTREAM_TIMEOUT_MS) },
+  )
+  const token = await oauth.processClientCredentialsResponse(AUTHORIZATION_SERVER, client, response)
 
   cached = {
-    token: data.access_token,
-    expiresAt: Date.now() + data.expires_in * 1000 - EXPIRY_MARGIN_MS,
+    token: token.access_token,
+    // Blizzard always sends expires_in (24 hours); an hour is a safe guess without it.
+    expiresAt: Date.now() + (token.expires_in ?? 60 * 60) * 1000 - EXPIRY_MARGIN_MS,
   }
 
   return cached.token
