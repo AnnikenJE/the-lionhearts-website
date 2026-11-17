@@ -18,11 +18,16 @@ updates:
     # site through an update.
     cooldown:
       default-days: 7
-    # TypeScript 7 is the native rewrite, and typescript-eslint cannot load it yet:
-    # lint crashes before it checks anything. Remove this once typescript-eslint
-    # supports TypeScript 7.
     ignore:
+      # TypeScript 7 is the native rewrite, and typescript-eslint cannot load it
+      # yet: lint crashes before it checks anything. Remove this once
+      # typescript-eslint supports TypeScript 7.
       - dependency-name: typescript
+        update-types: [version-update:semver-major]
+      # better-sqlite3 13 ends up in the Worker with a top-level `require.main`
+      # check, and Cloudflare refuses to publish it ("require is not defined"). It
+      # is only used by @nuxt/content in local development, so 12 is enough.
+      - dependency-name: better-sqlite3
         update-types: [version-update:semver-major]
     groups:
       all:
