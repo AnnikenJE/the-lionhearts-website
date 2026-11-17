@@ -18,6 +18,12 @@ updates:
     # site through an update.
     cooldown:
       default-days: 7
+    # TypeScript 7 is the native rewrite, and typescript-eslint cannot load it yet:
+    # lint crashes before it checks anything. Remove this once typescript-eslint
+    # supports TypeScript 7.
+    ignore:
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
     groups:
       all:
         patterns: ['*']
