@@ -69,6 +69,8 @@ Every pull request, and every push to `main`, runs `.github/workflows/ci.yml`: l
 
 A second CI job, `no env files or secrets`, guards against leaked credentials, since the repository is public and GitHub's push protection does not recognise a Warcraft Logs secret. It fails when git tracks a `.env` or `.env.*` file other than `.env.example` (`scripts/check-env-files.ts`), and runs gitleaks, pinned and checksum-verified, over the whole history. The same checks run locally as a pre-commit hook in `.githooks/pre-commit`; `npm install` points `core.hooksPath` there through the `prepare` script (`scripts/install-hooks.ts`). Locally gitleaks runs only if it is installed. Never bypass the hook with `--no-verify` to get a commit through: fix what it found.
 
+Dependabot (`.github/dependabot.yml`) opens the dependency updates once a month: one pull request for npm and one for GitHub Actions, each with every update in it, majors and security fixes included. A release must be seven days old before it is proposed. "Dependabot security updates" is off in the repository settings on purpose, so advisories raise alerts but no pull requests of their own; "Dependabot alerts" is on. CI checks each pull request like any other, and the user merges them.
+
 `npm run typecheck` and `npm run build` regenerate `.nuxt/`. A dev server running at the same time loses its worker and answers every request with `worker entry not found in ".nuxt/dev/index.mjs"`; restart it.
 
 `npm run typecheck` is `nuxt typecheck`, which runs `vue-tsc`. It prints a "Resolve plugin path failed: vue-router/volar/sfc-route-blocks" stack trace on every run: vue-tsc 3 still looks for a Volar plugin that vue-router 5 no longer ships. It is noise, not a failure. Trust the exit code.

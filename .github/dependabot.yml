@@ -1,0 +1,38 @@
+# Opens one pull request a month per ecosystem with every outdated npm package or
+# GitHub Action in it, majors and security fixes included. CI runs on it like on
+# any other pull request, so a merge is only ever a green update.
+#
+# Security fixes come with the monthly pull request too: "Dependabot security
+# updates" is switched off in the repository settings, so a new advisory raises an
+# alert but no pull request of its own. "Dependabot alerts" stays on.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+      timezone: Europe/Oslo
+    # A release has to be a week old before it is proposed. A hijacked package is
+    # usually caught and pulled within days, so this keeps one from reaching the
+    # site through an update.
+    cooldown:
+      default-days: 7
+    groups:
+      all:
+        patterns: ['*']
+    commit-message:
+      prefix: chore(deps)
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+      timezone: Europe/Oslo
+    cooldown:
+      default-days: 7
+    groups:
+      all:
+        patterns: ['*']
+    commit-message:
+      prefix: ci(deps)
