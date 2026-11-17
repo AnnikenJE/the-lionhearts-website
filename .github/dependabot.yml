@@ -1,10 +1,12 @@
 # Opens one pull request a month per ecosystem with every outdated npm package or
-# GitHub Action in it, majors and security fixes included. CI runs on it like on
-# any other pull request, so a merge is only ever a green update.
+# GitHub Action in it, majors included. CI runs on it like on any other pull
+# request, so a merge is only ever a green update.
 #
-# Security fixes come with the monthly pull request too: "Dependabot security
-# updates" is switched off in the repository settings, so a new advisory raises an
-# alert but no pull request of its own. "Dependabot alerts" stays on.
+# The monthly pull request only raises what package.json lists, so a security fix
+# for a package that comes in through another one would never arrive with it.
+# "Dependabot security updates" is on in the repository settings for that, and the
+# `security` groups below put every such fix for an ecosystem into one pull request
+# rather than one per package. Security updates skip the cooldown.
 version: 2
 
 updates:
@@ -32,6 +34,9 @@ updates:
     groups:
       all:
         patterns: ['*']
+      security:
+        applies-to: security-updates
+        patterns: ['*']
     commit-message:
       prefix: chore(deps)
 
@@ -44,6 +49,9 @@ updates:
       default-days: 7
     groups:
       all:
+        patterns: ['*']
+      security:
+        applies-to: security-updates
         patterns: ['*']
     commit-message:
       prefix: ci(deps)
