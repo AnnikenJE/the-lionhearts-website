@@ -108,7 +108,7 @@ nuxt.config.ts             # Nuxt config
 
 **Secret guard.** This repository is public, so a committed secret is a leaked one. `npm install` sets up a pre-commit hook (`.githooks/pre-commit`) that refuses a commit when git tracks a `.env` or `.env.*` file other than `.env.example`, and scans the staged changes with [gitleaks](https://github.com/gitleaks/gitleaks) if it is installed. CI runs both checks again on every pull request, gitleaks over the whole history. If a secret ever does get pushed, removing it is not enough: rotate it.
 
-**Dependency updates.** Dependabot proposes updates once a month (`.github/dependabot.yml`): one pull request for npm and one for GitHub Actions, with every update in it, and nothing released less than a week ago. CI checks each one before it can be merged.
+**Dependency updates.** Dependabot proposes updates once a month (`.github/dependabot.yml`): one pull request for npm and one for GitHub Actions, with every update in it, and nothing released less than a week ago. Security fixes come sooner, all in one pull request whenever a new advisory affects the site. CI checks each one before it can be merged.
 
 **Crawlers.** `public/robots.txt` keeps the site open to ordinary search engines but blocks the API, the `?tier=` variants and the individual character and raid pages (crawling them used up the Workers KV write budget), plus aggressive scrapers and AI training crawlers.
 
