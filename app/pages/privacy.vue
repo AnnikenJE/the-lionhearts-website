@@ -23,7 +23,7 @@ const SOURCES = [
 
 const link = 'text-accent underline underline-offset-4 transition hover:no-underline'
 
-const LAST_UPDATED = '16 November 2026'
+const LAST_UPDATED = '27 November 2026'
 
 usePageSeo({
   title: 'Privacy',
@@ -55,6 +55,11 @@ usePageSeo({
         in, for everyone on the guild roster. Anyone else in a raid, a guest or a
         former member, appears by name on that raid night, with no page of their
         own.
+      </p>
+      <p class="mt-4 text-fg-muted">
+        The raids page also shows a group picture taken in game during a guild
+        raid, with the names of the characters in it above their heads. It is a
+        screenshot kept on the site, not fetched from anywhere.
       </p>
       <p class="mt-4 text-fg-muted">
         All of it is character data. None of it is account data: no real names,
@@ -123,7 +128,8 @@ usePageSeo({
         <a :href="DISCORD_URL" target="_blank" rel="noopener" :class="link">our Discord</a>,
         and say which character you mean. We add the name to the site's opt-out
         list and it disappears from the roster, from every raid page, and its
-        character page stops existing.
+        character page stops existing. If the character is in the group picture
+        on the raids page, we blur its name there too.
       </p>
       <p class="mt-4 text-fg-muted">
         That covers this site only. Your character stays visible in game, on the

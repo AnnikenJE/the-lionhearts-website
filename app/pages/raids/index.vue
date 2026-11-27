@@ -36,6 +36,19 @@ usePageSeo({
       </p>
     </header>
 
+    <!-- A low strip, not the whole picture: cropped top and bottom to the line of
+         characters, so the page below still shows on arrival. -->
+    <img
+      src="/raids-banner-1623.webp"
+      srcset="/raids-banner-800.webp 800w, /raids-banner-1623.webp 1623w"
+      sizes="(min-width: 64rem) 976px, 100vw"
+      alt="The guild gathered for a group picture in a raid, a long line of characters with their names above their heads."
+      width="1623"
+      height="744"
+      decoding="async"
+      class="mt-10 h-32 w-full rounded-2xl border border-line object-cover object-[50%_62%] sm:h-48"
+    >
+
     <section class="mt-14">
       <SectionHeading class="mb-5">Raid schedule</SectionHeading>
       <RaidSchedule />
