@@ -7,6 +7,9 @@
 // name is all that is needed. Every source spells it the way the game does, and a
 // character name is unique on a realm, so a name match cannot hit the wrong
 // person on Darkmoon Faire.
+//
+// The list cannot reach text inside an image: if the name is in the group picture on
+// the raids page (public/raids-banner-*), blur it in both files as well.
 
 /** Character names that have asked not to appear. Spelling and case do not matter. */
 const OPTED_OUT: string[] = [
