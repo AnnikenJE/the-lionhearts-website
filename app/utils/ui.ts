@@ -48,5 +48,9 @@ export const PROSE = [
   // in place, stacking on top of the container's own spacing to the title.
   // ContentRenderer wraps a post's markdown in its own div, so the prose
   // container's children aren't the p/img tags themselves but that one wrapper.
-  '[&>div>p:first-of-type]:mt-0',
+  // The opening image's own 2em top margin goes too, or it sits a line below the
+  // title on a phone and a paragraph lower than the text beside it on desktop, and
+  // so does the last block's bottom margin, which left the card's bottom padding
+  // looking doubled.
+  '[&>div>p:first-of-type]:mt-0 [&>div>:first-child]:mt-0 [&>div>:last-child]:mb-0',
 ].join(' ')

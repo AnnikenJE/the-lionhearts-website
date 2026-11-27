@@ -13,8 +13,7 @@ const { data: newsList } = await useFetch<NewsCollectionItem[]>('/api/news', {
 const latest = computed(() => newsList.value.slice(0, 1))
 
 // Current tier only, no ?tier= selector: the landing page shows what's current, not
-// history. Hidden quietly (not an error) while pending, not configured, or empty, the
-// same way the news block stays out of the way with nothing to show.
+// history. Hidden quietly (not an error) while pending, not configured, or empty.
 const { data: raidData } = await useLazyServerFetch<RaidNightsResponse>('/api/raids')
 const latestNights = computed(() => raidData.value?.nights.slice(0, 3) ?? [])
 
