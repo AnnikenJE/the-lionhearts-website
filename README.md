@@ -33,7 +33,7 @@ This site is an experiment in agentic development: most of the code is written b
 - **Characters.** A page for every character on the current guild roster: Warcraft Logs parses per boss for any of the guild's raid tiers (best and median percentile, best DPS or HPS, kills, fastest kill, realm rank, All Stars), the guild raid nights they were in, Mythic+ score and best runs, equipped gear and raid progression from Raider.IO, and a full-body picture of the character in their current gear from the Blizzard API.
 - **Raids.** Raid nights from the Warcraft Logs API, one raid tier at a time with a selector for every tier the guild has raided (Dragonflight and Nerub-ar Palace included, back to Castle Nathria): bosses down and headcount per night, and a detail page per log with the boss list and who attended. Needs API credentials, see below.
 - **Privacy.** What the site shows about a character, where each field comes from, and how to be taken off.
-- **News.** Markdown posts from `content/news/`, currently switched off behind a flag (see below).
+- **News.** Markdown posts from `content/news/`, with the newest one shown in full on the landing page.
 
 ## Data sources
 
@@ -102,7 +102,7 @@ nuxt.config.ts             # Nuxt config
 
 **Roster data.** Fetched server-side and cached for an hour, so visitor traffic does not hammer the Raider.IO API. Rank names and class colours are configured at the top of `app/pages/roster.vue`. Raider.IO returns rank `99` for characters it cannot match to a guild rank; those are filtered out in `toRosterMembers()` (`server/utils/roster.ts`).
 
-**News.** `NEWS_ENABLED` in `app/data/news.ts` gates the whole section. While it is false the list page shows a coming-soon notice, post routes return 404, and nothing is queried, so unpublished drafts never reach the page payload. Flipping it to true is the whole launch.
+**News.** A post is a markdown file in `content/news/`, live on the next deploy. `NEWS_ENABLED` in `app/data/news.ts` switches the whole section off: the list page then shows a coming-soon notice, post routes return 404, and nothing is queried.
 
 **Raid data.** Fetched server-side from the Warcraft Logs v2 GraphQL API. The current tier's raid list and each log are cached and refreshed once an hour (a finished tier once a week), so Warcraft Logs is asked at most once an hour per page however many people visit. A night being logged live therefore shows up to an hour behind. Two logs of the same night (two raiders logging) are shown as one, and logs with no boss pulls are left out.
 
